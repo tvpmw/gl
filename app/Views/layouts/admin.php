@@ -292,6 +292,18 @@
         <?= $this->renderSection('content') ?>
     </main>
 
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <strong>Copyright &copy; <?= date('Y') ?> PT. Sadar Jaya Mandiri.</strong>    
+            </div>
+            <div class="d-none d-sm-block">
+                <b>Version</b> 1.0.0
+            </div>
+        </div>
+    </footer>
+
     <!-- JavaScript Dependencies -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
