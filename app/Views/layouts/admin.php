@@ -445,12 +445,12 @@
                     </div>
                 </div>
 
-                <div class="utility-nav-item">
+                <!-- <div class="utility-nav-item">
                     <a class="notification-btn" href="#" title="Notifications">
                         <i class="fas fa-bell"></i>
                         <span class="notification-badge">3</span>
                     </a>
-                </div>
+                </div> -->
 
                 <div class="utility-nav-item">
                     <?php
