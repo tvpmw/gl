@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GL Admin Dashboard</title>
-    
+    <link rel="icon" href="<?=base_url('favicon.ico')?>" type="image/x-icon" />
     <!-- CSS Dependencies -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -272,15 +272,22 @@
                         </a>
                     </li>
                     <li class="nav-item dropdown">
+                          <?php
+                          $uname = !empty(detailUser()->user_nama) ? detailUser()->user_nama : '';
+                          $ab = explode(' ', $uname);
+                          if ($ab) {
+                            $uname = $ab[0];
+                          }
+                          ?>
                         <a class="nav-link dropdown-toggle user-profile d-flex align-items-center gap-2" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
                             <img src="https://ui-avatars.com/api/?name=Admin+User&background=3a7bd5&color=fff" class="rounded-circle" width="32" height="32" alt="Profile">
-                            <span>Admin User</span>
+                            <span><?= $uname ?></span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="/profile"><i class="fas fa-user me-2"></i>Profile</a></li>
                             <li><a class="dropdown-item" href="/settings"><i class="fas fa-cog me-2"></i>Settings</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item text-danger" href="/logout"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                            <li><a class="dropdown-item text-danger" href="<?=base_url('logout')?>"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
                         </ul>
                     </li>
                 </ul>

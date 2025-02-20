@@ -60,11 +60,13 @@ class DashboardController extends BaseController
         if (!empty($getLR)) {
             foreach ($getLR as $value) {
                 $key = $value['tahun'];
-                $aksi = '<button class="btn btn-sm btn-light" title="View">
+                $bl = $value['bulan'];
+                $id = $key.'|'.$bl.'|'.$dbs;
+                $aksi = '<button class="btn btn-sm btn-light detailLR" data-id="'.$id.'" title="View">
                                     <i class="fas fa-eye"></i>
                                 </button>';
                 $lists[$key][] = [
-                    'bulan' => getMonths($value['bulan'], true),
+                    'bulan' => getMonths($bl, true),
                     'pendapatan' => (float) $value['pendapatan'],
                     'hpp' => (float) $value['hpp'],
                     'biaya' => (float) $value['biaya'],

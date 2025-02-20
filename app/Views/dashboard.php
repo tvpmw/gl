@@ -263,14 +263,14 @@ function loadData(params = {}) {
     document.getElementById("loadingTable").style.display = "block";
     document.getElementById("dataTable").innerHTML = "";
 
-    fetch(`<?=base_url('dashboard/get-data')?>`, {
+    fetch(`<?=base_url('cms/dashboard/get-data')?>`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(params)  
     })
     .then(response => response.json())
     .then(data => {
-        console.log("Response dari API:", data);  
+        // console.log("Response dari API:", data);  
 
         ["pendapatan", "hpp", "biaya", "lr"].forEach(id => {
             document.getElementById(id).classList.remove("loading");
@@ -398,6 +398,13 @@ const formatter = new Intl.NumberFormat("id-ID", { style: "currency", currency: 
 function toRupiah(str, withSymbol = true) {
     return withSymbol ? formatter.format(str) : (formatter.format(str)).replace(/(Rp)/, "").trim();
 }
+
+$(document).on('click', ".detailLR", function(event) {
+  event.preventDefault();
+  let id = $(this).data('id');
+  console.log(id);
+  alert('masih onprogress');
+});
 
 </script>
 <?= $this->endSection() ?>
