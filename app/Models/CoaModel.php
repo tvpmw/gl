@@ -144,7 +144,7 @@ class CoaModel extends Model
 
         return $this->db->query($sql)->getResultArray();
     }
-    
+
     public function getLaporanRekening($tahun, $bulan)
     {
         $sql = "
@@ -179,12 +179,12 @@ class CoaModel extends Model
 
             SELECT 
                 tipe,
-                \"KDSUB\",
-                kategori AS \"R E K E N I N G\",
+                \"KDSUB\" AS \"kdsub\",
+                kategori AS \"rekening\",
                 level AS \"Level\",
-                \"KDCOA\" AS \"Kode Akun\",
-                COALESCE(\"kdparent\", '-') AS \"Parent Akun\",
-                \"NMCOA\" AS \"Nama Akun\",
+                \"KDCOA\" AS \"kode_akun\",
+                COALESCE(\"kdparent\", '-') AS \"parent_akun\",
+                \"NMCOA\" AS \"nama_akun\",
                 nilai
             FROM RekeningData
 
@@ -192,19 +192,33 @@ class CoaModel extends Model
 
             SELECT 
                 6 AS tipe,
-                '650' AS \"KDSUB\",
-                'Persediaan' AS \"R E K E N I N G\",
+                '650' AS \"kdsub\",
+                'Persediaan' AS \"rekening\",
                 2 AS \"Level\",
-                '602.001' AS \"Kode Akun\",
-                '' AS \"Parent Akun\",
-                'Persediaan' AS \"Nama Akun\",
-                (sawal - sakhir) AS nilai
+                '5555' AS \"kode_akun\",
+                '' AS \"parent_akun\",
+                'Persediaan Awal' AS \"nama_akun\",
+                sawal AS nilai
             FROM periode
             WHERE \"TH\" = ? AND \"BL\" = ?
 
-            ORDER BY \"KDSUB\", \"Level\", \"Kode Akun\", \"R E K E N I N G\", \"Parent Akun\" NULLS FIRST;
+            UNION ALL
+
+            SELECT 
+                6 AS tipe,
+                '650' AS \"kdsub\",
+                'Persediaan' AS \"rekening\",
+                2 AS \"Level\",
+                '6666' AS \"kode_akun\",
+                '' AS \"parent_akun\",
+                'Persediaan Akhir' AS \"nama_akun\",
+                sakhir AS nilai
+            FROM periode
+            WHERE \"TH\" = ? AND \"BL\" = ?
+
+            ORDER BY \"kdsub\", \"Level\", \"kode_akun\", \"rekening\", \"parent_akun\" NULLS FIRST;
         ";
 
-        return $this->db->query($sql, [$tahun, $bulan, $tahun, $bulan])->getResultArray();
+        return $this->db->query($sql, [$tahun, $bulan, $tahun, $bulan, $tahun, $bulan])->getResultArray();
     }
 }

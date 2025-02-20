@@ -16,5 +16,9 @@ $routes->group('cms', ['filter' => 'auth'], function ($routes) {
 		$routes->post('get-data', 'DashboardController::getData');
 	});
 
+	$routes->group("report", function ($routes) {
+		$routes->get('labarugi/(:any)/(:any)/(:any)', 'ReportController::labaRugi/$1/$2/$3');
+	});
+
 	$routes->get('accounts', 'AccountController::index');
 });

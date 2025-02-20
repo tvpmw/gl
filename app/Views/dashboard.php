@@ -388,7 +388,7 @@ const ctx2 = document.getElementById("chartLabaRugi").getContext("2d");
 const chartPendapatanBiaya = new Chart(ctx1, { type: "bar", data: { labels: [], datasets: [] } });
 const chartLabaRugi = new Chart(ctx2, { type: "line", data: { labels: [], datasets: [] } });
 
-loadData({ tahun:'2025',dbs:'sdkom' });
+loadData({ tahun:'<?=$thnSkg?>',dbs:'sdkom' });
 
 function toNumber(value) {
     return Number(value.toString().replace(/[^0-9,]+/g, "").replace(/[,]+/g, "."));
@@ -402,8 +402,7 @@ function toRupiah(str, withSymbol = true) {
 $(document).on('click', ".detailLR", function(event) {
   event.preventDefault();
   let id = $(this).data('id');
-  console.log(id);
-  alert('masih onprogress');
+  window.location.replace('<?=base_url('cms/report/labarugi')?>/'+id);
 });
 
 </script>

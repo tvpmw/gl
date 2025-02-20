@@ -740,10 +740,20 @@ if (!function_exists('format_price2')) {
 if (!function_exists('format_angka')) {
   function format_angka($angka = NULL) {
     if(!empty($angka)){
-      return number_format($angka, 0, ',', '.');
+      return number_format($angka, 2, ',', '.');
     }else{
       return 0;
     }
+  }
+}
+
+if (!function_exists('formatNegatif')) {
+  function formatNegatif($angka) {
+    $angka = trim($angka);
+    if ($angka < 0) {
+        return '(' . number_format(abs($angka), 2, ',', '.') . ')';
+    }
+    return number_format($angka, 2, ',', '.');
   }
 }
 
@@ -805,6 +815,12 @@ if ( ! function_exists('format_date')) {
     }else{
       return '';
     }
+  }
+}
+
+if ( ! function_exists('formatTitle')) {
+  function formatTitle($string) {
+    return ucwords(strtolower($string));
   }
 }
 

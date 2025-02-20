@@ -61,7 +61,7 @@ class DashboardController extends BaseController
             foreach ($getLR as $value) {
                 $key = $value['tahun'];
                 $bl = $value['bulan'];
-                $id = $key.'|'.$bl.'|'.$dbs;
+                $id = $key.'/'.$bl.'/'.$dbs;
                 $aksi = '<button class="btn btn-sm btn-light detailLR" data-id="'.$id.'" title="View">
                                     <i class="fas fa-eye"></i>
                                 </button>';
