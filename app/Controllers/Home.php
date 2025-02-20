@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use CodeIgniter\HTTP\ResponseInterface;
 use App\Models\UsersModel;
 
 class Home extends BaseController
@@ -11,7 +12,7 @@ class Home extends BaseController
         helper(['my_helper']);
     }
 
-    public function index(): string
+    public function index()
     {
         if (!session()->get('isGlLoggedIn')) {
             $data['title'] = 'Login | GL';

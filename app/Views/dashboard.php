@@ -302,10 +302,10 @@ function loadData(params = {}) {
                 <tr>
                     <td>${data.tahun}</td>
                     <td>${item.bulan}</td>
-                    <td class="text-end">Rp ${toRupiah(item.pendapatan)}</td>
-                    <td class="text-end">Rp ${toRupiah(item.hpp)}</td>
-                    <td class="text-end">Rp ${toRupiah(item.biaya)}</td>
-                    <td class="text-end">Rp ${toRupiah(lr)}</td>
+                    <td class="text-end">${toRupiah(item.pendapatan)}</td>
+                    <td class="text-end">${toRupiah(item.hpp)}</td>
+                    <td class="text-end">${toRupiah(item.biaya)}</td>
+                    <td class="text-end">${toRupiah(lr)}</td>
                     <td class="text-center">${item.aksi}</td>
                 </tr>
             `;
@@ -316,19 +316,19 @@ function loadData(params = {}) {
             <tfoot>
                 <tr class="fw-bold bg-light">
                     <td colspan="2" class="text-center">Total</td>
-                    <td class="text-end">Rp ${toRupiah(totalPendapatan)}</td>
-                    <td class="text-end">Rp ${toRupiah(totalHpp)}</td>
-                    <td class="text-end">Rp ${toRupiah(totalBiaya)}</td>
-                    <td class="text-end">Rp ${toRupiah(totalLr)}</td>
+                    <td class="text-end">${toRupiah(totalPendapatan)}</td>
+                    <td class="text-end">${toRupiah(totalHpp)}</td>
+                    <td class="text-end">${toRupiah(totalBiaya)}</td>
+                    <td class="text-end">${toRupiah(totalLr)}</td>
                     <td></td>
                 </tr>
             </tfoot>
         `;
 
-        document.getElementById("pendapatan").textContent = `Rp ${toRupiah(totalPendapatan)}`;
-        document.getElementById("hpp").textContent = `Rp ${toRupiah(totalHpp)}`;
-        document.getElementById("biaya").textContent = `Rp ${toRupiah(totalBiaya)}`;
-        document.getElementById("lr").textContent = `Rp ${toRupiah(totalLr)}`;
+        document.getElementById("pendapatan").textContent = `${toRupiah(totalPendapatan)}`;
+        document.getElementById("hpp").textContent = `${toRupiah(totalHpp)}`;
+        document.getElementById("biaya").textContent = `${toRupiah(totalBiaya)}`;
+        document.getElementById("lr").textContent = `${toRupiah(totalLr)}`;
 
         document.getElementById("dataTable").innerHTML = tableRows + tableFooter;
 
