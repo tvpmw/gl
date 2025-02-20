@@ -17,8 +17,7 @@
         :root {
             --primary-color: #4f46e5;
             --primary-hover: #4338ca;
-            --surface-color: #f8fafc;
-            --nav-height: 70px;
+            --surface-color: #f8fafc;            
             --bg-main: #f8fafc;
             --bg-card: #ffffff;
             --text-main: #1e293b;
@@ -29,6 +28,8 @@
             --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
             --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
             --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+            --nav-height: 70px;  /* This already exists */
+            --nav-offset: calc(var(--nav-height)); /* Add this new variable */
         }
     
         [data-bs-theme="dark"] {
@@ -230,6 +231,13 @@
             font-size: 1.1rem;
             color: var(--text-muted);
             transition: all 0.3s ease;
+        }
+
+        .main-content {
+            padding-top: var(--nav-offset);
+            min-height: calc(50vh - var(--nav-height));
+            position: relative;
+            background: var(--bg-main);
         }
 
         .dropdown-item:hover {
