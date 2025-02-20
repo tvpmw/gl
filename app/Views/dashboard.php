@@ -71,6 +71,7 @@
     .action-btn:hover {
         background: #f0f2f5;
     }
+
     .loading {
         background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
         background-size: 200% 100%;
@@ -84,9 +85,6 @@
     }
     canvas {
         max-height: 300px !important;
-    }
-    .container-fluid.py-4 {
-        padding-top: 1rem !important;  /* Reduce from 1.5rem since we already have nav offset */
     }
 </style>
 <?= $this->endSection() ?>
