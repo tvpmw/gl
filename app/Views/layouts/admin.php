@@ -234,7 +234,7 @@
 <body>
     <nav class="navbar navbar-expand-lg top-navbar fixed-top">
         <div class="container-fluid px-4">
-            <a class="brand-logo d-flex align-items-center gap-2" href="/dashboard">
+            <a class="brand-logo d-flex align-items-center gap-2" href="<?=base_url()?>">
                 <i class="fas fa-analytics"></i>
                 <span>GL Admin</span>
             </a>
