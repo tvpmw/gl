@@ -270,8 +270,6 @@ function loadData(params = {}) {
     })
     .then(response => response.json())
     .then(data => {
-        // console.log("Response dari API:", data);  
-
         ["pendapatan", "hpp", "biaya", "lr"].forEach(id => {
             document.getElementById(id).classList.remove("loading");
         });
@@ -285,8 +283,31 @@ function loadData(params = {}) {
         let totalPendapatan = 0, totalHpp = 0, totalBiaya = 0, totalLr = 0;
         const labels = [], pendapatanData = [], hppData = [], biayaData = [], labaRugiData = [];
 
-        const tableRows = data.data.map(item => {
-            let lr = item.pendapatan - (item.hpp + item.biaya);
+        function calculatePercentageChange(current, previous) {
+            if (!previous) return { percent: 0, isIncrease: true };
+            const change = ((current - previous) / Math.abs(previous)) * 100;
+            return {
+                percent: Math.abs(change).toFixed(1),
+                isIncrease: change > 0
+            };
+        }
+
+        function getTrendHtml(current, previous, type = '') {
+            if (!previous) return '';
+            const trend = calculatePercentageChange(current, previous);
+            return `
+                <span class="ms-2 small ${trend.isIncrease ? 'text-success' : 'text-danger'}" 
+                      title="${type} ${trend.isIncrease ? 'naik' : 'turun'} ${trend.percent}% dari bulan sebelumnya">
+                    <i class="fas fa-arrow-${trend.isIncrease ? 'up' : 'down'}"></i> 
+                    ${trend.percent}%
+                </span>
+            `;
+        }
+
+        const tableRows = data.data.map((item, index) => {
+            const previousMonth = data.data[index + 1];
+            const lr = item.pendapatan - (item.hpp + item.biaya);
+            
             totalPendapatan += item.pendapatan;
             totalHpp += item.hpp;
             totalBiaya += item.biaya;
@@ -294,18 +315,32 @@ function loadData(params = {}) {
 
             labels.push(`${item.bulan} ${data.tahun}`);
             pendapatanData.push(item.pendapatan);
-            biayaData.push(item.biaya);
             hppData.push(item.hpp);
+            biayaData.push(item.biaya);
             labaRugiData.push(lr);
+
+            const prevLr = previousMonth ? (previousMonth.pendapatan - (previousMonth.hpp + previousMonth.biaya)) : null;
 
             return `
                 <tr>
                     <td>${data.tahun}</td>
                     <td>${item.bulan}</td>
-                    <td class="text-end">${toRupiah(item.pendapatan)}</td>
-                    <td class="text-end">${toRupiah(item.hpp)}</td>
-                    <td class="text-end">${toRupiah(item.biaya)}</td>
-                    <td class="text-end">${toRupiah(lr)}</td>
+                    <td class="text-end">
+                        ${toRupiah(item.pendapatan)}
+                        ${getTrendHtml(item.pendapatan, previousMonth?.pendapatan, 'Pendapatan')}
+                    </td>
+                    <td class="text-end">
+                        ${toRupiah(item.hpp)}
+                        ${getTrendHtml(item.hpp, previousMonth?.hpp, 'HPP')}
+                    </td>
+                    <td class="text-end">
+                        ${toRupiah(item.biaya)}
+                        ${getTrendHtml(item.biaya, previousMonth?.biaya, 'Biaya')}
+                    </td>
+                    <td class="text-end">
+                        ${toRupiah(lr)}
+                        ${getTrendHtml(lr, prevLr, 'Laba/Rugi')}
+                    </td>
                     <td class="text-center">${item.aksi}</td>
                 </tr>
             `;
