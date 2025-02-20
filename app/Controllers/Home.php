@@ -48,6 +48,9 @@ class Home extends BaseController
             ];
 
             $userData = reqApi($url,'GET',NULL,$header);
+            if($userData && $userData['status'] == 401){
+                return redirect()->to(getenv('BASE_URL_SSO').'?token=expired');
+            }
 
             if($userData && $userData['status'] == 200){
                 $users = new UsersModel();
