@@ -10,6 +10,7 @@ class DashboardController extends BaseController
     protected $coaModel;
     protected $coaModel2;
     protected $coaModel3;
+    protected $coaModel4;
     protected $redis;
 
     public function __construct()
@@ -19,6 +20,7 @@ class DashboardController extends BaseController
         $this->coaModel = new CoaModel('default');
         $this->coaModel2 = new CoaModel('crm_ars');        
         $this->coaModel3 = new CoaModel('crm_wep');
+        $this->coaModel4 = new CoaModel('crm_dtf');
 
         // Konfigurasi Predis
         $this->redis = new Client([
@@ -34,7 +36,7 @@ class DashboardController extends BaseController
         // pr($getLR,1);
         $data['thnSkg'] = date('Y');
         $data['startYear'] = 2009;
-        $data['dbs'] = ['sdkom','ariston','wep'];
+        $data['dbs'] = ['sdkom','ariston','wep', 'dtf'];
         return view('dashboard', $data);
     }
 
@@ -51,6 +53,9 @@ class DashboardController extends BaseController
                 break;
             case 'wep':
                 $getLR = $this->coaModel3->getLaporanLabaRugi();
+                break;
+            case 'dtf':
+                $getLR = $this->coaModel4->getLaporanLabaRugi();
                 break;
             default:
                 $getLR = $this->coaModel->getLaporanLabaRugi();
