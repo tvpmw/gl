@@ -313,4 +313,53 @@ class CoaModel extends Model
         // Jalankan query dengan binding parameter
         return $this->db->query($sql, $params)->getResultArray();
     }
+
+    public function getLaporanNeraca($tahun, $bulan)
+    {
+        $sql = "
+            WITH RekeningData AS (
+                SELECT 
+                    coa.\"KDCOA\", 
+                    coa.\"NMCOA\", 
+                    coa.\"kdparent\", 
+                    coa.\"KDSUB\",
+                    subcoa.\"NMSUB\" AS kategori,
+                    subcoa.\"TIPE\" AS tipe,
+                    COALESCE(
+                        SUM(
+                            CASE 
+                                WHEN subcoa.\"TIPE\" = 4 THEN (coadet.\"MKREDIT\" - coadet.\"MDEBET\")
+                                WHEN subcoa.\"TIPE\" = 5 THEN (coadet.\"MDEBET\" - coadet.\"MKREDIT\")
+                                WHEN subcoa.\"TIPE\" IN (2, 3) THEN (coadet.\"SKREDIT\" + coadet.\"MKREDIT\") - (coadet.\"SDEBET\" + coadet.\"MDEBET\")
+                                ELSE (coadet.\"SDEBET\" - coadet.\"SKREDIT\") + (coadet.\"MDEBET\" - coadet.\"MKREDIT\")
+                            END
+                        ), 
+                        0
+                    ) AS nilai,
+                    coa.root AS level
+                FROM coa
+                LEFT JOIN subcoa ON coa.\"KDSUB\" = subcoa.\"KDSUB\"
+                LEFT JOIN coadet ON coa.\"KDCOA\" = coadet.\"KDCOA\" 
+                    AND coadet.\"TH\" = ? 
+                    AND coadet.\"BL\" = ?
+                WHERE subcoa.\"TIPE\" < '4'
+                GROUP BY coa.\"KDCOA\", coa.\"NMCOA\", coa.\"kdparent\", coa.\"KDSUB\", subcoa.\"NMSUB\", subcoa.\"TIPE\", coa.root
+            )
+
+            SELECT 
+                tipe,
+                \"KDSUB\" AS \"kdsub\",
+                kategori AS \"rekening\",
+                level AS \"Level\",
+                \"KDCOA\" AS \"kode_akun\",
+                COALESCE(\"kdparent\", '-') AS \"parent_akun\",
+                \"NMCOA\" AS \"nama_akun\",
+                nilai
+            FROM RekeningData
+
+            ORDER BY \"kdsub\", \"Level\", \"kode_akun\", \"rekening\", \"parent_akun\" NULLS FIRST;
+        ";
+
+        return $this->db->query($sql, [$tahun, $bulan])->getResultArray();
+    }
 }
