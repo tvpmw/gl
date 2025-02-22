@@ -83,5 +83,25 @@ class Database extends Config
             'failover' => [],
             'port'     => env('database.crm_wep.port', 5432),
         ];
+
+        $this->crm_dtf = [
+            'DSN'      => '',
+            'hostname' => env('database.crm_dtf.hostname', 'localhost'),
+            'username' => env('database.crm_dtf.username', 'postgres'),
+            'password' => env('database.crm_dtf.password', ''),
+            'database' => env('database.crm_dtf.database', ''),
+            'DBDriver' => env('database.crm_dtf.DBDriver', 'Postgre'),
+            'DBPrefix' => env('database.crm_dtf.DBPrefix', ''),
+            'pConnect' => false,
+            'DBDebug'  => (ENVIRONMENT !== 'production'),
+            'charset'  => 'utf8',
+            'DBCollat' => 'utf8_general_ci',
+            'swapPre'  => '',
+            'encrypt'  => false,
+            'compress' => false,
+            'strictOn' => false,
+            'failover' => [],
+            'port'     => env('database.crm_dtf.port', 5432),
+        ];
     }
 }

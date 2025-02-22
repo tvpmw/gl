@@ -1,4 +1,22 @@
 <?= $this->extend('layouts/admin') ?>
+<?= $this->section('styles') ?>
+<style>
+    .loading {
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: loading 1.5s infinite linear;
+        color: transparent !important;
+        border-radius: 5px;
+    }
+    @keyframes loading {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+    canvas {
+        max-height: 300px !important;
+    }
+</style>
+<?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
 <div class="container-fluid py-4">
@@ -42,67 +60,70 @@
         </div>
     </div>
 
-    <!-- Kartu Neraca -->
-    <div class="row">
-        <div class="col-md-3">
-            <div class="card p-3" style="border-left: 5px solid #0d6efd;">
-                <h5 class="text-primary">Total Aset</h5>
-                <h3 id="total-aset">Rp 0</h3>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card p-3" style="border-left: 5px solid #dc3545;">
-                <h5 class="text-danger">Total Liabilitas</h5>
-                <h3 id="total-liabilitas">Rp 0</h3>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card p-3" style="border-left: 5px solid #28a745;">
-                <h5 class="text-success">Total Ekuitas</h5>
-                <h3 id="total-ekuitas">Rp 0</h3>
-            </div>
-        </div>
-		<div class="col-md-3">
-		    <div class="card p-3" style="border-left: 5px solid #ffc107;">
-		        <h5 class="text-warning">Balance</h5>
-		        <h3 id="total-balance">0</h3>
-		    </div>
-		</div>
-    </div>
+	<!-- Kartu Neraca -->
+	<div class="row">
+	    <div class="col-md-3">
+	        <div class="card p-3" style="border-left: 5px solid #0d6efd;">
+	            <h5 class="text-primary">Total Aset</h5>
+	            <h3 id="total-aset" class="loading">Loading...</h3>
+	        </div>
+	    </div>
+	    <div class="col-md-3">
+	        <div class="card p-3" style="border-left: 5px solid #dc3545;">
+	            <h5 class="text-danger">Total Liabilitas</h5>
+	            <h3 id="total-liabilitas" class="loading">Loading...</h3>
+	        </div>
+	    </div>
+	    <div class="col-md-3">
+	        <div class="card p-3" style="border-left: 5px solid #28a745;">
+	            <h5 class="text-success">Total Ekuitas</h5>
+	            <h3 id="total-ekuitas" class="loading">Loading...</h3>
+	        </div>
+	    </div>
+	    <div class="col-md-3">
+	        <div class="card p-3" style="border-left: 5px solid #ffc107;">
+	            <h5 class="text-warning">Balance</h5>
+	            <h3 id="total-balance" class="loading">Loading...</h3>
+	        </div>
+	    </div>
+	</div>
 
-    <!-- Chart Neraca -->
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <div class="card p-3">
-                <h5>Chart Tren Neraca</h5>
-                <canvas id="chartNeraca"></canvas>
-            </div>
-        </div>
-    </div>
+	<!-- Chart -->
+	<div class="row mt-4">
+	    <div class="col-md-12">
+	        <div class="card p-3">
+	            <h5>Chart Tren Neraca</h5>
+	            <div class="loading" id="chart-loading" style="height: 300px;"></div>
+	            <canvas id="chartNeraca" style="display: none;"></canvas>
+	        </div>
+	    </div>
+	</div>
 
-    <!-- Detail Neraca -->
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <div class="card p-3">
-                <h5>Detail Neraca</h5>
-                <table class="table table-bordered">
-                    <thead>
-                        <tr class="table-primary">
-                            <th>Bulan</th>
-                            <th class="text-end">Aset (Rp)</th>
-                            <th class="text-end">Liabilitas (Rp)</th>
-                            <th class="text-end">Laba/Rugi Tahun (Rp)</th>
-                            <th class="text-end">Ekuitas (Rp)</th>
-                            <th class="text-end">Ekuitas + Laba (Rp)</th>
-                            <th class="text-end">Balance</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="detail-neraca-body"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+	<!-- Detail Neraca -->
+	<div class="row mt-4">
+	    <div class="col-md-12">
+	        <div class="card p-3">
+	            <h5>Detail Neraca</h5>
+	            <table class="table table-bordered">
+	                <thead>
+	                    <tr class="table-primary">
+	                        <th>Bulan</th>
+	                        <th class="text-end">Aset (Rp)</th>
+	                        <th class="text-end">Liabilitas (Rp)</th>
+	                        <th class="text-end">Ekuitas (Rp)</th>
+	                        <th class="text-end">Laba/Rugi Tahun (Rp)</th>
+	                        <th class="text-end">Ekuitas + Laba (Rp)</th>
+	                        <th class="text-end">Balance</th>
+	                        <th>Aksi</th>
+	                    </tr>
+	                </thead>
+	                <tbody id="detail-neraca-body">
+	                    <tr class="loading"><td colspan="8">Loading data...</td></tr>
+	                </tbody>
+	            </table>
+	        </div>
+	    </div>
+	</div>
 </div>
 
 <?= $this->endSection() ?>
@@ -112,17 +133,29 @@
 document.addEventListener("DOMContentLoaded", function () {
     const formFilter = document.getElementById("form-filter");
     const chartCanvas = document.getElementById("chartNeraca");
+    const chartLoading = document.getElementById("chart-loading");
+
+    const totalAset = document.getElementById("total-aset");
+    const totalLiabilitas = document.getElementById("total-liabilitas");
+    const totalEkuitas = document.getElementById("total-ekuitas");
+    const totalBalance = document.getElementById("total-balance");
+
     let chartNeraca;
 
     async function fetchData() {
         const tahun = document.getElementById("tahun").value;
         const dbs = document.getElementById("dbs").value;
 
-        const params = {
-	        tahun: tahun,
-	        dbs: dbs,
-	        req: "neraca"
-	    };
+        // Tambahkan efek loading
+        [totalAset, totalLiabilitas, totalEkuitas, totalBalance].forEach(el => {
+            el.classList.add("loading");
+            el.textContent = "Loading...";
+        });
+
+        chartCanvas.style.display = "none";
+        chartLoading.style.display = "block";
+
+        const params = { tahun, dbs, req: "neraca" };
 
         try {
             const response = await fetch(`<?= base_url('cms/dashboard/get-data') ?>`, {
@@ -141,11 +174,24 @@ document.addEventListener("DOMContentLoaded", function () {
             const data = await response.json();
             const neracaData = data.data;
 
+            // Hapus efek loading setelah data berhasil dimuat
+            [totalAset, totalLiabilitas, totalEkuitas, totalBalance].forEach(el => {
+                el.classList.remove("loading");
+            });
+
+            chartCanvas.style.display = "block";
+            chartLoading.style.display = "none";
+
             if (neracaData.length > 0) {
-                document.getElementById("total-aset").textContent = `${toRupiah(neracaData[0].aset)}`;
-                document.getElementById("total-liabilitas").textContent = `${toRupiah(neracaData[0].liabilitas)}`;
-                document.getElementById("total-ekuitas").textContent = `${toRupiah(neracaData[0].ekuitaslaba)}`;
-                document.getElementById("total-balance").textContent = neracaData[0].balance.toFixed(2);
+                totalAset.textContent = toRupiah(neracaData[0].aset);
+                totalLiabilitas.textContent = toRupiah(neracaData[0].liabilitas);
+                totalEkuitas.textContent = toRupiah(neracaData[0].ekuitaslaba);
+                totalBalance.textContent = neracaData[0].balance.toFixed(2);
+            } else {
+                totalAset.textContent = "Rp 0";
+                totalLiabilitas.textContent = "Rp 0";
+                totalEkuitas.textContent = "Rp 0";
+                totalBalance.textContent = "0";
             }
 
             updateChart(neracaData);
@@ -187,8 +233,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 <td>${item.bulan}</td>
                 <td class="text-end">${toRupiah(item.aset)}</td>
                 <td class="text-end">${toRupiah(item.liabilitas)}</td>
-                <td class="text-end">${toRupiah(item.labarugi_tahun)}</td>
                 <td class="text-end">${toRupiah(item.ekuitas)}</td>
+                <td class="text-end">${toRupiah(item.labarugi_tahun)}</td>
                 <td class="text-end">${toRupiah(item.ekuitaslaba)}</td>
                 <td class="text-end">${item.balance.toFixed(2)}</td>
                 <td>${item.aksi}</td>
@@ -213,10 +259,10 @@ document.addEventListener("DOMContentLoaded", function () {
 	    return withSymbol ? formatter.format(str) : (formatter.format(str)).replace(/(Rp)/, "").trim();
 	}
 
-	$(document).on('click', ".detailLR", function(event) {
+	$(document).on('click', ".detailNR", function(event) {
 	  event.preventDefault();
 	  let id = $(this).data('id');
-	  window.location.replace('<?=base_url('cms/report/labarugi')?>/'+id);
+	  window.location.replace('<?=base_url('cms/report/neraca')?>/'+id);
 	});
 });
 </script>

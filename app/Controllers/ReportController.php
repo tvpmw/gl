@@ -12,9 +12,11 @@ class ReportController extends BaseController
     protected $coaModel;
     protected $coaModel2;
     protected $coaModel3;
+    protected $coaModel4;
     protected $subcoaModel;
     protected $subcoaModel2;
     protected $subcoaModel3;
+    protected $subcoaModel4;
 
     public function __construct()
     {
@@ -23,10 +25,12 @@ class ReportController extends BaseController
         $this->coaModel = new CoaModel('default');
         $this->coaModel2 = new CoaModel('crm_ars');
         $this->coaModel3 = new CoaModel('crm_wep');
+        $this->coaModel4 = new CoaModel('crm_dtf');
 
         $this->subcoaModel = new SubcoaModel('default');
         $this->subcoaModel2 = new SubcoaModel('crm_ars');
         $this->subcoaModel3 = new SubcoaModel('crm_wep');
+        $this->subcoaModel4 = new SubcoaModel('crm_dtf');
     }
 
     public function index()
@@ -51,6 +55,11 @@ class ReportController extends BaseController
                 $getLR = $this->coaModel3->getLaporanRekening($th,$bl);
                 $getAkun = $this->subcoaModel3->getSubLabaRugi();
                 $nmpt = 'Wahana Eka Pekasa';
+                break;
+            case 'dtf':
+                $getLR = $this->coaModel4->getLaporanRekening($th,$bl);
+                $getAkun = $this->subcoaModel4->getSubLabaRugi();
+                $nmpt = 'DTF';
                 break;
             default:
                 $getLR = $this->coaModel->getLaporanRekening($th,$bl);
@@ -120,8 +129,10 @@ class ReportController extends BaseController
     public function neraca($th=null,$bl=null,$db=null)
     {
         if(empty($th) || empty($bl) || empty($db)){
-            return redirect()->to('cms/dashboard');
+            return redirect()->to('cms/dashboard/neraca');
         }
 
+        $data['periode'] = getMonths($bl).' '.$th;
+        return view('report/neraca', $data);
     }
 }

@@ -224,8 +224,6 @@ class CoaModel extends Model
 
     public function getNeraca($tahun = null, $bulan = null)
     {
-        $db = \Config\Database::connect();
-
         $sql = "
             WITH RekeningData AS ( 
                 SELECT 
@@ -313,6 +311,6 @@ class CoaModel extends Model
         $sql .= " GROUP BY rd.tahun, rd.bulan, p.\"POSTING\" ORDER BY rd.tahun DESC, rd.bulan DESC;";
 
         // Jalankan query dengan binding parameter
-        return $db->query($sql, $params)->getResultArray();
+        return $this->db->query($sql, $params)->getResultArray();
     }
 }
