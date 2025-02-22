@@ -91,6 +91,15 @@
 
 <?= $this->section('content') ?>
 <div class="container-fluid py-4">
+    <ul class="nav nav-pills mb-2">
+      <li class="nav-item">
+        <a class="nav-link active" aria-current="page" href="javascript:void(0);">Laba/Rugi</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="<?=base_url('cms/dashboard/neraca')?>">Neraca</a>
+      </li>
+    </ul>    
+
     <div class="row mb-3">
       <div class="col">
         <div class="card card-body">
@@ -252,7 +261,6 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 function loadData(params = {}) {
     document.getElementById("pendapatan").classList.add("loading");
@@ -262,6 +270,8 @@ function loadData(params = {}) {
 
     document.getElementById("loadingTable").style.display = "block";
     document.getElementById("dataTable").innerHTML = "";
+
+    params.req = "labarugi";
 
     fetch(`<?=base_url('cms/dashboard/get-data')?>`, {
         method: 'POST',
@@ -434,10 +444,10 @@ function toRupiah(str, withSymbol = true) {
     return withSymbol ? formatter.format(str) : (formatter.format(str)).replace(/(Rp)/, "").trim();
 }
 
-$(document).on('click', ".detailLR", function(event) {
+$(document).on('click', ".detailNR", function(event) {
   event.preventDefault();
   let id = $(this).data('id');
-  window.location.replace('<?=base_url('cms/report/labarugi')?>/'+id);
+  window.location.replace('<?=base_url('cms/report/neraca')?>/'+id);
 });
 
 </script>

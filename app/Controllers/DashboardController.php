@@ -41,9 +41,28 @@ class DashboardController extends BaseController
     public function getData()
     {
         $input = json_decode(file_get_contents('php://input'), true);
+        $req = $input['req'] ?? 'labarugi';
         $tahun = intval($input['tahun']) ?: date('Y');
         $dbs = $input['dbs'] ?? 'sdkom';
 
+        if($req == 'labarugi'){
+            return $this->getDataLaba($tahun,$dbs);
+        }
+
+        if($req == 'neraca'){
+            return $this->getDataNeraca($tahun,$dbs);
+        }
+
+        $response = [
+            "tahun" => $tahun,
+            "data" => []
+        ];
+
+        return $this->response->setJSON($response);
+    }
+
+    private function getDataLaba($tahun,$dbs)
+    {
         // Ambil data berdasarkan pilihan database
         switch ($dbs) {
             case 'ariston':
@@ -71,6 +90,60 @@ class DashboardController extends BaseController
                     'hpp' => (float) $value['hpp'],
                     'biaya' => (float) $value['biaya'],
                     'lr' => (float) $value['lr'],
+                    'aksi' => $aksi,
+                ];
+            }
+        }
+
+        $response = [
+            "tahun" => $tahun,
+            "data" => $lists[$tahun] ?? []
+        ];
+
+        return $this->response->setJSON($response);
+    }
+
+    public function neraca()
+    {
+        // $getNr = $this->coaModel->getNeraca();
+        // pr($getNr,1);
+        $data['thnSkg'] = date('Y');
+        $data['startYear'] = 2009;
+        $data['dbs'] = ['sdkom','ariston','wep'];
+        return view('dashboard-neraca', $data);
+    }
+
+    private function getDataNeraca($tahun,$dbs)
+    {
+        // Ambil data berdasarkan pilihan database
+        switch ($dbs) {
+            case 'ariston':
+                $getLR = $this->coaModel2->getNeraca();
+                break;
+            case 'wep':
+                $getLR = $this->coaModel3->getNeraca();
+                break;
+            default:
+                $getLR = $this->coaModel->getNeraca();
+        }
+
+        $lists = [];
+        if (!empty($getLR)) {
+            foreach ($getLR as $value) {
+                $key = $value['tahun'];
+                $bl = $value['bulan'];
+                $id = $key.'/'.$bl.'/'.$dbs;
+                $aksi = '<button class="btn btn-sm btn-light detailNR" data-id="'.$id.'" title="View">
+                                    <i class="fas fa-eye"></i>
+                                </button>';
+                $lists[$key][] = [
+                    'bulan' => getMonths($bl, true),
+                    'aset' => (float) $value['aset'],
+                    'liabilitas' => (float) $value['liabilitas'],
+                    'labarugi_tahun' => (float) $value['labarugi_tahun'],
+                    'ekuitas' => (float) $value['ekuitas'],
+                    'ekuitaslaba' => (float) $value['ekuitas'] + $value['labarugi_tahun'],
+                    'balance' => (float) $value['balance'],
                     'aksi' => $aksi,
                 ];
             }

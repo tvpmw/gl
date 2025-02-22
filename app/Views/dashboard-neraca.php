@@ -1,0 +1,223 @@
+<?= $this->extend('layouts/admin') ?>
+
+<?= $this->section('content') ?>
+<div class="container-fluid py-4">
+    <ul class="nav nav-pills mb-2">
+        <li class="nav-item">
+            <a class="nav-link" href="<?= base_url('cms/dashboard') ?>">Laba/Rugi</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active" aria-current="page" href="javascript:void(0);">Neraca</a>
+        </li>
+    </ul>
+
+    <div class="row mb-3">
+        <div class="col">
+            <div class="card card-body">
+                <form id="form-filter">
+                    <div class="row">
+		              <!-- Dropdown Sumber -->
+		              <div class="col-3">
+		                <div class="form-group">
+		                  <select class="form-control" name="dbs" id="dbs" style="width: 100%">
+		                    <?php foreach ($dbs as $key => $row): ?>
+		                      <option value="<?=$row?>"><?=$row?></option>
+		                    <?php endforeach; ?>
+		                  </select>
+		                </div>
+		              </div>
+                        <div class="col-3">
+                            <select class="form-control" name="tahun" id="tahun">
+                                <?php for ($i = date('Y'); $i >= $startYear; $i--): ?>
+                                    <option value="<?= $i ?>" <?= ($i == $thnSkg) ? "selected" : "" ?>><?= $i ?></option>
+                                <?php endfor; ?>
+                            </select>
+                        </div>
+                        <div class="col-2">
+                            <button type="submit" class="btn btn-primary"><i class="fa fa-filter"></i> Filter</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kartu Neraca -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card p-3" style="border-left: 5px solid #0d6efd;">
+                <h5 class="text-primary">Total Aset</h5>
+                <h3 id="total-aset">Rp 0</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3" style="border-left: 5px solid #dc3545;">
+                <h5 class="text-danger">Total Liabilitas</h5>
+                <h3 id="total-liabilitas">Rp 0</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3" style="border-left: 5px solid #28a745;">
+                <h5 class="text-success">Total Ekuitas</h5>
+                <h3 id="total-ekuitas">Rp 0</h3>
+            </div>
+        </div>
+		<div class="col-md-3">
+		    <div class="card p-3" style="border-left: 5px solid #ffc107;">
+		        <h5 class="text-warning">Balance</h5>
+		        <h3 id="total-balance">0</h3>
+		    </div>
+		</div>
+    </div>
+
+    <!-- Chart Neraca -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card p-3">
+                <h5>Chart Tren Neraca</h5>
+                <canvas id="chartNeraca"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detail Neraca -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card p-3">
+                <h5>Detail Neraca</h5>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr class="table-primary">
+                            <th>Bulan</th>
+                            <th class="text-end">Aset (Rp)</th>
+                            <th class="text-end">Liabilitas (Rp)</th>
+                            <th class="text-end">Laba/Rugi Tahun (Rp)</th>
+                            <th class="text-end">Ekuitas (Rp)</th>
+                            <th class="text-end">Ekuitas + Laba (Rp)</th>
+                            <th class="text-end">Balance</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detail-neraca-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?= $this->endSection() ?>
+
+<?= $this->section('scripts') ?>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const formFilter = document.getElementById("form-filter");
+    const chartCanvas = document.getElementById("chartNeraca");
+    let chartNeraca;
+
+    async function fetchData() {
+        const tahun = document.getElementById("tahun").value;
+        const dbs = document.getElementById("dbs").value;
+
+        const params = {
+	        tahun: tahun,
+	        dbs: dbs,
+	        req: "neraca"
+	    };
+
+        try {
+            const response = await fetch(`<?= base_url('cms/dashboard/get-data') ?>`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Requested-With": "XMLHttpRequest"
+                },
+                body: JSON.stringify(params)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const neracaData = data.data;
+
+            if (neracaData.length > 0) {
+                document.getElementById("total-aset").textContent = `${toRupiah(neracaData[0].aset)}`;
+                document.getElementById("total-liabilitas").textContent = `${toRupiah(neracaData[0].liabilitas)}`;
+                document.getElementById("total-ekuitas").textContent = `${toRupiah(neracaData[0].ekuitaslaba)}`;
+                document.getElementById("total-balance").textContent = neracaData[0].balance.toFixed(2);
+            }
+
+            updateChart(neracaData);
+            updateTable(neracaData);
+        } catch (error) {
+            console.error("Error fetching data:", error);
+        }
+    }
+
+    function updateChart(neracaData) {
+        if (chartNeraca) {
+            chartNeraca.destroy();
+        }
+
+        const labels = neracaData.map(item => item.bulan);
+        const asetData = neracaData.map(item => item.aset);
+        const liabilitasData = neracaData.map(item => item.liabilitas);
+        const ekuitasData = neracaData.map(item => item.ekuitaslaba);
+
+        chartNeraca = new Chart(chartCanvas, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'Total Aset', data: asetData, borderColor: '#007bff', fill: false },
+                    { label: 'Total Liabilitas', data: liabilitasData, borderColor: '#dc3545', fill: false },
+                    { label: 'Total Ekuitas', data: ekuitasData, borderColor: '#28a745', fill: false }
+                ]
+            }
+        });
+    }
+
+    function updateTable(neracaData) {
+        const tableBody = document.getElementById("detail-neraca-body");
+        tableBody.innerHTML = "";
+
+        neracaData.forEach(item => {
+            const row = `<tr>
+                <td>${item.bulan}</td>
+                <td class="text-end">${toRupiah(item.aset)}</td>
+                <td class="text-end">${toRupiah(item.liabilitas)}</td>
+                <td class="text-end">${toRupiah(item.labarugi_tahun)}</td>
+                <td class="text-end">${toRupiah(item.ekuitas)}</td>
+                <td class="text-end">${toRupiah(item.ekuitaslaba)}</td>
+                <td class="text-end">${item.balance.toFixed(2)}</td>
+                <td>${item.aksi}</td>
+            </tr>`;
+            tableBody.innerHTML += row;
+        });
+    }
+
+    formFilter.addEventListener("submit", function (e) {
+        e.preventDefault();
+        fetchData();
+    });
+
+    fetchData();
+
+	function toNumber(value) {
+	    return Number(value.toString().replace(/[^0-9,]+/g, "").replace(/[,]+/g, "."));
+	}
+
+	const formatter = new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 });
+	function toRupiah(str, withSymbol = true) {
+	    return withSymbol ? formatter.format(str) : (formatter.format(str)).replace(/(Rp)/, "").trim();
+	}
+
+	$(document).on('click', ".detailLR", function(event) {
+	  event.preventDefault();
+	  let id = $(this).data('id');
+	  window.location.replace('<?=base_url('cms/report/labarugi')?>/'+id);
+	});
+});
+</script>
+<?= $this->endSection() ?>

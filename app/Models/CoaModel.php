@@ -221,4 +221,98 @@ class CoaModel extends Model
 
         return $this->db->query($sql, [$tahun, $bulan, $tahun, $bulan, $tahun, $bulan])->getResultArray();
     }
+
+    public function getNeraca($tahun = null, $bulan = null)
+    {
+        $db = \Config\Database::connect();
+
+        $sql = "
+            WITH RekeningData AS ( 
+                SELECT 
+                    coadet.\"TH\" AS tahun,
+                    coadet.\"BL\" AS bulan,
+                    subcoa.\"TIPE\" AS tipe,
+                    COALESCE(
+                        SUM(
+                            CASE 
+                                WHEN subcoa.\"TIPE\" = 4 THEN (coadet.\"MKREDIT\" - coadet.\"MDEBET\")
+                                WHEN subcoa.\"TIPE\" = 5 THEN (coadet.\"MDEBET\" - coadet.\"MKREDIT\")
+                                WHEN subcoa.\"TIPE\" IN (2, 3) THEN (coadet.\"SKREDIT\" + coadet.\"MKREDIT\") - (coadet.\"SDEBET\" + coadet.\"MDEBET\")
+                                ELSE (coadet.\"SDEBET\" - coadet.\"SKREDIT\") + (coadet.\"MDEBET\" - coadet.\"MKREDIT\")
+                            END
+                        ), 
+                        0
+                    ) AS nilai
+                FROM coa
+                LEFT JOIN subcoa ON coa.\"KDSUB\" = subcoa.\"KDSUB\"
+                LEFT JOIN coadet ON coa.\"KDCOA\" = coadet.\"KDCOA\"
+                WHERE subcoa.\"KDSUB\" != '650'
+                GROUP BY coadet.\"TH\", coadet.\"BL\", subcoa.\"TIPE\"
+
+                UNION ALL
+
+                SELECT 
+                    periode.\"TH\" AS tahun,
+                    periode.\"BL\" AS bulan,
+                    6 AS tipe,
+                    (sawal - sakhir) AS nilai
+                FROM periode
+            ),
+
+            LabaRugiAkumulasi AS (
+                SELECT 
+                    rd.tahun,
+                    rd.bulan,
+                    SUM(
+                        COALESCE(SUM(CASE WHEN rd.tipe = 4 THEN rd.nilai END), 0) 
+                        - COALESCE(SUM(CASE WHEN rd.tipe = 6 THEN rd.nilai END), 0) 
+                        - COALESCE(SUM(CASE WHEN rd.tipe = 5 THEN rd.nilai END), 0)
+                    ) OVER (PARTITION BY rd.tahun ORDER BY rd.bulan ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) 
+                    AS labarugi_tahun
+                FROM RekeningData rd
+                GROUP BY rd.tahun, rd.bulan
+            )
+
+            SELECT 
+                rd.tahun,
+                rd.bulan,
+                COALESCE(SUM(CASE WHEN rd.tipe = 1 THEN rd.nilai END), 0) AS aset,
+                COALESCE(SUM(CASE WHEN rd.tipe = 2 THEN rd.nilai END), 0) AS liabilitas,
+                MAX(lr.labarugi_tahun) AS labarugi_tahun,
+                (COALESCE(SUM(CASE WHEN rd.tipe = 3 THEN rd.nilai END), 0) + MAX(lr.labarugi_tahun)) AS ekuitas,
+                (COALESCE(SUM(CASE WHEN rd.tipe = 1 THEN rd.nilai END), 0) 
+                 - COALESCE(SUM(CASE WHEN rd.tipe = 2 THEN rd.nilai END), 0) 
+                 - (COALESCE(SUM(CASE WHEN rd.tipe = 3 THEN rd.nilai END), 0) + MAX(lr.labarugi_tahun))) AS balance,
+                p.\"POSTING\" AS posting
+            FROM RekeningData rd
+            JOIN LabaRugiAkumulasi lr 
+                ON rd.tahun = lr.tahun 
+                AND rd.bulan = lr.bulan
+            JOIN periode p 
+                ON rd.tahun = p.\"TH\" 
+                AND rd.bulan = p.\"BL\" 
+                AND p.\"POSTING\" = 1
+        ";
+
+        $conditions = [];
+        $params = [];
+
+        if (!is_null($tahun)) {
+            $conditions[] = "rd.tahun = :tahun:";
+            $params['tahun'] = $tahun;
+        }
+        if (!is_null($bulan)) {
+            $conditions[] = "rd.bulan = :bulan:";
+            $params['bulan'] = $bulan;
+        }
+
+        if (!empty($conditions)) {
+            $sql .= " WHERE " . implode(" AND ", $conditions);
+        }
+
+        $sql .= " GROUP BY rd.tahun, rd.bulan, p.\"POSTING\" ORDER BY rd.tahun DESC, rd.bulan DESC;";
+
+        // Jalankan query dengan binding parameter
+        return $db->query($sql, $params)->getResultArray();
+    }
 }

@@ -116,4 +116,12 @@ class ReportController extends BaseController
 
         return view('report/labarugi', $data);
     }
+
+    public function neraca($th=null,$bl=null,$db=null)
+    {
+        if(empty($th) || empty($bl) || empty($db)){
+            return redirect()->to('cms/dashboard');
+        }
+
+    }
 }
