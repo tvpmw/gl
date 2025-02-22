@@ -10,7 +10,7 @@
         }
         .page {
         	background-color: white;
-            width: auto;
+            width: 297mm;
             margin: 0 auto;
             padding: 20px;
         }
@@ -48,7 +48,6 @@
             text-align: right;
             padding-left: 20px;
 			padding-right: 5px;
-			border-right: 1px solid black;
         }
 		.nilai2 {
             text-align: right;
@@ -70,7 +69,6 @@
         }
         .bold {
             font-weight: bold;
-			padding-left: 3px;
         }
         .negative {
             color: black;
@@ -82,7 +80,7 @@
 <div class="container-fluid py-4">
 	<div class="page">
 	    <div class="header">
-	        <div class="bold" style="float: left; font-size: 12px;">nmpt</div>
+	        <div class="bold" style="float: left; font-size: 12px;"><?=$nmpt?></div>
 	        <div class="header-right">
 	            Tgl : <?=format_date(date('Y-m-d'))?><br>
 	        </div>
@@ -93,93 +91,188 @@
 	    <div class="bold" style="font-size: 12px;">Level : 3</div>
 	    <div class="bold" style="font-size: 12px;">Periode : <?=$periode?></div>
 	    <table>
-		<tr class="table-header">
-			<td colspan="2" style="text-align: center; width: 50%; border-right: 1px solid black;">AKTIVA</td>
-			<td colspan="2" style="text-align: center; width: 50%; border-left: 1px solid black;">KEWAJIBAN DAN MODAL</td>
-		</tr>
-			<tr>
-			    <td class="bold">AKTIVA LANCAR</td>
-			    <td class="nilai"></td>
-				<td class="bold">HUTANG LANCAR</td>
-			</tr>					
-			<tr>
-			    <td class="indent-1 bold">101.000 Kas</td>
-			    <td class="nilai bold">24.672.452,00</td>            
-				<td class="indent-1">301.000 Hutang Dagang</td>
-				<td class="nilai2">3.873.906.050,14</td>           
-			</tr>			
-			<tr>
-			    <td class="indent-2">101.001 KAS KELUAR</td>
-			    <td class="nilai">3.262.894,00</td>
-				<td class="indent-1 bold">302.000 Hutang Lain-lain</td>
-				<td class="nilai2 bold">18.762.830.861,43</td> 
-			</tr>			
-			<tr>
-			    <td class="indent-1 bold">102.000 Bank</td>
-			    <td class="nilai bold">2.802.282.195,76</td>
-				<td class="indent-2">302.001 Hutang Sadar Manunggal</td>
-				<td class="nilai2">8.800.000.000,00</td> 
+			<tr class="table-header">
+				<td style="text-align: center; width: 50%;">AKTIVA</td>
+				<td style="text-align: center; width: 50%; border-left: 1px solid black;">KEWAJIBAN DAN MODAL</td>
 			</tr>
 			<tr>
-			    <td class="indent-2">102.001 BII Dollar (2.105.015.038)</td>
-			    <td class="nilai">32.805.370,00</td>
-				<td class="indent-2 bold">302.030 HUTANG BII $</td>
-				<td class="nilai2 bold">0,00</td> 				
+				<td style="width: 50%;">
+					<table>
+				        <?php
+				        $totalAL = 0;
+						foreach ($akuns[1] as $akun) {
+					    	$totalSubAL = 0;
+						?>
+						<tr>
+							<td class="bold" colspan="2"><?=$akun['nmsub']?></td>
+						</tr>
+						<?php
+						    if (!empty($lists[$akun['tipe']][$akun['kdsub']])):
+						        foreach ($lists[$akun['tipe']][$akun['kdsub']] as $list) {
+						            $totalSubAL += $list['nilai'];
+						?>
+						<tr>
+						    <td class="indent-1 <?=(empty($list['nilai']))?'bold':''?>"><?=$list['kode_akun'].' '.$list['nama_akun']?></td>
+						    <td class="nilai <?=(empty($list['nilai']))?'bold':''?>"><?=(!empty($list['nilai']))?formatNegatif($list['nilai']):''?></td>            
+						</tr>
+						<?php
+			            if (!empty($listsKe3[$list['kode_akun']])):
+			                foreach ($listsKe3[$list['kode_akun']] as $row) {
+			                    $totalSubAL += $row['nilai'];
+						?>
+						<tr>
+						    <td class="indent-2"><?=$row['kode_akun'].' '.$row['nama_akun']?></td>
+						    <td class="nilai"><?=(!empty($row['nilai']))?formatNegatif($row['nilai']):'0,00'?></td>            
+						</tr>
+						<?php
+			            if (!empty($listsKe3[$row['kode_akun']])):
+			                foreach ($listsKe3[$row['kode_akun']] as $val) {
+			                    $totalSubAL += $val['nilai'];
+						?>
+						<tr>
+						    <td class="indent-3"><?=$val['kode_akun'].' '.$val['nama_akun']?></td>
+						    <td class="nilai"><?=(!empty($val['nilai']))?formatNegatif($val['nilai']):0?></td>
+						</tr>
+						<?php } endif; ?>
+						<?php } endif; ?>
+						<?php } endif; ?>
+
+						<tr>
+						    <td class="bold">Jumlah <?=$akun['nmsub']?></td>
+						    <td class="nilai bold" style="border-top: 1px solid black;">
+						        <?= formatNegatif($totalSubAL) ?>
+						    </td>
+						</tr>
+
+						<tr><td colspan="2">&nbsp;</td></tr>
+
+						<?php $totalAL += $totalSubAL; } ?>
+					</table>
+				</td>
+				<td style="width: 50%; border-left: 1px solid black;">
+					<table>
+				        <?php
+				        $totalHL = 0;
+						foreach ($akuns[2] as $akun) {
+					    	$totalSubHL = 0;
+						?>
+						<tr>
+							<td class="bold" colspan="2">&nbsp; <?=$akun['nmsub']?></td>
+						</tr>
+						<?php
+						    if (!empty($lists[$akun['tipe']][$akun['kdsub']])):
+						        foreach ($lists[$akun['tipe']][$akun['kdsub']] as $list) {
+						            $totalSubHL += $list['nilai'];
+						?>
+						<tr>
+						    <td class="indent-1 <?=(empty($list['nilai']))?'bold':''?>"><?=$list['kode_akun'].' '.$list['nama_akun']?></td>
+						    <td class="nilai <?=(empty($list['nilai']))?'bold':''?>"><?=(!empty($list['nilai']))?formatNegatif($list['nilai']):''?></td>            
+						</tr>
+						<?php
+			            if (!empty($listsKe3[$list['kode_akun']])):
+			                foreach ($listsKe3[$list['kode_akun']] as $row) {
+			                    $totalSubHL += $row['nilai'];
+						?>
+						<tr>
+						    <td class="indent-2"><?=$row['kode_akun'].' '.$row['nama_akun']?></td>
+						    <td class="nilai"><?=(!empty($row['nilai']))?formatNegatif($row['nilai']):'0,00'?></td>            
+						</tr>
+						<?php
+			            if (!empty($listsKe3[$row['kode_akun']])):
+			                foreach ($listsKe3[$row['kode_akun']] as $val) {
+			                    $totalSubHL += $val['nilai'];
+						?>
+						<tr>
+						    <td class="indent-3"><?=$val['kode_akun'].' '.$val['nama_akun']?></td>
+						    <td class="nilai"><?=(!empty($val['nilai']))?formatNegatif($val['nilai']):0?></td>
+						</tr>
+						<?php } endif; ?>
+						<?php } endif; ?>
+						<?php } endif; ?>
+
+						<tr>
+						    <td class="bold">&nbsp; Jumlah <?=$akun['nmsub']?></td>
+						    <td class="nilai bold" style="border-top: 1px solid black;">
+						        <?= formatNegatif($totalSubHL) ?>
+						    </td>
+						</tr>
+
+						<tr><td colspan="2">&nbsp;</td></tr>
+
+						<?php $totalHL += $totalSubHL; } ?>
+
+				        <?php
+				        $totalMD = 0;
+						foreach ($akuns[3] as $akun) {
+					    	$totalSubMD = 0;
+						?>
+						<tr>
+							<td class="bold" colspan="2">&nbsp; <?=$akun['nmsub']?></td>
+						</tr>
+						<?php
+						    if (!empty($lists[$akun['tipe']][$akun['kdsub']])):
+						        foreach ($lists[$akun['tipe']][$akun['kdsub']] as $list) {
+						            $totalSubMD += $list['nilai'];
+						?>
+						<tr>
+						    <td class="indent-1 <?=(empty($list['nilai']))?'bold':''?>"><?=$list['kode_akun'].' '.$list['nama_akun']?></td>
+						    <td class="nilai <?=(empty($list['nilai']))?'bold':''?>"><?=(!empty($list['nilai']))?formatNegatif($list['nilai']):''?></td>            
+						</tr>
+						<?php
+			            if (!empty($listsKe3[$list['kode_akun']])):
+			                foreach ($listsKe3[$list['kode_akun']] as $row) {
+			                    $totalSubMD += $row['nilai'];
+						?>
+						<tr>
+						    <td class="indent-2"><?=$row['kode_akun'].' '.$row['nama_akun']?></td>
+						    <td class="nilai"><?=(!empty($row['nilai']))?formatNegatif($row['nilai']):'0,00'?></td>            
+						</tr>
+						<?php
+			            if (!empty($listsKe3[$row['kode_akun']])):
+			                foreach ($listsKe3[$row['kode_akun']] as $val) {
+			                    $totalSubMD += $val['nilai'];
+						?>
+						<tr>
+						    <td class="indent-3"><?=$val['kode_akun'].' '.$val['nama_akun']?></td>
+						    <td class="nilai"><?=(!empty($val['nilai']))?formatNegatif($val['nilai']):0?></td>
+						</tr>
+						<?php } endif; ?>
+						<?php } endif; ?>
+						<?php } endif; ?>
+
+						<tr>
+						    <td class="bold">&nbsp; Jumlah <?=$akun['nmsub']?></td>
+						    <td class="nilai bold" style="border-top: 1px solid black;">
+						        <?= formatNegatif($totalSubMD) ?>
+						    </td>
+						</tr>
+
+						<tr><td colspan="2">&nbsp;</td></tr>
+
+						<?php $totalMD += $totalSubMD; } ?>
+					</table>
+				</td>
 			</tr>
 
-	        <tr>
-	            <td class="indent-1 bold">104.000 Piutang</td>
-	            <td class="nilai bold">6.214.213.967,82</td>	            
-				<td class="indent-3">302.030.001 HUTANG BII $45000*8800</td>
-				<td class="nilai2">0,00</td> 			
-	        </tr>
-			
-			<tr>
-	            <td class="indent-1 bold">104.090 PIUTANG SALES</td>
-	            <td class="nilai bold">263.386.791,00</td>	
-				<td class="indent-1 bold">Jumlah HUTANG LANCAR</td>
-				<td class="nilai2 bold" style="border-top: 1px solid black;">22.833.220.662,47</td> 				 	
+			<tr style="border-top: 1px solid black;border-bottom: 1px solid black;">
+				<td style="width: 50%;">
+					<table>
+						<tr>
+						    <td class="bold">TOTAL AKTIVA</td>
+						    <td class="nilai bold"><?= formatNegatif($totalAL) ?></td>            
+						</tr>	
+					</table>
+				</td>
+				<?php $totmodal = $totalHL+$totalMD; ?>
+				<td style="width: 50%; border-left: 1px solid black;">
+					<table>
+						<tr>
+							<td class="bold">TOTAL KEWAJIBAN & MODAL</td>
+							<td class="nilai2 bold"><?= formatNegatif($totmodal) ?></td>           
+						</tr>			
+					</table>
+				</td>
 			</tr>
-
-			<tr>
-	            <td class="indent-2 bold">104.126 PIUTANG RATIH</td>
-	            <td class="nilai bold">0,00</td>		
-				<td class="bold">PRIVE</td>				
-			</tr>
-
-			<tr>
-	            <td class="indent-3">104.127 PIUTANG RISKA</td>
-	            <td class="nilai">0,00</td>
-				<td class="indent-1">900.001 Prive</td>
-				<td class="nilai2">(65.000.000,00)</td>				
-			</tr>
-
-			<tr>
-	            <td class="indent-3">104.128 PIUTANG RISKA</td>
-	            <td class="nilai">0,00</td>
-				<td class="bold">Jumlah PRIVE</td>
-				<td class="nilai2 bold" style="border-top: 1px solid black;">(65.000.000,00)</td>				
-			</tr>
-
-			<tr>
-	            <td class="indent-2">126.000 INVESTASI SAHAM WAHANA EKA PERKASA</td>
-	            <td class="nilai">200.000.000,00</td>	
-				<td class="bold">LABA / ( RUGI ) TAHUN BERJALAN</td>
-				<td class="nilai2 bold">31.460.257,76</td>				
-			</tr>
-			 
-			<tr>
-	            <td class="indent-1 bold">Jumlah AKTIVA LANCAR</td>
-	            <td class="nilai bold" style="border-top: 1px solid black; border-right: 1px solid black;">16.444.137.748,99</td>				
-	        </tr>
-		    
-		    <tr style="border-top: 1px solid black;border-bottom: 1px solid black;">
-	            <td class="bold">TOTAL AKTIVA</td>            	            
-	            <td class="nilai bold">24.439.421.356,99</td>
-				<td class="bold">TOTAL KEWAJIBAN & MODAL</td> 
-				<td class="nilai2 bold">24.439.421.357,00</td>
-		    </tr>
-
 	    </table>
 	</div>
 </div>

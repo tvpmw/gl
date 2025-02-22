@@ -10,7 +10,7 @@
         }
         .page {
         	background-color: white;
-            width: 210mm;
+            width: 297mm;
             margin: 0 auto;
             padding: 20px;
         }

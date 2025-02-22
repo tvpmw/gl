@@ -113,4 +113,26 @@ class SubcoaModel extends Model
 
         return $result;
     }
+
+    public function getSubNeraca()
+    {
+        $builder = $this->db->table($this->table);
+        $builder->select('KDSUB as kdsub, NMSUB as nmsub, TIPE as tipe');
+        $builder->where('TIPE <', '4');
+
+        // Ambil data dari database
+        $query = $builder->get();
+        $result = $query->getResultArray();
+
+        // Tambahkan data tambahan
+        // $result[] = ['kdsub' => '599', 'nmsub' => 'PERSEDIAAN AWAL', 'tipe' => 6];
+        // $result[] = ['kdsub' => '650', 'nmsub' => 'PERSEDIAAN AKHIR', 'tipe' => 6];
+
+        // Urutkan berdasarkan kdsub
+        usort($result, function ($a, $b) {
+            return $a['kdsub'] <=> $b['kdsub'];
+        });
+
+        return $result;
+    }
 }

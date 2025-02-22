@@ -132,7 +132,92 @@ class ReportController extends BaseController
             return redirect()->to('cms/dashboard/neraca');
         }
 
+        // Ambil data berdasarkan pilihan database
+        switch ($db) {
+            case 'ariston':
+                $getNR = $this->coaModel2->getLaporanNeraca($th,$bl);
+                $getAkun = $this->subcoaModel2->getSubNeraca();
+                $nmpt = 'Ariston';
+                $mdl = $this->coaModel2;
+                break;
+            case 'wep':
+                $getNR = $this->coaModel3->getLaporanNeraca($th,$bl);
+                $getAkun = $this->subcoaModel3->getSubNeraca();
+                $nmpt = 'Wahana Eka Pekasa';
+                $mdl = $this->coaModel3;
+                break;
+            case 'dtf':
+                $getNR = $this->coaModel4->getLaporanNeraca($th,$bl);
+                $getAkun = $this->subcoaModel4->getSubNeraca();
+                $nmpt = 'DTF';
+                $mdl = $this->coaModel4;
+                break;
+            default:
+                $getNR = $this->coaModel->getLaporanNeraca($th,$bl);
+                $getAkun = $this->subcoaModel->getSubNeraca();
+                $nmpt = 'PT Sadar Jaya Mandiri';
+                $mdl = $this->coaModel;
+        }
+
+        $lists = [];
+        $listsKe3 = [];
+        if (!empty($getNR)) {
+            foreach ($getNR as $value) {
+                $tipe = $value['tipe'];
+                $kdsub = $value['kdsub'];
+                $parent_akun = $value['parent_akun'];
+                $id = $value['kode_akun'];
+
+                // Tombol aksi
+                $aksi = '<button class="btn btn-sm btn-light detailLR" data-id="'.$id.'" title="View">
+                                <i class="fas fa-eye"></i>
+                            </button>';
+                if(empty($parent_akun)){
+                    $lists[$tipe][$kdsub][] = [
+                        'tipe' => $tipe,
+                        'kdsub' => $kdsub,
+                        'rekening' => $value['rekening'],
+                        'Level' => $value['Level'],
+                        'kode_akun' => $value['kode_akun'],
+                        'parent_akun' => $value['parent_akun'],
+                        'nama_akun' => $value['nama_akun'],
+                        'nilai' => $value['nilai'],
+                        'aksi' => $aksi,
+                    ];
+                }
+
+                if(!empty($parent_akun)){
+                    $listsKe3[$parent_akun][] = [
+                        'tipe' => $tipe,
+                        'kdsub' => $kdsub,
+                        'rekening' => $value['rekening'],
+                        'Level' => $value['Level'],
+                        'kode_akun' => $value['kode_akun'],
+                        'parent_akun' => $value['parent_akun'],
+                        'nama_akun' => $value['nama_akun'],
+                        'nilai' => $value['nilai'],
+                        'aksi' => $aksi,
+                    ];
+                }
+            }
+        }
+
+        $listAkun = [];
+        foreach($getAkun as $akun){
+            $cek = $mdl->where(['KDSUB'=>$akun['kdsub']])->first();
+            if(!empty($cek)){
+                $key = $akun['tipe'];
+                $listAkun[$key][] = $akun;
+            }
+        }
+
         $data['periode'] = getMonths($bl).' '.$th;
+        $data['nmpt'] = $nmpt;
+        $data['akuns'] = $listAkun;
+        $data['lists'] = $lists;
+        $data['listsKe3'] = $listsKe3;
+        // pr($data,1);
+
         return view('report/neraca', $data);
     }
 }
