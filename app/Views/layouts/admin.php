@@ -413,6 +413,58 @@
             .utility-nav {
                 gap: 0.5rem;
             }
+        }        
+        [data-bs-theme="dark"] {
+            --bg-main: #1a1f37;            /* Darker background */
+            --bg-card: #1e293b;            /* Card background */
+            --text-main: #ffffff;          /* Brighter text */
+            --text-muted: #a0aec0;         /* Lighter muted text */
+            --border-color: rgba(255,255,255,0.1);
+            --surface-color: #1a1f37;
+            --nav-bg: rgba(26, 31, 55, 0.95);
+            /* Update border colors for dark mode */
+            --border-dark: rgba(255, 255, 255, 0.8);
+        }
+
+        // Add these styles after the existing .dropdown-item:hover styles
+        [data-bs-theme="dark"] .table {
+            color: var(--text-main);
+        }
+
+        [data-bs-theme="dark"] .nilai,
+        [data-bs-theme="dark"] .nilai2 {
+            color: var(--text-main);
+            border-right: 1px solid var(--border-dark);
+        }
+
+        [data-bs-theme="dark"] tr[style*="border"] {
+            border-color: var(--border-dark) !important;
+        }
+
+        [data-bs-theme="dark"] [style*="border"] {
+            border-color: var(--border-dark) !important;
+        }
+
+        [data-bs-theme="dark"] .bold {
+            color: var(--text-main);
+        }
+
+        [data-bs-theme="dark"] .table-header {
+            background-color: var(--bg-card);
+            border-color: var(--border-color);
+        }
+
+        [data-bs-theme="dark"] .table-header td {
+            border-top: 1px solid var(--border-dark);
+            border-bottom: 1px solid var(--border-dark);
+        }
+
+        [data-bs-theme="dark"] td {
+            border-color: var(--border-color);
+        }
+
+        [data-bs-theme="dark"] .page {
+            background-color: var(--bg-card);
         }
     </style>
 

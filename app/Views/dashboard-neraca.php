@@ -224,19 +224,60 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    function calculatePercentageChange(current, previous) {
+        if (!previous) return { percent: 0, isIncrease: true };
+        const change = ((current - previous) / Math.abs(previous)) * 100;
+        return {
+            percent: Math.abs(change).toFixed(1),
+            isIncrease: change > 0
+        };
+    }
+
+    function getTrendHtml(current, previous, type = '') {
+        if (!previous) return '';
+        const trend = calculatePercentageChange(current, previous);
+        return `
+            <span class="ms-2 small ${trend.isIncrease ? 'text-success' : 'text-danger'}" 
+                title="${type} ${trend.isIncrease ? 'naik' : 'turun'} ${trend.percent}% dari bulan sebelumnya">
+                <i class="fas fa-arrow-${trend.isIncrease ? 'up' : 'down'}"></i> 
+                ${trend.percent}%
+            </span>
+        `;
+    }
+
     function updateTable(neracaData) {
         const tableBody = document.getElementById("detail-neraca-body");
         tableBody.innerHTML = "";
 
-        neracaData.forEach(item => {
+        neracaData.forEach((item, index) => {
+            const previousMonth = neracaData[index + 1];
+            
             const row = `<tr>
                 <td>${item.bulan}</td>
-                <td class="text-end">${toRupiah(item.aset)}</td>
-                <td class="text-end">${toRupiah(item.liabilitas)}</td>
-                <td class="text-end">${toRupiah(item.ekuitas)}</td>
-                <td class="text-end">${toRupiah(item.labarugi_tahun)}</td>
-                <td class="text-end">${toRupiah(item.ekuitaslaba)}</td>
-                <td class="text-end">${item.balance.toFixed(2)}</td>
+                <td class="text-end">
+                    ${toRupiah(item.aset)}
+                    ${getTrendHtml(item.aset, previousMonth?.aset, 'Aset')}
+                </td>
+                <td class="text-end">
+                    ${toRupiah(item.liabilitas)}
+                    ${getTrendHtml(item.liabilitas, previousMonth?.liabilitas, 'Liabilitas')}
+                </td>
+                <td class="text-end">
+                    ${toRupiah(item.ekuitas)}
+                    ${getTrendHtml(item.ekuitas, previousMonth?.ekuitas, 'Ekuitas')}
+                </td>
+                <td class="text-end">
+                    ${toRupiah(item.labarugi_tahun)}
+                    ${getTrendHtml(item.labarugi_tahun, previousMonth?.labarugi_tahun, 'Laba/Rugi')}
+                </td>
+                <td class="text-end">
+                    ${toRupiah(item.ekuitaslaba)}
+                    ${getTrendHtml(item.ekuitaslaba, previousMonth?.ekuitaslaba, 'Ekuitas + Laba')}
+                </td>
+                <td class="text-end">
+                    ${item.balance.toFixed(2)}
+                    ${getTrendHtml(item.balance, previousMonth?.balance, 'Balance')}
+                </td>
                 <td>${item.aksi}</td>
             </tr>`;
             tableBody.innerHTML += row;
