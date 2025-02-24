@@ -137,7 +137,8 @@ class CoaModel extends Model
                  - COALESCE(SUM(CASE WHEN rd.tipe = 5 THEN rd.nilai END), 0)) AS lr,
                 p.\"POSTING\" AS posting
             FROM RekeningData rd
-            JOIN periode p ON rd.tahun = p.\"TH\" AND rd.bulan = p.\"BL\" AND p.\"POSTING\"=1
+            -- JOIN periode p ON rd.tahun = p.\"TH\" AND rd.bulan = p.\"BL\" AND p.\"POSTING\"=1
+            JOIN periode p ON rd.tahun = p.\"TH\" AND rd.bulan = p.\"BL\"
             GROUP BY rd.tahun, rd.bulan, p.\"POSTING\"
             ORDER BY rd.tahun DESC, rd.bulan DESC;
         ";
@@ -289,7 +290,7 @@ class CoaModel extends Model
             JOIN periode p 
                 ON rd.tahun = p.\"TH\" 
                 AND rd.bulan = p.\"BL\" 
-                AND p.\"POSTING\" = 1
+                -- AND p.\"POSTING\" = 1
         ";
 
         $conditions = [];
@@ -447,7 +448,7 @@ class CoaModel extends Model
                     6 AS tipe,
                     (periode.sawal - periode.sakhir) AS nilai
                 FROM periode
-                WHERE periode.\"POSTING\" = 1
+                -- WHERE periode.\"POSTING\" = 1
             )
 
             SELECT 

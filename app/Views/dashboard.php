@@ -249,6 +249,7 @@
                             <th class="text-end">HPP</th>
                             <th class="text-end">Biaya</th>
                             <th class="text-end">Laba/Rugi</th>
+                            <th class="text-end">Status</th>
                             <th class="text-center">Aksi</th>
                         </tr>
                     </thead>
@@ -358,6 +359,11 @@ function loadData(params = {}) {
                         ${toRupiah(lr)}
                         ${getTrendHtml(lr, prevLr, 'Laba/Rugi')}
                     </td>
+                    <td>
+                        <span class="badge ${item.posting !== '0' ? 'bg-success' : 'bg-danger'}">
+                            ${item.posting !== '0' ? 'Posting' : 'Berjalan'}
+                        </span>
+                    </td>                                        
                     <td class="text-center">${item.aksi}</td>
                 </tr>
             `;

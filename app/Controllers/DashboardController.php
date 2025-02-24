@@ -105,6 +105,7 @@ class DashboardController extends BaseController
                     'hpp' => (float) $value['hpp'],
                     'biaya' => (float) $value['biaya'],
                     'lr' => (float) $value['lr'],
+                    'posting' => $value['posting'],
                     'aksi' => $aksi,
                 ];
             }
@@ -209,6 +210,7 @@ class DashboardController extends BaseController
                     'ekuitas' => (float) $value['ekuitas'],
                     'ekuitaslaba' => (float) $value['ekuitas'] + $value['labarugi_tahun'],
                     'balance' => (float) $value['balance'],
+                    'posting' => $value['posting'],
                     'aksi' => $aksi,
                 ];
             }
