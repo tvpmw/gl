@@ -231,7 +231,7 @@
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h5 class="card-title mb-0">Laporan Laba Rugi</h5>
+                <h5 class="card-title mb-0">Laporan Laba Rugi <span id="thSet"></span></h5>
             </div>
             <div id="loadingTable" class="text-center my-3">
                 <div class="spinner-border text-primary" role="status"></div>
@@ -241,13 +241,12 @@
                 <table id="journalEntriesTable" class="table table-hover align-middle">
                     <thead class="table-light">
                         <tr>
-                            <th>Tahun</th>
                             <th>Bulan</th>
                             <th class="text-end">Pendapatan</th>
                             <th class="text-end">HPP</th>
                             <th class="text-end">Biaya</th>
                             <th class="text-end">Laba/Rugi</th>
-                            <th class="text-center">Actions</th>
+                            <th class="text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="dataTable"><!-- Data dari JS --></tbody>
@@ -303,7 +302,13 @@ function loadData(params = {}) {
         }
 
         function getTrendHtml(current, previous, type = '') {
-            if (!previous) return '';
+            if (!previous) 
+                return `
+                    <span class="ms-2 small text-black" title="Tetap">
+                        <i class="fas fa-arrow-up"></i> 0.0%
+                    </span>
+                `;
+
             const trend = calculatePercentageChange(current, previous);
             return `
                 <span class="ms-2 small ${trend.isIncrease ? 'text-success' : 'text-danger'}" 
@@ -333,7 +338,6 @@ function loadData(params = {}) {
 
             return `
                 <tr>
-                    <td>${data.tahun}</td>
                     <td>${item.bulan}</td>
                     <td class="text-end">
                         ${toRupiah(item.pendapatan)}
@@ -360,7 +364,7 @@ function loadData(params = {}) {
         const tableFooter = `
             <tfoot>
                 <tr class="fw-bold bg-light">
-                    <td colspan="2" class="text-center">Total</td>
+                    <td class="text-center">Total</td>
                     <td class="text-end">${toRupiah(totalPendapatan)}</td>
                     <td class="text-end">${toRupiah(totalHpp)}</td>
                     <td class="text-end">${toRupiah(totalBiaya)}</td>
@@ -379,6 +383,8 @@ function loadData(params = {}) {
 
         updateChart(chartPendapatanBiaya, labels, ["Pendapatan", "HPP"], [pendapatanData, hppData]);
         updateChart(chartLabaRugi, labels, ["Laba Rugi"], [labaRugiData]);
+
+        document.getElementById("thSet").innerHTML="Tahun "+params.tahun;
     })
     .catch(error => {
         console.error("Error loading data:", error);

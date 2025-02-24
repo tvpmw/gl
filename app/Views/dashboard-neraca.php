@@ -100,30 +100,36 @@
 	</div>
 
 	<!-- Detail Neraca -->
-	<div class="row mt-4">
-	    <div class="col-md-12">
-	        <div class="card p-3">
-	            <h5>Detail Neraca</h5>
-	            <table class="table table-bordered">
-	                <thead>
-	                    <tr class="table-primary">
-	                        <th>Bulan</th>
-	                        <th class="text-end">Aset (Rp)</th>
-	                        <th class="text-end">Liabilitas (Rp)</th>
-	                        <th class="text-end">Ekuitas (Rp)</th>
-	                        <th class="text-end">Laba/Rugi Tahun (Rp)</th>
-	                        <th class="text-end">Ekuitas + Laba (Rp)</th>
-	                        <th class="text-end">Balance</th>
-	                        <th>Aksi</th>
-	                    </tr>
-	                </thead>
-	                <tbody id="detail-neraca-body">
-	                    <tr class="loading"><td colspan="8">Loading data...</td></tr>
-	                </tbody>
-	            </table>
-	        </div>
-	    </div>
-	</div>
+    <div class="card border-0 shadow-sm mt-4 mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="card-title mb-0">Laporan Neraca <span id="thSet"></span></h5>
+            </div>
+            <div id="loadingTable" class="text-center my-3">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p>Memuat data...</p>
+            </div>
+            <div class="table-responsive">
+                <table id="journalEntriesTable" class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Bulan</th>
+                            <th class="text-end">Aset (Rp)</th>
+                            <th class="text-end">Liabilitas (Rp)</th>
+                            <th class="text-end">Ekuitas (Rp)</th>
+                            <th class="text-end">Laba/Rugi Tahun (Rp)</th>
+                            <th class="text-end">Ekuitas + Laba (Rp)</th>
+                            <th class="text-end">Balance</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detail-neraca-body">
+                        <tr class="loading"><td colspan="8">Loading data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 
 <?= $this->endSection() ?>
@@ -139,6 +145,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const totalLiabilitas = document.getElementById("total-liabilitas");
     const totalEkuitas = document.getElementById("total-ekuitas");
     const totalBalance = document.getElementById("total-balance");
+
+    document.getElementById("loadingTable").style.display = "block";
 
     let chartNeraca;
 
@@ -194,8 +202,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 totalBalance.textContent = "0";
             }
 
+            document.getElementById("loadingTable").style.display = "none";
+
             updateChart(neracaData);
             updateTable(neracaData);
+
+            document.getElementById("thSet").innerHTML="Tahun "+tahun;
         } catch (error) {
             console.error("Error fetching data:", error);
         }
@@ -234,7 +246,13 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function getTrendHtml(current, previous, type = '') {
-        if (!previous) return '';
+            if (!previous) 
+                return `
+                    <span class="ms-2 small text-black" title="Tetap">
+                        <i class="fas fa-arrow-up"></i> 0.0%
+                    </span>
+                `;
+
         const trend = calculatePercentageChange(current, previous);
         return `
             <span class="ms-2 small ${trend.isIncrease ? 'text-success' : 'text-danger'}" 
