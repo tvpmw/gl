@@ -309,7 +309,7 @@ function loadData(params = {}) {
             if (!previous) 
                 return `
                     <span class="ms-2 small text-black" title="Tetap">
-                        <i class="fas fa-arrow-up"></i> 0.0%
+                        <i class="fas fa-minus"></i> 0.0%                        
                     </span>
                 `;
 
