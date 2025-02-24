@@ -164,8 +164,7 @@
 	        <?php
 	        $totalPend = 0;
 			foreach ($akuns[4] as $akun) {
-		    	$totalKdsub = 0;
-				$hasNonZeroValues = false;
+		    	$totalKdsub = 0;				
 			?>
 			<tr>
 			    <td class="bold"><?=$akun['nmsub']?></td>
@@ -174,16 +173,13 @@
 			<?php
 			    if (!empty($lists[$akun['tipe']][$akun['kdsub']])):
 			        foreach ($lists[$akun['tipe']][$akun['kdsub']] as $list) {
-			            $totalKdsub += $list['nilai'];
-						if ($list['nilai'] != 0) {
-							$hasNonZeroValues = true;
+			            $totalKdsub += $list['nilai'];							
 			?>
 			<tr class="hover-group">
 			    <td class="indent-1 <?=(empty($list['nilai']))?'bold':''?>"><?=$list['ket']?></td>
 			    <td class="nilai <?=(empty($list['nilai']))?'bold':''?>"><?=(!empty($list['nilai']))?formatNegatif($list['nilai']):''?></td>            
 			</tr>
-			<?php
-			}
+			<?php			
             if (!empty($listsKe3[$list['kode_akun']])):
                 foreach ($listsKe3[$list['kode_akun']] as $row) {
                     $totalKdsub += $row['nilai'];
@@ -247,15 +243,13 @@
 			<?php
 		    if (!empty($lists[$akun['tipe']][$akun['kdsub']])):
 		        foreach ($lists[$akun['tipe']][$akun['kdsub']] as $list) {
-		            $totalKdsubBli += $list['nilai'];
-					if($list['nilai'] != 0) {
+		            $totalKdsubBli += $list['nilai'];				
 			?>
 			<tr class="hover-group">
 			    <td class="indent-2 <?=(empty($list['nilai']))?'bold':''?>"><?=$list['ket']?></td>
 			    <td class="nilai <?=(empty($list['nilai']))?'bold':''?>"><?=(!empty($list['nilai']))?formatNegatif($list['nilai']):''?></td>            
 			</tr>
-			<?php
-			}
+			<?php			
             if (!empty($listsKe3[$list['kode_akun']])):
                 foreach ($listsKe3[$list['kode_akun']] as $row) {
                     $totalKdsubBli += $row['nilai'];
@@ -278,7 +272,7 @@
 			</tr>
 			<?php } } endif; ?>
 			<?php } endif; ?>
-			<?php } endif; if($totalKdsubBli != 0)  ?>
+			<?php } endif; ?>
 
 			<tr>
 			    <td class="bold indent-1">TOTAL PEMBELIAN</td>
@@ -332,15 +326,13 @@
 			<?php
 			    if (!empty($lists[$akun['tipe']][$akun['kdsub']])):
 			        foreach ($lists[$akun['tipe']][$akun['kdsub']] as $list) {
-			            $totalKdsubBy += $list['nilai'];
-						if($list['nilai'] != 0) {
+			            $totalKdsubBy += $list['nilai'];						
 			?>
 			<tr class="hover-group">
 			    <td class="indent-1 <?=(empty($list['nilai']))?'bold':''?>"><?=$list['ket']?></td>
 			    <td class="nilai <?=(empty($list['nilai']))?'bold':''?>"><?=(!empty($list['nilai']))?formatNegatif($list['nilai']):''?></td>            
 			</tr>
-			<?php
-			}
+			<?php			
             if (!empty($listsKe3[$list['kode_akun']])):
                 foreach ($listsKe3[$list['kode_akun']] as $row) {
                     $totalKdsubBy += $row['nilai'];
@@ -362,7 +354,7 @@
 			</tr>
 			<?php } } endif; ?>
 			<?php } endif; ?>
-			<?php } endif; if($totalKdsubBy != 0)  ?>
+			<?php } endif;?>
 
 			<tr>
 			    <td class="bold">Jumlah <?=$akun['nmsub']?></td>
