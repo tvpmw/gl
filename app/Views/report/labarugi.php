@@ -164,45 +164,74 @@
 	        <?php
 	        $totalPend = 0;
 			foreach ($akuns[4] as $akun) {
-		    	$totalKdsub = 0;				
+		    	$totalKdsub = 0;
 			?>
 			<tr>
-			    <td class="bold"><?=$akun['nmsub']?></td>
-			    <td></td>
+				<td class="bold" colspan="2"><?=$akun['nmsub']?></td>
 			</tr>
 			<?php
-			    if (!empty($lists[$akun['tipe']][$akun['kdsub']])):
-			        foreach ($lists[$akun['tipe']][$akun['kdsub']] as $list) {
-			            $totalKdsub += $list['nilai'];							
+			$totalKdsub = 0;
+			if (!empty($lists[$akun['tipe']][$akun['kdsub']])):
+			    foreach ($lists[$akun['tipe']][$akun['kdsub']] as $list) {
+			        $totalList = $list['nilai'];
+			        $totalRow = 0;
+			        $totalVal = 0;
+
+			        if (!empty($listsKe3[$list['kode_akun']])) {
+			            foreach ($listsKe3[$list['kode_akun']] as $row) {
+			                $totalRow += $row['nilai'];
+
+			                if (!empty($listsKe3[$row['kode_akun']])) {
+			                    foreach ($listsKe3[$row['kode_akun']] as $val) {
+			                        $totalVal += $val['nilai'];
+			                    }
+			                }
+			            }
+			        }
+
+			        $totalGabungan = $totalList + $totalRow + $totalVal;
+
+			        if ($totalGabungan != 0):
+			            $totalKdsub += $totalGabungan;
 			?>
-			<tr class="hover-group">
-			    <td class="indent-1 <?=(empty($list['nilai']))?'bold':''?>"><?=$list['ket']?></td>
-			    <td class="nilai <?=(empty($list['nilai']))?'bold':''?>"><?=(!empty($list['nilai']))?formatNegatif($list['nilai']):''?></td>            
-			</tr>
-			<?php			
-            if (!empty($listsKe3[$list['kode_akun']])):
-                foreach ($listsKe3[$list['kode_akun']] as $row) {
-                    $totalKdsub += $row['nilai'];
-					if ($row['nilai'] != 0) {						
-			?>
-			<tr class="hover-group">
-			    <td class="indent-2 <?=(!empty($listsKe3[$row['kode_akun']]))?'bold':''?>"><?=$row['ket']?></td>
-			    <td class="nilai <?=(!empty($listsKe3[$row['kode_akun']]))?'bold':''?>"><?=(!empty($row['nilai']))?formatNegatif($row['nilai']):0?></td>
-			</tr>
+
+            <tr class="hover-group">
+            	<?php if(!empty($list['nilai'])){ ?>
+                <td class="indent-1"><?=$list['ket']?></td>
+                <td class="nilai"><?=formatNegatif($list['nilai'])?></td>
+                <?php }else{ ?>
+                <td class="indent-1 bold"><?=$list['ket']?></td>
+                <td class="nilai bold"><?=formatNegatif($totalGabungan)?></td>
+                <?php } ?>            
+            </tr>
+
+            <?php if (!empty($listsKe3[$list['kode_akun']])): ?>
+                <?php foreach ($listsKe3[$list['kode_akun']] as $row): ?>
+                	<?php if( abs($row['nilai']) >= 1 ): ?>
+                    <tr class="hover-group">
+                        <td class="indent-2"><?=$row['ket']?></td>
+                        <td class="nilai"><?=formatNegatif($row['nilai'])?></td>            
+                    </tr>
+                    <?php endif; ?>
+
+                    <?php if (!empty($listsKe3[$row['kode_akun']])): ?>
+                        <?php foreach ($listsKe3[$row['kode_akun']] as $val): ?>
+                        	<?php if(!empty($val['nilai'])): ?>
+                            <tr class="hover-group">
+                                <td class="indent-3"><?=$val['ket']?></td>
+                                <td class="nilai"><?=formatNegatif($val['nilai'])?></td>
+                            </tr>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+
+                <?php endforeach; ?>
+            <?php endif; ?>
 			<?php
-			}
-            if (!empty($listsKe3[$row['kode_akun']])):
-                foreach ($listsKe3[$row['kode_akun']] as $val) {
-                    $totalKdsub += $val['nilai'];
-					if ($val['nilai'] != 0) {
+			        endif;
+			    }
+			endif;
 			?>
-			<tr class="hover-group">
-			    <td class="indent-3"><?=$val['ket']?></td>
-			    <td class="nilai"><?=(!empty($val['nilai']))?formatNegatif($val['nilai']):0?></td>
-			</tr>
-			<?php } } endif; ?>
-			<?php } endif; ?>
-			<?php } endif; if ($totalKdsub != 0) {?>
 
 			<tr>
 			    <td class="bold">Jumlah <?=$akun['nmsub']?></td>
@@ -225,7 +254,6 @@
 	            <td class="bold">H P P</td>        
 	        </tr>
 	        <?php
-			} 
 	        $persdAwl = $lists['6']['650'][0]['nilai'] ?? 0;
 	        ?>
 	        <tr>
@@ -240,39 +268,72 @@
 			foreach ($akuns[6] as $akun) {
 		    	$totalKdsubBli = 0;
 			?>
-			<?php
-		    if (!empty($lists[$akun['tipe']][$akun['kdsub']])):
-		        foreach ($lists[$akun['tipe']][$akun['kdsub']] as $list) {
-		            $totalKdsubBli += $list['nilai'];				
-			?>
-			<tr class="hover-group">
-			    <td class="indent-2 <?=(empty($list['nilai']))?'bold':''?>"><?=$list['ket']?></td>
-			    <td class="nilai <?=(empty($list['nilai']))?'bold':''?>"><?=(!empty($list['nilai']))?formatNegatif($list['nilai']):''?></td>            
-			</tr>
-			<?php			
-            if (!empty($listsKe3[$list['kode_akun']])):
-                foreach ($listsKe3[$list['kode_akun']] as $row) {
-                    $totalKdsubBli += $row['nilai'];
-					if($row['nilai'] != 0) {
-			?>
-			<tr class="hover-group">
-			    <td class="indent-3"><?=$row['ket']?></td>
-			    <td class="nilai"><?=(!empty($row['nilai']))?formatNegatif($row['nilai']):0?></td>
+			<tr>
+				<td class="bold" colspan="2"><?=$akun['nmsub']?></td>
 			</tr>
 			<?php
-			}
-            if (!empty($listsKe3[$row['kode_akun']])):
-                foreach ($listsKe3[$row['kode_akun']] as $val) {
-                    $totalKdsubBli += $val['nilai'];
-					if($val['nilai'] != 0) {
+			$totalKdsubBli = 0;
+			if (!empty($lists[$akun['tipe']][$akun['kdsub']])):
+			    foreach ($lists[$akun['tipe']][$akun['kdsub']] as $list) {
+			        $totalList = $list['nilai'];
+			        $totalRow = 0;
+			        $totalVal = 0;
+
+			        if (!empty($listsKe3[$list['kode_akun']])) {
+			            foreach ($listsKe3[$list['kode_akun']] as $row) {
+			                $totalRow += $row['nilai'];
+
+			                if (!empty($listsKe3[$row['kode_akun']])) {
+			                    foreach ($listsKe3[$row['kode_akun']] as $val) {
+			                        $totalVal += $val['nilai'];
+			                    }
+			                }
+			            }
+			        }
+
+			        $totalGabungan = $totalList + $totalRow + $totalVal;
+
+			        if ($totalGabungan != 0):
+			            $totalKdsubBli += $totalGabungan;
 			?>
-			<tr class="hover-group">
-			    <td class="indent-3"><?=$val['ket']?></td>
-			    <td class="nilai"><?=(!empty($val['nilai']))?formatNegatif($val['nilai']):0?></td>
-			</tr>
-			<?php } } endif; ?>
-			<?php } endif; ?>
-			<?php } endif; ?>
+
+            <tr class="hover-group">
+            	<?php if(!empty($list['nilai'])){ ?>
+                <td class="indent-1"><?=$list['ket']?></td>
+                <td class="nilai"><?=formatNegatif($list['nilai'])?></td>
+                <?php }else{ ?>
+                <td class="indent-1 bold"><?=$list['ket']?></td>
+                <td class="nilai bold"><?=formatNegatif($totalGabungan)?></td>
+                <?php } ?>            
+            </tr>
+
+            <?php if (!empty($listsKe3[$list['kode_akun']])): ?>
+                <?php foreach ($listsKe3[$list['kode_akun']] as $row): ?>
+                	<?php if( abs($row['nilai']) >= 1 ): ?>
+                    <tr class="hover-group">
+                        <td class="indent-2"><?=$row['ket']?></td>
+                        <td class="nilai"><?=formatNegatif($row['nilai'])?></td>            
+                    </tr>
+                    <?php endif; ?>
+
+                    <?php if (!empty($listsKe3[$row['kode_akun']])): ?>
+                        <?php foreach ($listsKe3[$row['kode_akun']] as $val): ?>
+                        	<?php if(!empty($val['nilai'])): ?>
+                            <tr class="hover-group">
+                                <td class="indent-3"><?=$val['ket']?></td>
+                                <td class="nilai"><?=formatNegatif($val['nilai'])?></td>
+                            </tr>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+
+                <?php endforeach; ?>
+            <?php endif; ?>
+			<?php
+			        endif;
+			    }
+			endif;
+			?>
 
 			<tr>
 			    <td class="bold indent-1">TOTAL PEMBELIAN</td>
@@ -320,41 +381,71 @@
 		    	$totalKdsubBy = 0;
 			?>
 			<tr>
-			    <td class="bold"><?=$akun['nmsub']?></td>
-			    <td></td>
+				<td class="bold" colspan="2"><?=$akun['nmsub']?></td>
 			</tr>
 			<?php
-			    if (!empty($lists[$akun['tipe']][$akun['kdsub']])):
-			        foreach ($lists[$akun['tipe']][$akun['kdsub']] as $list) {
-			            $totalKdsubBy += $list['nilai'];						
+			$totalKdsubBy = 0;
+			if (!empty($lists[$akun['tipe']][$akun['kdsub']])):
+			    foreach ($lists[$akun['tipe']][$akun['kdsub']] as $list) {
+			        $totalList = $list['nilai'];
+			        $totalRow = 0;
+			        $totalVal = 0;
+
+			        if (!empty($listsKe3[$list['kode_akun']])) {
+			            foreach ($listsKe3[$list['kode_akun']] as $row) {
+			                $totalRow += $row['nilai'];
+
+			                if (!empty($listsKe3[$row['kode_akun']])) {
+			                    foreach ($listsKe3[$row['kode_akun']] as $val) {
+			                        $totalVal += $val['nilai'];
+			                    }
+			                }
+			            }
+			        }
+
+			        $totalGabungan = $totalList + $totalRow + $totalVal;
+
+			        if ($totalGabungan != 0):
+			            $totalKdsubBy += $totalGabungan;
 			?>
-			<tr class="hover-group">
-			    <td class="indent-1 <?=(empty($list['nilai']))?'bold':''?>"><?=$list['ket']?></td>
-			    <td class="nilai <?=(empty($list['nilai']))?'bold':''?>"><?=(!empty($list['nilai']))?formatNegatif($list['nilai']):''?></td>            
-			</tr>
-			<?php			
-            if (!empty($listsKe3[$list['kode_akun']])):
-                foreach ($listsKe3[$list['kode_akun']] as $row) {
-                    $totalKdsubBy += $row['nilai'];
-					if($row['nilai'] != 0) {
+
+            <tr class="hover-group">
+            	<?php if(!empty($list['nilai'])){ ?>
+                <td class="indent-1"><?=$list['ket']?></td>
+                <td class="nilai"><?=formatNegatif($list['nilai'])?></td>
+                <?php }else{ ?>
+                <td class="indent-1 bold"><?=$list['ket']?></td>
+                <td class="nilai bold"><?=formatNegatif($totalGabungan)?></td>
+                <?php } ?>            
+            </tr>
+
+            <?php if (!empty($listsKe3[$list['kode_akun']])): ?>
+                <?php foreach ($listsKe3[$list['kode_akun']] as $row): ?>
+                	<?php if( abs($row['nilai']) >= 1 ): ?>
+                    <tr class="hover-group">
+                        <td class="indent-2"><?=$row['ket']?></td>
+                        <td class="nilai"><?=formatNegatif($row['nilai'])?></td>            
+                    </tr>
+                    <?php endif; ?>
+
+                    <?php if (!empty($listsKe3[$row['kode_akun']])): ?>
+                        <?php foreach ($listsKe3[$row['kode_akun']] as $val): ?>
+                        	<?php if(!empty($val['nilai'])): ?>
+                            <tr class="hover-group">
+                                <td class="indent-3"><?=$val['ket']?></td>
+                                <td class="nilai"><?=formatNegatif($val['nilai'])?></td>
+                            </tr>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+
+                <?php endforeach; ?>
+            <?php endif; ?>
+			<?php
+			        endif;
+			    }
+			endif;
 			?>
-			<tr class="hover-group">
-			    <td class="indent-2 <?=(!empty($listsKe3[$row['kode_akun']]))?'bold':''?>"><?=$row['ket']?></td>
-			    <td class="nilai <?=(!empty($listsKe3[$row['kode_akun']]))?'bold':''?>"><?=(!empty($row['nilai']))?formatNegatif($row['nilai']):0?></td>
-			</tr>
-			<?php }
-            if (!empty($listsKe3[$row['kode_akun']])):
-                foreach ($listsKe3[$row['kode_akun']] as $val) {
-                    $totalKdsubBy += $val['nilai'];
-					if($val['nilai'] != 0) {
-			?>
-			<tr class="hover-group">
-			    <td class="indent-3"><?=$val['ket']?></td>
-			    <td class="nilai"><?=(!empty($val['nilai']))?formatNegatif($val['nilai']):0?></td>
-			</tr>
-			<?php } } endif; ?>
-			<?php } endif; ?>
-			<?php } endif;?>
 
 			<tr>
 			    <td class="bold">Jumlah <?=$akun['nmsub']?></td>
