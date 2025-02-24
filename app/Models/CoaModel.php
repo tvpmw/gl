@@ -488,7 +488,7 @@ class CoaModel extends Model
                 \"SDEBET\" AS jvdebet,
                 \"SKREDIT\" AS jvkredit,
                 'Saldo Awal' AS ket,
-                NULL AS tgl,
+                DATE_TRUNC('month', TO_DATE(\"TH\" || '-' || \"BL\" || '-01', 'YYYY-MM-DD')) AS tgl,
                 \"TH\" AS th,
                 \"BL\" AS bl
             FROM coadet
@@ -510,7 +510,7 @@ class CoaModel extends Model
             JOIN jv ON jv.\"KDJV\" = jvdet.\"KDJV\" AND jv.\"TH\" = ? AND jv.\"BL\" = ?
             WHERE jvdet.\"KDCOA\" = ?
             
-            ORDER BY urut, tgl;
+            ORDER BY tgl, urut;
         ";
 
         return $this->db->query($sql, [$kdcoa, $tahun, $bulan, $tahun, $bulan, $kdcoa])->getResultArray();
