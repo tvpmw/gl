@@ -247,9 +247,14 @@
 						    </td>
 						</tr>
 
-						<tr><td colspan="2">&nbsp;</td></tr>
-
 						<?php $totalMD += $totalSubMD; } ?>
+						<tr>
+						    <td class="bold">&nbsp; LABA / ( RUGI ) TAHUN BERJALAN</td>
+						    <td class="nilai bold" style="border-top: 1px solid black;">
+						        <?= formatNegatif($lrtb) ?>
+						    </td>
+						</tr>
+						<tr><td colspan="2">&nbsp;</td></tr>
 					</table>
 				</td>
 			</tr>
@@ -263,7 +268,7 @@
 						</tr>	
 					</table>
 				</td>
-				<?php $totmodal = $totalHL+$totalMD; ?>
+				<?php $totmodal = $totalHL+$totalMD+$lrtb; ?>
 				<td style="width: 50%; border-left: 1px solid black;">
 					<table>
 						<tr>

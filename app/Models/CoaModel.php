@@ -181,7 +181,7 @@ class CoaModel extends Model
                 tipe,
                 \"KDSUB\" AS \"kdsub\",
                 kategori AS \"rekening\",
-                level AS \"Level\",
+                level AS \"level\",
                 \"KDCOA\" AS \"kode_akun\",
                 COALESCE(\"kdparent\", '-') AS \"parent_akun\",
                 \"NMCOA\" AS \"nama_akun\",
@@ -194,7 +194,7 @@ class CoaModel extends Model
                 6 AS tipe,
                 '650' AS \"kdsub\",
                 'Persediaan' AS \"rekening\",
-                2 AS \"Level\",
+                1 AS \"level\",
                 '5555' AS \"kode_akun\",
                 '' AS \"parent_akun\",
                 'Persediaan Awal' AS \"nama_akun\",
@@ -208,7 +208,7 @@ class CoaModel extends Model
                 6 AS tipe,
                 '650' AS \"kdsub\",
                 'Persediaan' AS \"rekening\",
-                2 AS \"Level\",
+                1 AS \"level\",
                 '6666' AS \"kode_akun\",
                 '' AS \"parent_akun\",
                 'Persediaan Akhir' AS \"nama_akun\",
@@ -216,7 +216,7 @@ class CoaModel extends Model
             FROM periode
             WHERE \"TH\" = ? AND \"BL\" = ?
 
-            ORDER BY \"kdsub\", \"Level\", \"kode_akun\", \"rekening\", \"parent_akun\" NULLS FIRST;
+            ORDER BY \"kdsub\", \"level\", \"kode_akun\", \"rekening\", \"parent_akun\" NULLS FIRST;
         ";
 
         return $this->db->query($sql, [$tahun, $bulan, $tahun, $bulan, $tahun, $bulan])->getResultArray();
@@ -350,16 +350,80 @@ class CoaModel extends Model
                 tipe,
                 \"KDSUB\" AS \"kdsub\",
                 kategori AS \"rekening\",
-                level AS \"Level\",
+                level AS \"level\",
                 \"KDCOA\" AS \"kode_akun\",
                 COALESCE(\"kdparent\", '-') AS \"parent_akun\",
                 \"NMCOA\" AS \"nama_akun\",
                 nilai
             FROM RekeningData
 
-            ORDER BY \"kdsub\", \"Level\", \"kode_akun\", \"rekening\", \"parent_akun\" NULLS FIRST;
+            ORDER BY \"kdsub\", \"level\", \"kode_akun\", \"rekening\", \"parent_akun\" NULLS FIRST;
         ";
 
         return $this->db->query($sql, [$tahun, $bulan])->getResultArray();
+    }
+
+    public function getLabaRugiTahunBerjalan($tahun,$bulan)
+    {
+        $query = "
+            WITH RekeningData AS ( 
+                SELECT 
+                    coadet.\"TH\" AS tahun,
+                    coadet.\"BL\" AS bulan,
+                    subcoa.\"TIPE\" AS tipe,
+                    COALESCE(
+                        SUM(
+                            CASE 
+                                WHEN subcoa.\"TIPE\" = 4 THEN (coadet.\"MKREDIT\" - coadet.\"MDEBET\")
+                                WHEN subcoa.\"TIPE\" = 5 THEN (coadet.\"MDEBET\" - coadet.\"MKREDIT\")
+                                WHEN subcoa.\"TIPE\" IN (2, 3) THEN (coadet.\"SKREDIT\" + coadet.\"MKREDIT\") - (coadet.\"SDEBET\" + coadet.\"MDEBET\")
+                                ELSE (coadet.\"SDEBET\" - coadet.\"SKREDIT\") + (coadet.\"MDEBET\" - coadet.\"MKREDIT\")
+                            END
+                        ), 
+                        0
+                    ) AS nilai
+                FROM coa
+                LEFT JOIN subcoa ON coa.\"KDSUB\" = subcoa.\"KDSUB\"
+                LEFT JOIN coadet ON coa.\"KDCOA\" = coadet.\"KDCOA\"
+                WHERE subcoa.\"KDSUB\" != '650'
+                GROUP BY coadet.\"TH\", coadet.\"BL\", subcoa.\"TIPE\"
+
+                UNION ALL
+
+                SELECT 
+                    periode.\"TH\" AS tahun,
+                    periode.\"BL\" AS bulan,
+                    6 AS tipe,
+                    (periode.sawal - periode.sakhir) AS nilai
+                FROM periode
+                WHERE periode.\"POSTING\" = 1
+            )
+
+            SELECT 
+                rd.tahun,
+                rd.bulan,
+                SUM(
+                    SUM(rd.nilai) FILTER (WHERE rd.tipe = 4) 
+                    - SUM(rd.nilai) FILTER (WHERE rd.tipe = 6) 
+                    - SUM(rd.nilai) FILTER (WHERE rd.tipe = 5)
+                ) OVER (
+                    PARTITION BY rd.tahun 
+                    ORDER BY rd.bulan 
+                    ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+                ) AS labarugi_tahun
+            FROM RekeningData rd
+            GROUP BY rd.tahun, rd.bulan
+            ORDER BY rd.tahun, rd.bulan;
+        ";
+
+        $getRows = $this->db->query($query)->getResultArray();
+        $lrtb = 0;
+        foreach($getRows as $row){
+            if($row['tahun'] == $tahun && $row['bulan'] == $bulan){
+                $lrtb = $row['labarugi_tahun'];
+            }
+        }
+
+        return $lrtb;
     }
 }

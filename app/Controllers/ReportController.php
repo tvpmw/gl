@@ -74,18 +74,19 @@ class ReportController extends BaseController
                 $tipe = $value['tipe'];
                 $kdsub = $value['kdsub'];
                 $parent_akun = $value['parent_akun'];
+                $level = $value['level'];
                 $id = $value['kode_akun'];
 
                 // Tombol aksi
                 $aksi = '<button class="btn btn-sm btn-light detailLR" data-id="'.$id.'" title="View">
                                 <i class="fas fa-eye"></i>
                             </button>';
-                if(empty($parent_akun)){
+                if($level == 1){
                     $lists[$tipe][$kdsub][] = [
                         'tipe' => $tipe,
                         'kdsub' => $kdsub,
                         'rekening' => $value['rekening'],
-                        'Level' => $value['Level'],
+                        'level' => $value['level'],
                         'kode_akun' => $value['kode_akun'],
                         'parent_akun' => $value['parent_akun'],
                         'nama_akun' => $value['nama_akun'],
@@ -94,12 +95,12 @@ class ReportController extends BaseController
                     ];
                 }
 
-                if(!empty($parent_akun)){
+                if($level != 1){
                     $listsKe3[$parent_akun][] = [
                         'tipe' => $tipe,
                         'kdsub' => $kdsub,
                         'rekening' => $value['rekening'],
-                        'Level' => $value['Level'],
+                        'level' => $value['level'],
                         'kode_akun' => $value['kode_akun'],
                         'parent_akun' => $value['parent_akun'],
                         'nama_akun' => $value['nama_akun'],
@@ -136,27 +137,31 @@ class ReportController extends BaseController
         switch ($db) {
             case 'ariston':
                 $getNR = $this->coaModel2->getLaporanNeraca($th,$bl);
+                $getLbt = $this->coaModel2->getLabaRugiTahunBerjalan($th,$bl);
                 $getAkun = $this->subcoaModel2->getSubNeraca();
-                $nmpt = 'Ariston';
                 $mdl = $this->coaModel2;
+                $nmpt = 'Ariston';
                 break;
             case 'wep':
                 $getNR = $this->coaModel3->getLaporanNeraca($th,$bl);
+                $getLbt = $this->coaModel3->getLabaRugiTahunBerjalan($th,$bl);
                 $getAkun = $this->subcoaModel3->getSubNeraca();
-                $nmpt = 'Wahana Eka Pekasa';
                 $mdl = $this->coaModel3;
+                $nmpt = 'Wahana Eka Pekasa';
                 break;
             case 'dtf':
                 $getNR = $this->coaModel4->getLaporanNeraca($th,$bl);
+                $getLbt = $this->coaModel4->getLabaRugiTahunBerjalan($th,$bl);
                 $getAkun = $this->subcoaModel4->getSubNeraca();
-                $nmpt = 'DTF';
                 $mdl = $this->coaModel4;
+                $nmpt = 'DTF';
                 break;
             default:
                 $getNR = $this->coaModel->getLaporanNeraca($th,$bl);
+                $getLbt = $this->coaModel->getLabaRugiTahunBerjalan($th,$bl);
                 $getAkun = $this->subcoaModel->getSubNeraca();
-                $nmpt = 'PT Sadar Jaya Mandiri';
                 $mdl = $this->coaModel;
+                $nmpt = 'PT Sadar Jaya Mandiri';
         }
 
         $lists = [];
@@ -166,18 +171,19 @@ class ReportController extends BaseController
                 $tipe = $value['tipe'];
                 $kdsub = $value['kdsub'];
                 $parent_akun = $value['parent_akun'];
+                $level = $value['level'];
                 $id = $value['kode_akun'];
 
                 // Tombol aksi
                 $aksi = '<button class="btn btn-sm btn-light detailLR" data-id="'.$id.'" title="View">
                                 <i class="fas fa-eye"></i>
                             </button>';
-                if(empty($parent_akun)){
+                if($level == 1){
                     $lists[$tipe][$kdsub][] = [
                         'tipe' => $tipe,
                         'kdsub' => $kdsub,
                         'rekening' => $value['rekening'],
-                        'Level' => $value['Level'],
+                        'level' => $value['level'],
                         'kode_akun' => $value['kode_akun'],
                         'parent_akun' => $value['parent_akun'],
                         'nama_akun' => $value['nama_akun'],
@@ -186,12 +192,12 @@ class ReportController extends BaseController
                     ];
                 }
 
-                if(!empty($parent_akun)){
+                if($level != 1){
                     $listsKe3[$parent_akun][] = [
                         'tipe' => $tipe,
                         'kdsub' => $kdsub,
                         'rekening' => $value['rekening'],
-                        'Level' => $value['Level'],
+                        'level' => $value['level'],
                         'kode_akun' => $value['kode_akun'],
                         'parent_akun' => $value['parent_akun'],
                         'nama_akun' => $value['nama_akun'],
@@ -216,6 +222,7 @@ class ReportController extends BaseController
         $data['akuns'] = $listAkun;
         $data['lists'] = $lists;
         $data['listsKe3'] = $listsKe3;
+        $data['lrtb'] = $getLbt;
         // pr($data,1);
 
         return view('report/neraca', $data);
