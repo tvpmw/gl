@@ -17,7 +17,7 @@
         <div class="card-header text-center">
             <h4 class="mb-0">BUKU BESAR</h4>
             <h6 class="mb-0"><?=$nmpt?></h6>
-            <h6 class="mb-0 text-primary">November 2024</h6>
+            <h6 class="mb-0 text-primary"><?=$periode?></h6>
         </div>
         <div class="card-body">
             <h6 class="mt-3"><strong>Kode Perkiraan: <?=$akun->KDCOA ?? ''?> - <?=$akun->NMCOA ?? ''?></strong></h6>
