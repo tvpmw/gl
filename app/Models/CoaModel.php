@@ -426,4 +426,42 @@ class CoaModel extends Model
 
         return $lrtb;
     }
+
+    public function getJurnalData($kdcoa, $tahun, $bulan)
+    {
+        $sql = "
+            SELECT
+                'Awal' AS urut,
+                '' AS kdjv,
+                \"KDCOA\" AS kdcoa,
+                \"SDEBET\" AS jvdebet,
+                \"SKREDIT\" AS jvkredit,
+                'Saldo Awal' AS ket,
+                NULL AS tgl,
+                \"TH\" AS th,
+                \"BL\" AS bl
+            FROM coadet
+            WHERE \"KDCOA\" = ? AND \"TH\" = ? AND \"BL\" = ?
+            
+            UNION ALL
+            
+            SELECT 
+                jvdet.\"KDJV\" AS urut,
+                jvdet.\"KDJV\" AS kdjv,
+                jvdet.\"KDCOA\" AS kdcoa,
+                jvdet.\"JVDEBET\" AS jvdebet,
+                jvdet.\"JVKREDIT\" AS jvkredit,
+                jvdet.\"KET\" AS ket,
+                jv.\"TGLJV\"::DATE AS tgl,
+                jv.\"TH\" AS th,
+                jv.\"BL\" AS bl
+            FROM jvdet
+            JOIN jv ON jv.\"KDJV\" = jvdet.\"KDJV\" AND jv.\"TH\" = ? AND jv.\"BL\" = ?
+            WHERE jvdet.\"KDCOA\" = ?
+            
+            ORDER BY urut, tgl;
+        ";
+
+        return $this->db->query($sql, [$kdcoa, $tahun, $bulan, $tahun, $bulan, $kdcoa])->getResultArray();
+    }
 }

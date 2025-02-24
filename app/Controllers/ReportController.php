@@ -75,23 +75,27 @@ class ReportController extends BaseController
                 $kdsub = $value['kdsub'];
                 $parent_akun = $value['parent_akun'];
                 $level = $value['level'];
-                $id = $value['kode_akun'];
+                $id = $th.'/'.$bl.'/'.$db.'/'.$value['kode_akun'];
+                $kode_akun = $value['kode_akun'];
+                $nama_akun = $value['nama_akun'];
+                $setKet = $kode_akun.' '.$nama_akun;
 
-                // Tombol aksi
-                $aksi = '<button class="btn btn-sm btn-light detailLR" data-id="'.$id.'" title="View">
-                                <i class="fas fa-eye"></i>
-                            </button>';
+                if(empty($value['nilai'])){
+                    $ket = $setKet;
+                }else{
+                    $ket = '<a href="'.base_url('cms/report/bukubesar/'.$id).'" >'.$setKet.'</a>';
+                }
                 if($level == 1){
                     $lists[$tipe][$kdsub][] = [
                         'tipe' => $tipe,
                         'kdsub' => $kdsub,
                         'rekening' => $value['rekening'],
                         'level' => $value['level'],
-                        'kode_akun' => $value['kode_akun'],
+                        'kode_akun' => $kode_akun,
                         'parent_akun' => $value['parent_akun'],
-                        'nama_akun' => $value['nama_akun'],
+                        'nama_akun' => $nama_akun,
                         'nilai' => $value['nilai'],
-                        'aksi' => $aksi,
+                        'ket' => $ket,
                     ];
                 }
 
@@ -101,11 +105,11 @@ class ReportController extends BaseController
                         'kdsub' => $kdsub,
                         'rekening' => $value['rekening'],
                         'level' => $value['level'],
-                        'kode_akun' => $value['kode_akun'],
+                        'kode_akun' => $kode_akun,
                         'parent_akun' => $value['parent_akun'],
-                        'nama_akun' => $value['nama_akun'],
+                        'nama_akun' => $nama_akun,
                         'nilai' => $value['nilai'],
-                        'aksi' => $aksi,
+                        'ket' => $ket,
                     ];
                 }
             }
@@ -178,23 +182,27 @@ class ReportController extends BaseController
                 $kdsub = $value['kdsub'];
                 $parent_akun = $value['parent_akun'];
                 $level = $value['level'];
-                $id = $value['kode_akun'];
+                $id = $th.'/'.$bl.'/'.$db.'/'.$value['kode_akun'];
+                $kode_akun = $value['kode_akun'];
+                $nama_akun = $value['nama_akun'];
+                $setKet = $kode_akun.' '.$nama_akun;
 
-                // Tombol aksi
-                $aksi = '<button class="btn btn-sm btn-light detailLR" data-id="'.$id.'" title="View">
-                                <i class="fas fa-eye"></i>
-                            </button>';
+                if(empty($value['nilai'])){
+                    $ket = $setKet;
+                }else{
+                    $ket = '<a href="'.base_url('cms/report/bukubesar/'.$id).'" >'.$setKet.'</a>';
+                }
                 if($level == 1){
                     $lists[$tipe][$kdsub][] = [
                         'tipe' => $tipe,
                         'kdsub' => $kdsub,
                         'rekening' => $value['rekening'],
                         'level' => $value['level'],
-                        'kode_akun' => $value['kode_akun'],
+                        'kode_akun' => $kode_akun,
                         'parent_akun' => $value['parent_akun'],
-                        'nama_akun' => $value['nama_akun'],
+                        'nama_akun' => $nama_akun,
                         'nilai' => $value['nilai'],
-                        'aksi' => $aksi,
+                        'ket' => $ket
                     ];
                 }
 
@@ -204,11 +212,11 @@ class ReportController extends BaseController
                         'kdsub' => $kdsub,
                         'rekening' => $value['rekening'],
                         'level' => $value['level'],
-                        'kode_akun' => $value['kode_akun'],
+                        'kode_akun' => $kode_akun,
                         'parent_akun' => $value['parent_akun'],
-                        'nama_akun' => $value['nama_akun'],
+                        'nama_akun' => $nama_akun,
                         'nilai' => $value['nilai'],
-                        'aksi' => $aksi,
+                        'ket' => $ket
                     ];
                 }
             }
@@ -238,5 +246,43 @@ class ReportController extends BaseController
         // pr($data,1);
 
         return view('report/neraca', $data);
+    }
+
+    public function bukuBesar($th=null,$bl=null,$db=null,$kdcoa=null)
+    {
+        if(empty($th) || empty($bl) || empty($db) || empty($kdcoa)){
+            return redirect()->back();
+        }
+
+        // Ambil data berdasarkan pilihan database
+        switch ($db) {
+            case 'ariston':
+                $getBB = $this->coaModel2->getJurnalData($kdcoa,$th,$bl);
+                $mdl = $this->coaModel2;
+                $nmpt = 'Ariston';
+                break;
+            case 'wep':
+                $getBB = $this->coaModel3->getJurnalData($kdcoa,$th,$bl);
+                $mdl = $this->coaModel3;
+                $nmpt = 'Wahana Eka Pekasa';
+                break;
+            case 'dtf':
+                $getBB = $this->coaModel4->getJurnalData($kdcoa,$th,$bl);
+                $mdl = $this->coaModel4;
+                $nmpt = 'DTF';
+                break;
+            default:
+                $getBB = $this->coaModel->getJurnalData($kdcoa,$th,$bl);
+                $mdl = $this->coaModel;
+                $nmpt = 'PT Sadar Jaya Mandiri';
+        }
+
+        $data['periode'] = getMonths($bl).' '.$th;
+        $data['nmpt'] = $nmpt;
+        $data['lists'] = $getBB;
+        $data['akun'] = $mdl->where('KDCOA',$kdcoa)->first();
+
+        // pr($data,1);
+        return view('report/bukubesar', $data);
     }
 }

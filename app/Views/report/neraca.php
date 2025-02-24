@@ -73,6 +73,31 @@
         .negative {
             color: black;
         }
+		a {
+		    color: unset !important;
+		    text-decoration: unset !important;
+		    transition: color 0.3s ease-in-out;
+		}
+
+		.hover-group {
+		    align-items: center;
+		}
+
+		.hover-group a {
+		    color: unset !important;
+		    text-decoration: unset !important;
+		    transition: color 0.3s ease-in-out, font-weight 0.3s ease-in-out;
+		}
+
+		.hover-group .nilai {
+		    transition: color 0.3s ease-in-out, font-weight 0.3s ease-in-out;
+		}
+
+		.hover-group:hover a,
+		.hover-group:hover .nilai {
+		    color: blue !important;
+		    font-weight: bold;
+		}
     </style>
 <?= $this->endSection() ?>
 
@@ -156,8 +181,8 @@
 						        foreach ($lists[$akun['tipe']][$akun['kdsub']] as $list) {
 						            $totalSubAL += $list['nilai'];
 						?>
-						<tr>
-						    <td class="indent-1 <?=(empty($list['nilai']))?'bold':''?>"><?=$list['kode_akun'].' '.$list['nama_akun']?></td>
+						<tr class="hover-group">
+						    <td class="indent-1 <?=(empty($list['nilai']))?'bold':''?>"><?=$list['ket']?></td>
 						    <td class="nilai <?=(empty($list['nilai']))?'bold':''?>"><?=(!empty($list['nilai']))?formatNegatif($list['nilai']):''?></td>            
 						</tr>
 						<?php
@@ -165,8 +190,8 @@
 			                foreach ($listsKe3[$list['kode_akun']] as $row) {
 			                    $totalSubAL += $row['nilai'];
 						?>
-						<tr>
-						    <td class="indent-2"><?=$row['kode_akun'].' '.$row['nama_akun']?></td>
+						<tr class="hover-group">
+						    <td class="indent-2"><?=$row['ket']?></td>
 						    <td class="nilai"><?=(!empty($row['nilai']))?formatNegatif($row['nilai']):'0,00'?></td>            
 						</tr>
 						<?php
@@ -174,8 +199,8 @@
 			                foreach ($listsKe3[$row['kode_akun']] as $val) {
 			                    $totalSubAL += $val['nilai'];
 						?>
-						<tr>
-						    <td class="indent-3"><?=$val['kode_akun'].' '.$val['nama_akun']?></td>
+						<tr class="hover-group">
+						    <td class="indent-3"><?=$val['ket']?></td>
 						    <td class="nilai"><?=(!empty($val['nilai']))?formatNegatif($val['nilai']):0?></td>
 						</tr>
 						<?php } endif; ?>
@@ -209,8 +234,8 @@
 						        foreach ($lists[$akun['tipe']][$akun['kdsub']] as $list) {
 						            $totalSubHL += $list['nilai'];
 						?>
-						<tr>
-						    <td class="indent-1 <?=(empty($list['nilai']))?'bold':''?>"><?=$list['kode_akun'].' '.$list['nama_akun']?></td>
+						<tr class="hover-group">
+						    <td class="indent-1 <?=(empty($list['nilai']))?'bold':''?>"><?=$list['ket']?></td>
 						    <td class="nilai <?=(empty($list['nilai']))?'bold':''?>"><?=(!empty($list['nilai']))?formatNegatif($list['nilai']):''?></td>            
 						</tr>
 						<?php
@@ -218,8 +243,8 @@
 			                foreach ($listsKe3[$list['kode_akun']] as $row) {
 			                    $totalSubHL += $row['nilai'];
 						?>
-						<tr>
-						    <td class="indent-2"><?=$row['kode_akun'].' '.$row['nama_akun']?></td>
+						<tr class="hover-group">
+						    <td class="indent-2"><?=$row['ket']?></td>
 						    <td class="nilai"><?=(!empty($row['nilai']))?formatNegatif($row['nilai']):'0,00'?></td>            
 						</tr>
 						<?php
@@ -227,8 +252,8 @@
 			                foreach ($listsKe3[$row['kode_akun']] as $val) {
 			                    $totalSubHL += $val['nilai'];
 						?>
-						<tr>
-						    <td class="indent-3"><?=$val['kode_akun'].' '.$val['nama_akun']?></td>
+						<tr class="hover-group">
+						    <td class="indent-3"><?=$val['ket']?></td>
 						    <td class="nilai"><?=(!empty($val['nilai']))?formatNegatif($val['nilai']):0?></td>
 						</tr>
 						<?php } endif; ?>
@@ -259,8 +284,8 @@
 						        foreach ($lists[$akun['tipe']][$akun['kdsub']] as $list) {
 						            $totalSubMD += $list['nilai'];
 						?>
-						<tr>
-						    <td class="indent-1 <?=(empty($list['nilai']))?'bold':''?>"><?=$list['kode_akun'].' '.$list['nama_akun']?></td>
+						<tr class="hover-group">
+						    <td class="indent-1 <?=(empty($list['nilai']))?'bold':''?>"><?=$list['ket']?></td>
 						    <td class="nilai <?=(empty($list['nilai']))?'bold':''?>"><?=(!empty($list['nilai']))?formatNegatif($list['nilai']):''?></td>            
 						</tr>
 						<?php
@@ -268,8 +293,8 @@
 			                foreach ($listsKe3[$list['kode_akun']] as $row) {
 			                    $totalSubMD += $row['nilai'];
 						?>
-						<tr>
-						    <td class="indent-2"><?=$row['kode_akun'].' '.$row['nama_akun']?></td>
+						<tr class="hover-group">
+						    <td class="indent-2"><?=$row['ket']?></td>
 						    <td class="nilai"><?=(!empty($row['nilai']))?formatNegatif($row['nilai']):'0,00'?></td>            
 						</tr>
 						<?php
@@ -277,8 +302,8 @@
 			                foreach ($listsKe3[$row['kode_akun']] as $val) {
 			                    $totalSubMD += $val['nilai'];
 						?>
-						<tr>
-						    <td class="indent-3"><?=$val['kode_akun'].' '.$val['nama_akun']?></td>
+						<tr class="hover-group">
+						    <td class="indent-3"><?=$val['ket']?></td>
 						    <td class="nilai"><?=(!empty($val['nilai']))?formatNegatif($val['nilai']):0?></td>
 						</tr>
 						<?php } endif; ?>
