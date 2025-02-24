@@ -314,6 +314,57 @@ class CoaModel extends Model
         return $this->db->query($sql, $params)->getResultArray();
     }
 
+    public function getCoa($tahun = null, $bulan = null)
+    {
+        $sql = "
+            SELECT 
+                coa.\"KDCOA\", 
+                coa.\"NMCOA\", 
+                coa.\"kdparent\", 
+                coa.\"KDSUB\",
+                subcoa.\"NMSUB\" AS nm_sub,
+                subcoa.\"TIPE\" AS tipe,
+                COALESCE(
+                    SUM(
+                        CASE 
+                            WHEN subcoa.\"TIPE\" = 4 THEN (coadet.\"MKREDIT\" - coadet.\"MDEBET\")
+                            WHEN subcoa.\"TIPE\" = 5 THEN (coadet.\"MDEBET\" - coadet.\"MKREDIT\")
+                            WHEN subcoa.\"TIPE\" IN (2, 3) THEN (coadet.\"SKREDIT\" + coadet.\"MKREDIT\") - (coadet.\"SDEBET\" + coadet.\"MDEBET\")
+                            ELSE (coadet.\"SDEBET\" - coadet.\"SKREDIT\") + (coadet.\"MDEBET\" - coadet.\"MKREDIT\")
+                        END
+                    ), 
+                    0
+                ) AS nilai,
+                coa.root AS level,
+                coa.\"STAT\" AS status
+            FROM coa
+            LEFT JOIN subcoa ON coa.\"KDSUB\" = subcoa.\"KDSUB\"
+            LEFT JOIN coadet ON coa.\"KDCOA\" = coadet.\"KDCOA\"
+        ";
+
+        $conditions = [];
+        $params = [];
+
+        if (!is_null($tahun)) {
+            $conditions[] = "coadet.\"TH\" = :tahun:";
+            $params['tahun'] = $tahun;
+        }
+        if (!is_null($bulan)) {
+            $conditions[] = "coadet.\"BL\" = :bulan:";
+            $params['bulan'] = $bulan;
+        }
+
+        if (!empty($conditions)) {
+            $sql .= " WHERE " . implode(" AND ", $conditions);
+        }
+
+        $sql .= " GROUP BY coa.\"KDCOA\", coa.\"NMCOA\", coa.\"kdparent\", coa.\"KDSUB\", 
+                subcoa.\"NMSUB\", subcoa.\"TIPE\", coa.root, coa.\"STAT\"
+                ORDER BY coa.\"KDCOA\";";
+
+        return $this->db->query($sql, $params)->getResultArray();
+    }
+
     public function getLaporanNeraca($tahun, $bulan)
     {
         $sql = "

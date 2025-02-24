@@ -55,6 +55,16 @@ class DashboardController extends BaseController
             return $this->getDataNeraca($tahun,$dbs);
         }
 
+        if($req == 'coa') {
+            $data = $this->getDataCoa($tahun, $dbs);
+            $response = [
+                'status' => true,
+                'message' => 'Data COA berhasil diambil',
+                'data' => $data
+            ];
+            return $this->response->setJSON($response);
+        }
+
         $response = [
             "tahun" => $tahun,
             "data" => []
@@ -108,6 +118,45 @@ class DashboardController extends BaseController
         return $this->response->setJSON($response);
     }
 
+    private function getDataCoa($tahun, $dbs)
+    {
+        // Ambil data berdasarkan pilihan database
+        switch ($dbs) {
+            case 'ariston':
+                $getCoa = $this->coaModel2->getCoa($tahun);
+                break;
+            case 'wep':
+                $getCoa = $this->coaModel3->getCoa($tahun);
+                break;
+            case 'dtf':
+                $getCoa = $this->coaModel4->getCoa($tahun);
+                break;
+            default:
+                $getCoa = $this->coaModel->getCoa($tahun);
+        }
+
+        $lists = [];
+        if (!empty($getCoa)) {
+            foreach ($getCoa as $value) {
+                $aksi = '<button class="btn btn-sm btn-light detailCOA" data-id="'.$value['KDCOA'].'" title="View">
+                            <i class="fas fa-eye"></i>
+                        </button>';
+                
+                $lists[] = [
+                    'kode_akun' => $value['KDCOA'] ?? '',
+                    'nama_akun' => $value['NMCOA'] ?? '',
+                    'kategori' => $value['nm_sub'] ?? '', // Changed from KDSUB to nm_sub
+                    'level' => $value['level'] ?? 0,      // This matches the root AS level alias
+                    'status' => $value['status'] ?? 1,    // This matches the STAT AS status alias
+                    'nilai' => floatval($value['nilai'] ?? 0),
+                    'aksi' => $aksi
+                ];
+            }
+        }
+
+        return $lists;
+    }
+
     public function neraca()
     {
         // $getNr = $this->coaModel->getNeraca();
@@ -116,6 +165,14 @@ class DashboardController extends BaseController
         $data['startYear'] = 2009;
         $data['dbs'] = getSelDb();
         return view('dashboard-neraca', $data);
+    }
+
+    public function coa()
+    {
+        $data['thnSkg'] = date('Y');
+        $data['startYear'] = 2009;
+        $data['dbs'] = getSelDb();
+        return view('dashboard-coa', $data);
     }
 
     private function getDataNeraca($tahun,$dbs)

@@ -493,14 +493,14 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav mx-auto nav-menu">                    
                 <li class="nav-item">
-                    <a class="nav-link <?= current_url() == base_url('accounts') ? 'active' : '' ?>" href="/accounts">
-                        <i class="fas fa-book me-2"></i>Chart of Accounts
-                    </a>
-                </li>
+                <a class="nav-link <?= str_starts_with(current_url(), base_url('cms/dashboard')) ? 'active' : '' ?>" href="<?= base_url('cms/dashboard') ?>">
+                    <i class="fas fa-home me-2"></i>Dashboard
+                </a>            
+                </li>                
                 <li class="nav-item">
-                    <a class="nav-link <?= current_url() == base_url('reports') ? 'active' : '' ?>" href="/reports">
-                        <i class="fas fa-chart-bar me-2"></i>Reports
-                    </a>
+                <a class="nav-link <?= str_starts_with(current_url(), base_url('cms/report')) ? 'active' : '' ?>">
+                    <i class="fas fa-book me-2"></i>Report                    
+                </a>
                 </li>
             </ul>
 

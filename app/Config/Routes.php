@@ -15,6 +15,7 @@ $routes->group('cms', ['filter' => 'auth'], function ($routes) {
 		$routes->get('/', 'DashboardController::index');
 		$routes->post('get-data', 'DashboardController::getData');
 		$routes->get('neraca', 'DashboardController::neraca');
+		$routes->get('coa', 'DashboardController::coa');
 	});
 
 	$routes->group("report", function ($routes) {
@@ -22,6 +23,4 @@ $routes->group('cms', ['filter' => 'auth'], function ($routes) {
 		$routes->get('neraca/(:any)/(:any)/(:any)', 'ReportController::neraca/$1/$2/$3');
 		$routes->get('bukubesar/(:any)/(:any)/(:any)/(:any)', 'ReportController::bukuBesar/$1/$2/$3/$4');
 	});
-
-	$routes->get('accounts', 'AccountController::index');
 });

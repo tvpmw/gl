@@ -27,6 +27,9 @@
         <li class="nav-item">
             <a class="nav-link active" aria-current="page" href="javascript:void(0);">Neraca</a>
         </li>
+        <li class="nav-item">
+            <a class="nav-link" href="<?= base_url('cms/dashboard/coa') ?>">Chart of Accounts</a>
+        </li>
     </ul>
 
     <div class="row mb-3">
