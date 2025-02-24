@@ -122,6 +122,12 @@ class ReportController extends BaseController
         $data['akuns'] = $listAkun;
         $data['lists'] = $lists;
         $data['listsKe3'] = $listsKe3;
+        $data['startYear'] = 2009;
+        $data['thnSel'] = $th;
+        $data['bln'] = getMonths();
+        $data['blnSel'] = $bl;
+        $data['dbs'] = getSelDb();
+        $data['dbSel'] = $db;
         // pr($data,1);
 
         return view('report/labarugi', $data);
@@ -223,6 +229,12 @@ class ReportController extends BaseController
         $data['lists'] = $lists;
         $data['listsKe3'] = $listsKe3;
         $data['lrtb'] = $getLbt;
+        $data['startYear'] = 2009;
+        $data['thnSel'] = $th;
+        $data['bln'] = getMonths();
+        $data['blnSel'] = $bl;
+        $data['dbs'] = getSelDb();
+        $data['dbSel'] = $db;
         // pr($data,1);
 
         return view('report/neraca', $data);

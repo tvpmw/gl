@@ -466,6 +466,14 @@
         [data-bs-theme="dark"] .page {
             background-color: var(--bg-card);
         }
+        
+        @media print
+        {    
+            .no-print, .no-print *
+            {
+                display: none !important;
+            }
+        }
     </style>
 
     <?= $this->renderSection('styles') ?>

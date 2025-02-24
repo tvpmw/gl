@@ -444,17 +444,11 @@ function toRupiah(str, withSymbol = true) {
     return withSymbol ? formatter.format(str) : (formatter.format(str)).replace(/(Rp)/, "").trim();
 }
 
-$(document).on('click', ".detailNR", function(event) {
-  event.preventDefault();
-  let id = $(this).data('id');
-  window.location.replace('<?=base_url('cms/report/neraca')?>/'+id);
-});
-
 $(document).on('click', ".detailLR", function(event) {
-	  event.preventDefault();
-	  let id = $(this).data('id');      
-	  window.location.replace('<?=base_url('cms/report/labarugi')?>/'+id);
-	});
+  event.preventDefault();
+  let id = $(this).data('id');      
+  window.location.replace('<?=base_url('cms/report/labarugi')?>/'+id);
+});
 
 </script>
 <?= $this->endSection() ?>

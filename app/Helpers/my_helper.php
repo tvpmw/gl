@@ -757,6 +757,18 @@ if (!function_exists('formatNegatif')) {
   }
 }
 
+if (!function_exists('getSelDb')) {
+  function getSelDb($db=null) {
+    $dbs = ['sdkom','ariston','wep','dtf'];
+    if (empty($db)) {
+      return $dbs;
+    }
+
+    return $dbs[$db];
+  }
+}
+
+
 if ( ! function_exists('tanggal_indo')) {
   function tanggal_indo($tgl, $cetak_hari = false)
   {

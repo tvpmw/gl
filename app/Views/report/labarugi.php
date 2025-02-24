@@ -73,6 +73,51 @@
 
 <?= $this->section('content') ?>
 <div class="container-fluid py-4">
+    <div class="row mb-3 no-print page">
+      <div class="col">
+        <div class="card card-body">
+          <form action="#" id="form-filter" class="form-horizontal">
+            <div class="row">
+              <!-- Dropdown Sumber -->
+              <div class="col-2">
+                <div class="form-group">
+                  <select class="form-control" name="dbs" id="dbs" style="width: 100%">
+                    <?php foreach ($dbs as $key => $row): ?>
+                      <option value="<?=$row?>" <?=($row == $dbSel) ? "selected" : ""?>><?=$row?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+              </div>
+              <!-- Dropdown Bulan -->
+              <div class="col-3">
+                <div class="form-group">
+                  <select class="form-control select2" name="bulan" id="bulan" style="width: 100%">
+                    <?php foreach ($bln as $key => $value): ?>
+                      <option value="<?=$key?>" <?=($key == $blnSel) ? "selected" : ""?>><?=$value?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+              </div>
+              <!-- Dropdown Tahun -->
+              <div class="col-2">
+                <div class="form-group">
+                  <select class="form-control select2" name="tahun" id="tahun" style="width: 100%">
+                    <?php for ($i = date('Y'); $i >= $startYear; $i--): ?>
+                      <option value="<?=$i?>" <?=($i == $thnSel) ? "selected" : ""?>><?=$i?></option>
+                    <?php endfor; ?>
+                  </select>
+                </div>
+              </div>
+              <div class="col">
+                <button type="submit" class="btn btn-primary mb-2"><i class="fa fa-eye"></i> <?=isLang('tampilkan')?></button>
+                <button type="button" class="btn btn-light mb-2 btn-back"><i class="fa fa-rotate-left"></i> <?=isLang('dashboard')?></button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>     
+
 	<div class="page">
 	    <div class="header">
 	        <div class="bold" style="float: left; font-size: 12px;"><?=$nmpt?></div>
@@ -309,4 +354,27 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
+<script>
+$("#form-filter").submit(function(event) {
+    event.preventDefault();  // Mencegah form dari reload halaman
+
+    const formData = $("#form-filter").serializeArray();
+    const params = {};
+
+    formData.forEach(({ name, value }) => {
+        if (value.trim() !== "") { // Pastikan input tidak kosong
+            params[name] = value;
+        }
+    });
+
+	let id = params['tahun']+'/'+params['bulan']+'/'+params['dbs'];      
+	window.location.replace('<?=base_url('cms/report/labarugi')?>/'+id);
+});
+
+$(document).on('click', ".btn-back", function(event) {
+  event.preventDefault();
+  window.location.replace('<?=base_url('cms/dashboard')?>');
+});
+</script>
+
 <?= $this->endSection() ?>
