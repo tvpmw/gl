@@ -208,10 +208,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
             document.getElementById("loadingTable").style.display = "none";
 
-            updateChart(neracaData);
-            updateTable(neracaData);
+            // **SORT hanya untuk CHART**
+            const sortedChartData = [...neracaData].sort((a, b) => a.bln - b.bln);
 
-            document.getElementById("thSet").innerHTML="Tahun "+tahun;
+            updateChart(sortedChartData); // Gunakan data yang sudah diurutkan
+            updateTable(neracaData);      // Gunakan data asli tanpa diurutkan
+
+            document.getElementById("thSet").innerHTML = "Tahun " + tahun;
         } catch (error) {
             console.error("Error fetching data:", error);
         }
@@ -221,8 +224,6 @@ document.addEventListener("DOMContentLoaded", function () {
         if (chartNeraca) {
             chartNeraca.destroy();
         }
-
-        neracaData.sort((a, b) => a.bln - b.bln);
 
         const labels = neracaData.map(item => item.bulan);
         const asetData = neracaData.map(item => item.aset);
