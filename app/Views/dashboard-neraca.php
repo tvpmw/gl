@@ -211,8 +211,8 @@ document.addEventListener("DOMContentLoaded", function () {
             // **SORT hanya untuk CHART**
             const sortedChartData = [...neracaData].sort((a, b) => a.bln - b.bln);
 
-            updateChart(sortedChartData); // Gunakan data yang sudah diurutkan
-            updateTable(neracaData);      // Gunakan data asli tanpa diurutkan
+            updateChart(sortedChartData);
+            updateTable(neracaData);
 
             document.getElementById("thSet").innerHTML = "Tahun " + tahun;
         } catch (error) {
