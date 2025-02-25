@@ -123,7 +123,7 @@
                             <th class="text-end">Laba/Rugi Tahun (Rp)</th>
                             <th class="text-end">Ekuitas + Laba (Rp)</th>
                             <th class="text-end">Balance</th>
-                            <th>Status</th>
+                            <th class="text-center">Status</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -302,7 +302,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     ${item.balance.toFixed(2)}
                     ${getTrendHtml(item.balance, previousMonth?.balance, 'Balance')}
                 </td>
-                <td>
+                <td class="text-center">
                     <span class="badge ${item.posting !== '0' ? 'bg-success' : 'bg-danger'}">
                         ${item.posting !== '0' ? 'Posting' : 'Berjalan'}
                     </span>
