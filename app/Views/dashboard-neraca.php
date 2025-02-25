@@ -222,6 +222,8 @@ document.addEventListener("DOMContentLoaded", function () {
             chartNeraca.destroy();
         }
 
+        neracaData.sort((a, b) => a.bln - b.bln);
+
         const labels = neracaData.map(item => item.bulan);
         const asetData = neracaData.map(item => item.aset);
         const liabilitasData = neracaData.map(item => item.liabilitas);

@@ -140,7 +140,7 @@ class CoaModel extends Model
             -- JOIN periode p ON rd.tahun = p.\"TH\" AND rd.bulan = p.\"BL\" AND p.\"POSTING\"=1
             JOIN periode p ON rd.tahun = p.\"TH\" AND rd.bulan = p.\"BL\"
             GROUP BY rd.tahun, rd.bulan, p.\"POSTING\"
-            ORDER BY rd.tahun ASC, rd.bulan ASC;
+            ORDER BY rd.tahun DESC, rd.bulan DESC;
         ";
 
         return $this->db->query($sql)->getResultArray();

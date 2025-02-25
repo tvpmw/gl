@@ -100,6 +100,7 @@ class DashboardController extends BaseController
                                     <i class="fas fa-eye"></i>
                                 </button>';
                 $lists[$key][] = [
+                    'bln' => $bl,
                     'bulan' => getMonths($bl, true),
                     'pendapatan' => (float) $value['pendapatan'],
                     'hpp' => (float) $value['hpp'],
@@ -203,6 +204,7 @@ class DashboardController extends BaseController
                                     <i class="fas fa-eye"></i>
                                 </button>';
                 $lists[$key][] = [
+                    'bln' => $bl,
                     'bulan' => getMonths($bl, true),
                     'aset' => (float) $value['aset'],
                     'liabilitas' => (float) $value['liabilitas'],

@@ -323,22 +323,31 @@ function loadData(params = {}) {
             `;
         }
 
-        const tableRows = data.data.map((item, index) => {
-            const previousMonth = data.data[index + 1];
+        const tableData = [...data.data]; 
+        const sortedChartData = [...data.data].sort((a, b) => a.bln - b.bln);
+
+        sortedChartData.forEach(item => {
             const lr = item.pendapatan - (item.hpp + item.biaya);
             
-            totalPendapatan += item.pendapatan;
-            totalHpp += item.hpp;
-            totalBiaya += item.biaya;
-            totalLr += lr;
-
             labels.push(`${item.bulan} ${data.tahun}`);
             pendapatanData.push(item.pendapatan);
             hppData.push(item.hpp);
             biayaData.push(item.biaya);
             labaRugiData.push(lr);
+        });
 
-            const prevLr = previousMonth ? (previousMonth.pendapatan - (previousMonth.hpp + previousMonth.biaya)) : null;
+        const tableRows = tableData.map((item, index) => {
+            const previousMonth = tableData[index + 1];
+            const lr = item.pendapatan - (item.hpp + item.biaya);
+
+            totalPendapatan += item.pendapatan;
+            totalHpp += item.hpp;
+            totalBiaya += item.biaya;
+            totalLr += lr;
+
+            const prevLr = previousMonth 
+                ? (previousMonth.pendapatan - (previousMonth.hpp + previousMonth.biaya)) 
+                : null;
 
             return `
                 <tr>
@@ -393,7 +402,7 @@ function loadData(params = {}) {
         updateChart(chartPendapatanBiaya, labels, ["Pendapatan", "HPP"], [pendapatanData, hppData]);
         updateChart(chartLabaRugi, labels, ["Laba Rugi"], [labaRugiData]);
 
-        document.getElementById("thSet").innerHTML="Tahun "+params.tahun;
+        document.getElementById("thSet").innerHTML = "Tahun " + params.tahun;
     })
     .catch(error => {
         console.error("Error loading data:", error);
@@ -404,19 +413,7 @@ function loadData(params = {}) {
 
 function updateChart(chart, labels, datasetsLabels, datasetsData) {
     chart.data.labels = labels;
-    chart.data.datasets = datasetsLabels.map((label, i) => ({
-        label,
-        data: datasetsData[i],
-        backgroundColor: i === 0 ? 'blue' : 'red',
-        borderColor: i === 0 ? 'blue' : 'red',
-        borderWidth: 1,
-        fill: false
-    }));
-    chart.update();
-}
 
-function updateChart(chart, labels, datasetsLabels, datasetsData) {
-    chart.data.labels = labels;
     chart.data.datasets = datasetsLabels.map((label, i) => ({
         label,
         data: datasetsData[i],
