@@ -137,6 +137,17 @@ class ReportController extends BaseController
         return view('report/labarugi', $data);
     }
 
+    public function filterLabaRugi()
+    {
+        $data['startYear'] = 2009;
+        $data['thnSel'] = date('Y');
+        $data['bln'] = getMonths();
+        $data['blnSel'] = date('m');
+        $data['dbs'] = getSelDb();
+        $data['dbSel'] = 'sdkom';
+        return view('report/labarugi-filter', $data);
+    }
+
     public function neraca($th=null,$bl=null,$db=null)
     {
         if(empty($th) || empty($bl) || empty($db)){
@@ -248,6 +259,17 @@ class ReportController extends BaseController
         return view('report/neraca', $data);
     }
 
+    public function filterNeraca()
+    {
+        $data['startYear'] = 2009;
+        $data['thnSel'] = date('Y');
+        $data['bln'] = getMonths();
+        $data['blnSel'] = date('m');
+        $data['dbs'] = getSelDb();
+        $data['dbSel'] = 'sdkom';
+        return view('report/neraca-filter', $data);
+    }
+
     public function bukuBesar($th=null,$bl=null,$db=null,$kdcoa=null)
     {
         if(empty($th) || empty($bl) || empty($db) || empty($kdcoa)){
@@ -284,5 +306,93 @@ class ReportController extends BaseController
 
         // pr($data,1);
         return view('report/bukubesar', $data);
+    }
+
+    public function filterBukuBesar()
+    {
+        $data['dbs'] = getSelDb();
+        return view('report/bukubesar-filter', $data);
+    }
+
+    public function searchRekening()
+    {
+        $search = $this->request->getGet('search');
+        $db = $this->request->getGet('db');
+
+        // Ambil data berdasarkan pilihan database
+        switch ($db) {
+            case 'ariston':
+                $mdl = $this->coaModel2;
+                $nmpt = 'Ariston';
+                break;
+            case 'wep':
+                $mdl = $this->coaModel3;
+                $nmpt = 'Wahana Eka Pekasa';
+                break;
+            case 'dtf':
+                $mdl = $this->coaModel4;
+                $nmpt = 'DTF';
+                break;
+            default:
+                $mdl = $this->coaModel;
+                $nmpt = 'PT Sadar Jaya Mandiri';
+        }
+
+        $data = $mdl->select('KDCOA as kdcoa, NMCOA as nmcoa')
+            ->like('"KDCOA"', $search, 'both', null, true)
+            ->orLike('"NMCOA"', $search, 'both', null, true)
+            ->findAll(10);
+
+        return $this->response->setJSON(array_map(function($item) {
+            return [
+                'id' => $item->kdcoa,
+                'nama_rekening' => $item->kdcoa.' - '.$item->nmcoa
+            ];
+        }, $data));
+    }
+
+    public function resultBukuBesar()
+    {
+        $input = json_decode(file_get_contents('php://input'), true);
+        $dbs = $input['dbs'] ?? 'sdkom';
+        $tanggal_awal = $input['tanggal_awal'];
+        $tanggal_akhir = $input['tanggal_akhir'];
+        $rekening_id = $input['rekening_id'];
+
+        if(empty($tanggal_awal) || empty($tanggal_akhir) || empty($rekening_id)){
+            return "Form wajib diisi";
+        }
+
+        // Ambil data berdasarkan pilihan database
+        switch ($dbs) {
+            case 'ariston':
+                $getBB = $this->coaModel2->getJurnalDataByDate($rekening_id,$tanggal_awal,$tanggal_akhir);
+                $mdl = $this->coaModel2;
+                $nmpt = 'Ariston';
+                break;
+            case 'wep':
+                $getBB = $this->coaModel3->getJurnalDataByDate($rekening_id,$tanggal_awal,$tanggal_akhir);
+                $mdl = $this->coaModel3;
+                $nmpt = 'Wahana Eka Pekasa';
+                break;
+            case 'dtf':
+                $getBB = $this->coaModel4->getJurnalDataByDate($rekening_id,$tanggal_awal,$tanggal_akhir);
+                $mdl = $this->coaModel4;
+                $nmpt = 'DTF';
+                break;
+            default:
+                $getBB = $this->coaModel->getJurnalDataByDate($rekening_id,$tanggal_awal,$tanggal_akhir);
+                $mdl = $this->coaModel;
+                $nmpt = 'PT Sadar Jaya Mandiri';
+        }
+
+        $data['periode'] = format_date($tanggal_awal).' s/d '.format_date($tanggal_akhir);
+        $data['nmpt'] = $nmpt;
+        $data['lists'] = $getBB;
+        $data['akun'] = $mdl->where('KDCOA',$rekening_id)->first();
+
+        // pr($data,1);
+        return view('report/bukubesar-result', $data);
+
     }
 }

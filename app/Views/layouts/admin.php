@@ -474,77 +474,100 @@
                 display: none !important;
             }
         }
+
+        html, body {
+            height: 100%;
+        }
+
+        .main-content {
+            flex: 1;
+        }
+
+        .wrapper {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .footer {
+            background: var(--bg-card);
+            color: var(--text-muted);
+            padding: 1rem;
+            text-align: center;
+            border-top: 1px solid var(--border-color);
+        }
     </style>
 
     <?= $this->renderSection('styles') ?>
 </head>
 <body>
-<!-- Replace the existing nav opening -->
-<nav class="navbar navbar-expand-lg top-navbar fixed-top">
-    <div class="container-fluid">
-        <a class="brand-logo" href="<?=base_url()?>">
-            <i class="fas fa-analytics"></i>
-            <span>GL Admin</span>
-        </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <i class="fas fa-bars"></i>
-        </button>
+<div class="wrapper">
+    <!-- Replace the existing nav opening -->
+    <nav class="navbar navbar-expand-lg top-navbar fixed-top">
+        <div class="container-fluid">
+            <a class="brand-logo" href="<?= base_url() ?>">
+                <i class="fas fa-analytics"></i>
+                <span>GL Admin</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <i class="fas fa-bars"></i>
+            </button>
 
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav mx-auto nav-menu">                    
-                <li class="nav-item">
-                <a class="nav-link <?= str_starts_with(current_url(), base_url('cms/dashboard')) ? 'active' : '' ?>" href="<?= base_url('cms/dashboard') ?>">
-                    <i class="fas fa-home me-2"></i>Dashboard
-                </a>            
-                </li>                
-                <li class="nav-item">
-                <a class="nav-link <?= str_starts_with(current_url(), base_url('cms/report')) ? 'active' : '' ?>">
-                    <i class="fas fa-book me-2"></i>Report                    
-                </a>
-                </li>
-            </ul>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mx-auto nav-menu">                    
+                    <li class="nav-item">
+                        <a class="nav-link <?= str_starts_with(current_url(), base_url('cms/dashboard')) ? 'active' : '' ?>" href="<?= base_url('cms/dashboard') ?>">
+                            <i class="fas fa-home me-2"></i>Dashboard
+                        </a>            
+                    </li>
 
-            <div class="utility-nav">
-                <div class="utility-nav-item">
-                    <div class="theme-switch" id="themeToggle">
-                        <div class="switch-handle">
-                            <i class="fas fa-sun"></i>
+                    <!-- Dropdown Report -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle <?= str_starts_with(current_url(), base_url('cms/report')) ? 'active' : '' ?>" href="#" id="reportDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-book me-2"></i>Report
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="<?= base_url('cms/report/labarugi-filter') ?>"><i class="fas fa-chart-line me-2"></i>Laba Rugi</a></li>
+                            <li><a class="dropdown-item" href="<?= base_url('cms/report/neraca-filter') ?>"><i class="fas fa-balance-scale me-2"></i>Neraca</a></li>
+                            <li><a class="dropdown-item" href="<?= base_url('cms/report/bukubesar-filter') ?>"><i class="fas fa-book-open me-2"></i>Buku Besar</a></li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <div class="utility-nav">
+                    <div class="utility-nav-item">
+                        <div class="theme-switch" id="themeToggle">
+                            <div class="switch-handle">
+                                <i class="fas fa-sun"></i>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- <div class="utility-nav-item">
-                    <a class="notification-btn" href="#" title="Notifications">
-                        <i class="fas fa-bell"></i>
-                        <span class="notification-badge">3</span>
-                    </a>
-                </div> -->
-
-                <div class="utility-nav-item">
-                    <?php
-                    $uname = !empty(detailUser()->user_nama) ? detailUser()->user_nama : '';
-                    $ab = explode(' ', $uname);
-                    if ($ab) {
-                        $uname = $ab[0];
-                    }
-                    ?>
-                    <div class="dropdown">
-                        <a class="nav-link dropdown-toggle user-profile" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                            <img src="https://ui-avatars.com/api/?name=<?= urlencode($uname) ?>&background=4f46e5&color=fff" class="rounded-circle" width="32" height="32" alt="Profile">
-                            <span><?= $uname ?></span>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="/profile"><i class="fas fa-user"></i>Profile</a></li>
-                            <li><a class="dropdown-item" href="/settings"><i class="fas fa-cog"></i>Settings</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item text-danger" href="<?=base_url('logout')?>"><i class="fas fa-sign-out-alt"></i>Logout</a></li>
-                        </ul>
+                    <div class="utility-nav-item">
+                        <?php
+                        $uname = !empty(detailUser()->user_nama) ? detailUser()->user_nama : '';
+                        $ab = explode(' ', $uname);
+                        if ($ab) {
+                            $uname = $ab[0];
+                        }
+                        ?>
+                        <div class="dropdown">
+                            <a class="nav-link dropdown-toggle user-profile" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                                <img src="https://ui-avatars.com/api/?name=<?= urlencode($uname) ?>&background=4f46e5&color=fff" class="rounded-circle" width="32" height="32" alt="Profile">
+                                <span><?= $uname ?></span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="/profile"><i class="fas fa-user"></i>Profile</a></li>
+                                <li><a class="dropdown-item" href="/settings"><i class="fas fa-cog"></i>Settings</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="<?= base_url('logout') ?>"><i class="fas fa-sign-out-alt"></i>Logout</a></li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-</nav>
+    </nav>
 
     <main class="main-content">
         <?= $this->renderSection('content') ?>
@@ -561,6 +584,7 @@
             </div>
         </div>
     </footer>
+</div>
 
     <!-- JavaScript Dependencies -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>

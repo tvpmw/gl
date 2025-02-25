@@ -493,7 +493,9 @@ class CoaModel extends Model
                 \"TH\" AS th,
                 \"BL\" AS bl
             FROM coadet
-            WHERE \"KDCOA\" = ? AND \"TH\" = ? AND \"BL\" = ?
+            WHERE \"KDCOA\" = ?
+            AND \"TH\" = EXTRACT(YEAR FROM ?::DATE)
+            AND \"BL\" = EXTRACT(MONTH FROM ?::DATE)
             
             UNION ALL
             
@@ -508,12 +510,84 @@ class CoaModel extends Model
                 jv.\"TH\" AS th,
                 jv.\"BL\" AS bl
             FROM jvdet
-            JOIN jv ON jv.\"KDJV\" = jvdet.\"KDJV\" AND jv.\"TH\" = ? AND jv.\"BL\" = ?
+            JOIN jv ON jv.\"KDJV\" = jvdet.\"KDJV\"
             WHERE jvdet.\"KDCOA\" = ?
+            AND jv.\"TGLJV\"::DATE BETWEEN ? AND ?
             
             ORDER BY tgl, urut;
         ";
 
-        return $this->db->query($sql, [$kdcoa, $tahun, $bulan, $tahun, $bulan, $kdcoa])->getResultArray();
+        return $this->db->query($sql, [$kdcoa, $tanggal_awal, $tanggal_awal, $kdcoa, $tanggal_awal, $tanggal_akhir])->getResultArray();
+    }
+
+    public function getJurnalDataByDate($kdcoa, $tanggal_awal, $tanggal_akhir)
+    {
+        $sql = "
+            WITH saldo_awal AS (
+                -- Saldo awal dari coadet jika tanggal_awal adalah tanggal 1
+                SELECT 
+                    \"KDCOA\" AS kdcoa, 
+                    \"SDEBET\" AS jvdebet, 
+                    \"SKREDIT\" AS jvkredit 
+                FROM coadet 
+                WHERE \"KDCOA\" = ?
+                    AND \"TH\" = EXTRACT(YEAR FROM ?::DATE)
+                    AND \"BL\" = EXTRACT(MONTH FROM ?::DATE)
+
+                UNION ALL
+
+                -- Jika tanggal_awal bukan tanggal 1, ambil akumulasi transaksi dari awal bulan hingga sehari sebelum tanggal_awal
+                SELECT 
+                    jvdet.\"KDCOA\" AS kdcoa, 
+                    SUM(jvdet.\"JVDEBET\") AS jvdebet, 
+                    SUM(jvdet.\"JVKREDIT\") AS jvkredit 
+                FROM jvdet 
+                JOIN jv ON jv.\"KDJV\" = jvdet.\"KDJV\" 
+                WHERE jvdet.\"KDCOA\" = ? 
+                    AND jv.\"TGLJV\" >= DATE_TRUNC('month', ?::DATE)  -- Mulai dari awal bulan
+                    AND jv.\"TGLJV\" < ?::DATE  -- Hingga sehari sebelum tanggal_awal
+                GROUP BY jvdet.\"KDCOA\"
+            )
+
+            SELECT 
+                'Awal' AS urut, 
+                '' AS kdjv, 
+                kdcoa, 
+                SUM(jvdebet) AS jvdebet, 
+                SUM(jvkredit) AS jvkredit, 
+                'Saldo Awal' AS ket, 
+                (?::DATE - INTERVAL '1 day') AS tgl, -- Saldo awal dicatat sehari sebelum tanggal_awal 
+                EXTRACT(YEAR FROM ?::DATE) AS th, 
+                EXTRACT(MONTH FROM ?::DATE) AS bl 
+            FROM saldo_awal 
+            GROUP BY kdcoa 
+
+            UNION ALL
+
+            -- Ambil transaksi dalam periode tanggal_awal - tanggal_akhir
+            SELECT 
+                jvdet.\"KDJV\" AS urut, 
+                jvdet.\"KDJV\" AS kdjv, 
+                jvdet.\"KDCOA\" AS kdcoa, 
+                jvdet.\"JVDEBET\" AS jvdebet, 
+                jvdet.\"JVKREDIT\" AS jvkredit, 
+                jvdet.\"KET\" AS ket, 
+                jv.\"TGLJV\"::DATE AS tgl, 
+                jv.\"TH\" AS th, 
+                jv.\"BL\" AS bl 
+            FROM jvdet 
+            JOIN jv ON jv.\"KDJV\" = jvdet.\"KDJV\" 
+            WHERE jvdet.\"KDCOA\" = ? 
+                AND jv.\"TGLJV\" BETWEEN ?::DATE AND ?::DATE 
+
+            ORDER BY tgl, urut;
+        ";
+
+        return $this->db->query($sql, [
+            $kdcoa, $tanggal_awal, $tanggal_awal, // coadet
+            $kdcoa, $tanggal_awal, $tanggal_awal, // akumulasi transaksi sebelum tanggal_awal
+            $tanggal_awal, $tanggal_awal, $tanggal_awal, // saldo awal diambil sehari sebelumnya
+            $kdcoa, $tanggal_awal, $tanggal_akhir // transaksi dalam rentang tanggal_awal - tanggal_akhir
+        ])->getResultArray();
     }
 }
