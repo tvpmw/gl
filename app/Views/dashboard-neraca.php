@@ -198,7 +198,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 totalAset.textContent = toRupiah(neracaData[0].aset);
                 totalLiabilitas.textContent = toRupiah(neracaData[0].liabilitas);
                 totalEkuitas.textContent = toRupiah(neracaData[0].ekuitaslaba);
-                totalBalance.textContent = neracaData[0].balance.toFixed(2);
+                totalBalance.textContent = toRupiah(neracaData[0].balance);
             } else {
                 totalAset.textContent = "Rp 0";
                 totalLiabilitas.textContent = "Rp 0";
@@ -299,7 +299,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     ${getTrendHtml(item.ekuitaslaba, previousMonth?.ekuitaslaba, 'Ekuitas + Laba')}
                 </td>
                 <td class="text-end">
-                    ${item.balance.toFixed(2)}
+                    ${toRupiah(item.balance)}
                     ${getTrendHtml(item.balance, previousMonth?.balance, 'Balance')}
                 </td>
                 <td class="text-center">
