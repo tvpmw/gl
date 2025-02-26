@@ -493,9 +493,7 @@ class CoaModel extends Model
                 \"TH\" AS th,
                 \"BL\" AS bl
             FROM coadet
-            WHERE \"KDCOA\" = ?
-            AND \"TH\" = EXTRACT(YEAR FROM ?::DATE)
-            AND \"BL\" = EXTRACT(MONTH FROM ?::DATE)
+            WHERE \"KDCOA\" = ? AND \"TH\" = ? AND \"BL\" = ?
             
             UNION ALL
             
@@ -510,14 +508,13 @@ class CoaModel extends Model
                 jv.\"TH\" AS th,
                 jv.\"BL\" AS bl
             FROM jvdet
-            JOIN jv ON jv.\"KDJV\" = jvdet.\"KDJV\"
+            JOIN jv ON jv.\"KDJV\" = jvdet.\"KDJV\" AND jv.\"TH\" = ? AND jv.\"BL\" = ?
             WHERE jvdet.\"KDCOA\" = ?
-            AND jv.\"TGLJV\"::DATE BETWEEN ? AND ?
             
             ORDER BY tgl, urut;
         ";
 
-        return $this->db->query($sql, [$kdcoa, $tanggal_awal, $tanggal_awal, $kdcoa, $tanggal_awal, $tanggal_akhir])->getResultArray();
+        return $this->db->query($sql, [$kdcoa, $tahun, $bulan, $tahun, $bulan, $kdcoa])->getResultArray();
     }
 
     public function getJurnalDataByDate($kdcoa, $tanggal_awal, $tanggal_akhir)
