@@ -103,6 +103,7 @@
 
 <?= $this->section('scripts') ?>
 <script>
+document.addEventListener("DOMContentLoaded", function () {
     let typingTimer;
     const debounceTime = 300;
     let validRekening = false;
@@ -134,10 +135,10 @@
                     const div = document.createElement("div");
                     div.className = "list-group-item list-group-item-action";
                     div.textContent = item.nama_rekening;
-                    div.setAttribute("data-id", item.id); // Simpan ID rekening dalam atribut
+                    div.setAttribute("data-id", item.id);
                     div.onclick = () => {
                         document.getElementById("rekening").value = item.nama_rekening;
-                        document.getElementById("rekening_id").value = item.id; // Simpan ID rekening
+                        document.getElementById("rekening_id").value = item.id;
                         validRekening = true;
                         rekeningList.innerHTML = "";
                         rekeningList.style.display = "none";
@@ -154,108 +155,120 @@
         }
     }
 
-    document.addEventListener("DOMContentLoaded", function () {
-        const form = document.getElementById("filterForm");
-        const rekeningInput = document.getElementById("rekening");
-        const rekeningIdInput = document.getElementById("rekening_id");
-        const dbs = document.getElementById("dbs");
-        const rekeningList = document.getElementById("rekeningList");
-        const resultContainer = document.getElementById("resultContainer");
+    const form = document.getElementById("filterForm");
+    const filterButton = form.querySelector("button[type='submit']");
+    const rekeningInput = document.getElementById("rekening");
+    const rekeningIdInput = document.getElementById("rekening_id");
+    const dbs = document.getElementById("dbs");
+    const rekeningList = document.getElementById("rekeningList");
+    const resultContainer = document.getElementById("resultContainer");
 
-        dbs.addEventListener("change", function () {
-            rekeningInput.value = "";
-            rekeningIdInput.value = "";
-            rekeningList.innerHTML = "";
-            rekeningList.style.display = "none";
-            validRekening = false;
-        });
-
-        rekeningInput.addEventListener("input", function () {
-            clearTimeout(typingTimer);
-            typingTimer = setTimeout(() => {
-                searchRekening(this.value);
-            }, debounceTime);
-            validRekening = false;
-            rekeningIdInput.value = ""; // Kosongkan ID jika user mengetik manual
-        });
-
-        rekeningInput.addEventListener("blur", function () {
-            setTimeout(() => {
-                rekeningList.style.display = "none";
-            }, 200);
-        });
-
-        document.getElementById("resetBtn").addEventListener("click", function () {
-            rekeningInput.value = "";
-            rekeningIdInput.value = "";
-            rekeningList.innerHTML = "";
-            rekeningList.style.display = "none";
-            validRekening = false;
-            resultContainer.innerHTML = "";
-        });
-
-        document.addEventListener("click", function (event) {
-            if (!rekeningInput.contains(event.target) && !rekeningList.contains(event.target)) {
-                rekeningList.style.display = "none";
-            }
-        });
-
-        // Validasi sebelum submit form
-        form.addEventListener("submit", async function (e) {
-            e.preventDefault();
-
-            if (!validRekening || !rekeningIdInput.value) {
-                alert("Silakan pilih rekening dari daftar yang tersedia!");
-                rekeningInput.focus();
-                return;
-            }
-
-            const formData = new FormData(form);
-            const data = Object.fromEntries(formData.entries());
-
-            try {
-                const response = await fetch("<?= base_url('cms/report/bukubesar-filter') ?>", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(data)
-                });
-
-                const result = await response.text();
-                if (response.ok) {
-                    resultContainer.innerHTML = result;
-                } else {
-                    resultContainer.innerHTML = `<div class="alert alert-danger">Terjadi kesalahan saat memproses data.</div>`;
-                }
-            } catch (error) {
-                console.error("Gagal mengirim data:", error);
-                resultContainer.innerHTML = `<div class="alert alert-danger">Gagal mengirim data ke server!</div>`;
-            }
-        });
+    dbs.addEventListener("change", function () {
+        rekeningInput.value = "";
+        rekeningIdInput.value = "";
+        rekeningList.innerHTML = "";
+        rekeningList.style.display = "none";
+        validRekening = false;
     });
 
-    document.addEventListener("DOMContentLoaded", function () {
-        const tanggalAwal = document.getElementById("tanggal_awal");
-        const tanggalAkhir = document.getElementById("tanggal_akhir");
-
-        tanggalAwal.addEventListener("change", function () {
-            tanggalAkhir.min = tanggalAwal.value;
-            if (tanggalAkhir.value) {
-                tanggalAkhir.value = "";
-            }
-        });
-
-        tanggalAkhir.addEventListener("change", function () {
-            if (tanggalAkhir.value < tanggalAwal.value) {
-                alert("Tanggal akhir tidak boleh lebih kecil dari tanggal awal!");
-                tanggalAkhir.value = "";
-            }
-        });
-
-        tanggalAkhir.addEventListener("focus", function () {
-            this.showPicker();
-        });
+    rekeningInput.addEventListener("input", function () {
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(() => {
+            searchRekening(this.value);
+        }, debounceTime);
+        validRekening = false;
+        rekeningIdInput.value = "";
     });
+
+    rekeningInput.addEventListener("blur", function () {
+        setTimeout(() => {
+            rekeningList.style.display = "none";
+        }, 200);
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", function () {
+        rekeningInput.value = "";
+        rekeningIdInput.value = "";
+        rekeningList.innerHTML = "";
+        rekeningList.style.display = "none";
+        validRekening = false;
+        resultContainer.innerHTML = "";
+    });
+
+    document.addEventListener("click", function (event) {
+        if (!rekeningInput.contains(event.target) && !rekeningList.contains(event.target)) {
+            rekeningList.style.display = "none";
+        }
+    });
+
+    form.addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        if (!validRekening || !document.getElementById("rekening_id").value) {
+            alert("Silakan pilih rekening dari daftar yang tersedia!");
+            return;
+        }
+
+        // Menampilkan loading pada tombol
+        filterButton.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Memproses...`;
+        filterButton.disabled = true;
+
+        // Menampilkan loading pada resultContainer
+        resultContainer.innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Memproses data, mohon tunggu...</p>
+            </div>
+        `;
+
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+
+        try {
+            const response = await fetch("<?= base_url('cms/report/bukubesar-filter') ?>", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.text();
+            if (response.ok) {
+                resultContainer.innerHTML = result;
+            } else {
+                resultContainer.innerHTML = `<div class="alert alert-danger">Terjadi kesalahan saat memproses data.</div>`;
+            }
+        } catch (error) {
+            console.error("Gagal mengirim data:", error);
+            resultContainer.innerHTML = `<div class="alert alert-danger">Gagal mengirim data ke server!</div>`;
+        }
+
+        // Mengembalikan tombol seperti semula setelah request selesai
+        filterButton.innerHTML = "Filter";
+        filterButton.disabled = false;
+    });
+
+    const tanggalAwal = document.getElementById("tanggal_awal");
+    const tanggalAkhir = document.getElementById("tanggal_akhir");
+
+    tanggalAwal.addEventListener("change", function () {
+        tanggalAkhir.min = tanggalAwal.value;
+        if (tanggalAkhir.value) {
+            tanggalAkhir.value = "";
+        }
+    });
+
+    tanggalAkhir.addEventListener("change", function () {
+        if (tanggalAkhir.value < tanggalAwal.value) {
+            alert("Tanggal akhir tidak boleh lebih kecil dari tanggal awal!");
+            tanggalAkhir.value = "";
+        }
+    });
+
+    tanggalAkhir.addEventListener("focus", function () {
+        this.showPicker();
+    });
+});
 </script>
 <?= $this->endSection() ?>
