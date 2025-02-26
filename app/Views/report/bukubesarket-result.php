@@ -7,13 +7,16 @@
     }
 </style>
 
-
 <div class="card shadow">
     <div class="card-header text-center">
         <h4 class="mb-0">BUKU BESAR</h4>
         <h6 class="mb-0"><?=$nmpt?></h6>
         <h6 class="mb-0 text-primary"><?=$periode?></h6>
     </div>
+    <?php 
+    foreach ($lists as $key => $list) { 
+        $akun = $mdl->where('KDCOA',$key)->first();
+    ?>
     <div class="card-body">
         <h6 class="mt-3"><strong>Kode Perkiraan: <?=$akun->KDCOA ?? ''?> - <?=$akun->NMCOA ?? ''?></strong></h6>
         <div class="table-responsive">
@@ -35,7 +38,7 @@
                     $totalDebet = 0;
                     $totalKredit = 0;
 
-                    foreach ($lists as $key => $row) { 
+                    foreach ($list as $k => $row) { 
                         $debet = $row['jvdebet'];
                         $kredit = $row['jvkredit'];
                         $saldo = ($saldo + $debet) - $kredit;
@@ -69,6 +72,7 @@
             </table>
         </div>
     </div>
+    <?php } ?>
     <div class="card-footer text-end">
         <small class="text-muted"><?=format_date(date('Y-m-d')).' '.date('H:i:s')?></small>
     </div>

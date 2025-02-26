@@ -393,6 +393,56 @@ class ReportController extends BaseController
 
         // pr($data,1);
         return view('report/bukubesar-result', $data);
+    }
 
+    public function filterBukuBesarKet()
+    {
+        $data['dbs'] = getSelDb();
+        $data['thnSkg'] = date('Y');
+        $data['startYear'] = 2009;
+        return view('report/bukubesarket-filter', $data);
+    }
+
+    public function resultBukuBesarKet()
+    {
+        $input = json_decode(file_get_contents('php://input'), true);
+        $dbs = $input['dbs'] ?? 'sdkom';
+        $tahun = $input['tahun'];
+        $keterangan = $input['keterangan'];
+
+        if(empty($tahun) || empty($keterangan)){
+            return "Form wajib diisi";
+        }
+
+        // Ambil data berdasarkan pilihan database
+        switch ($dbs) {
+            case 'ariston':
+                $getBB = $this->coaModel2->getJurnalDataByKet($keterangan,$tahun);
+                $mdl = $this->coaModel2;
+                $nmpt = 'Ariston';
+                break;
+            case 'wep':
+                $getBB = $this->coaModel3->getJurnalDataByKet($keterangan,$tahun);
+                $mdl = $this->coaModel3;
+                $nmpt = 'Wahana Eka Pekasa';
+                break;
+            case 'dtf':
+                $getBB = $this->coaModel4->getJurnalDataByKet($keterangan,$tahun);
+                $mdl = $this->coaModel4;
+                $nmpt = 'DTF';
+                break;
+            default:
+                $getBB = $this->coaModel->getJurnalDataByKet($keterangan,$tahun);
+                $mdl = $this->coaModel;
+                $nmpt = 'PT Sadar Jaya Mandiri';
+        }
+
+        $data['periode'] = $tahun;
+        $data['nmpt'] = $nmpt;
+        $data['lists'] = $getBB;
+        $data['mdl'] = $mdl;
+
+        // pr($data,1);
+        return view('report/bukubesarket-result', $data);
     }
 }

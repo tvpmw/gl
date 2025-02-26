@@ -529,7 +529,8 @@
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="<?= base_url('cms/report/labarugi-filter') ?>"><i class="fas fa-chart-line me-2"></i>Laba Rugi</a></li>
                             <li><a class="dropdown-item" href="<?= base_url('cms/report/neraca-filter') ?>"><i class="fas fa-balance-scale me-2"></i>Neraca</a></li>
-                            <li><a class="dropdown-item" href="<?= base_url('cms/report/bukubesar-filter') ?>"><i class="fas fa-book-open me-2"></i>Buku Besar</a></li>
+                            <li><a class="dropdown-item" href="<?= base_url('cms/report/bukubesar-filter') ?>"><i class="fas fa-book-open me-2"></i>Buku Besar Rekening</a></li>
+                            <li><a class="dropdown-item" href="<?= base_url('cms/report/bukubesar-filterket') ?>"><i class="fas fa-book-open me-2"></i>Buku Besar Keterangan</a></li>
                         </ul>
                     </li>
                 </ul>

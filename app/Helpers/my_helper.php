@@ -748,13 +748,15 @@ if (!function_exists('format_angka')) {
 }
 
 if (!function_exists('formatNegatif')) {
-  function formatNegatif($angka) {
-    $angka = trim($angka);
-    if ($angka < 0) {
-        return '(' . number_format(abs($angka), 2, ',', '.') . ')';
+    function formatNegatif($angka) {
+        $angka = trim($angka);
+        $angka = floatval($angka); // Konversi ke float
+
+        if ($angka < 0) {
+            return '(' . number_format(abs($angka), 2, ',', '.') . ')';
+        }
+        return number_format($angka, 2, ',', '.');
     }
-    return number_format($angka, 2, ',', '.');
-  }
 }
 
 if (!function_exists('getSelDb')) {

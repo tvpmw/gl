@@ -29,5 +29,7 @@ $routes->group('cms', ['filter' => 'auth'], function ($routes) {
 		$routes->get('bukubesar-filter', 'ReportController::filterBukuBesar');
 		$routes->post('bukubesar-filter', 'ReportController::resultBukuBesar');
 		$routes->get('search-rekening', 'ReportController::searchRekening');
+		$routes->get('bukubesar-filterket', 'ReportController::filterBukuBesarKet');
+		$routes->post('bukubesar-filterket', 'ReportController::resultBukuBesarKet');
 	});
 });

@@ -587,4 +587,69 @@ class CoaModel extends Model
             $kdcoa, $tanggal_awal, $tanggal_akhir // transaksi dalam rentang tanggal_awal - tanggal_akhir
         ])->getResultArray();
     }
+
+    public function getJurnalDataByKet($ket, $tahun)
+    {
+        $sql = "
+            WITH transaksi_pertama AS (
+                -- Ambil tanggal transaksi pertama per KDCOA dalam tahun yang dipilih
+                SELECT 
+                    jvdet.\"KDCOA\" AS kdcoa,
+                    MIN(jv.\"TGLJV\")::DATE AS tanggal_awal
+                FROM jvdet
+                JOIN jv ON jv.\"KDJV\" = jvdet.\"KDJV\"
+                WHERE jvdet.\"KET\" ILIKE ? AND jv.\"TH\" = ?
+                GROUP BY jvdet.\"KDCOA\"
+            ),
+            saldo_awal AS (
+                -- Hitung saldo awal sebelum tanggal transaksi pertama di tahun yang dipilih
+                SELECT 
+                    jvdet.\"KDCOA\" AS kdcoa,
+                    COALESCE(SUM(jvdet.\"JVDEBET\"), 0) AS saldo_awal_debet,
+                    COALESCE(SUM(jvdet.\"JVKREDIT\"), 0) AS saldo_awal_kredit
+                FROM jvdet
+                JOIN jv ON jv.\"KDJV\" = jvdet.\"KDJV\"
+                JOIN transaksi_pertama tp ON jvdet.\"KDCOA\" = tp.kdcoa
+                WHERE jv.\"TGLJV\" < tp.tanggal_awal AND jv.\"TH\" < ?
+                GROUP BY jvdet.\"KDCOA\"
+            )
+            SELECT 
+                'Saldo Awal' AS kdjv,
+                tp.kdcoa,
+                'Saldo Awal' AS ket,
+                sa.saldo_awal_debet AS jvdebet,
+                sa.saldo_awal_kredit AS jvkredit,
+                (tp.tanggal_awal - INTERVAL '1 day')::DATE AS tgl,
+                NULL AS th,
+                NULL AS bl
+            FROM transaksi_pertama tp
+            LEFT JOIN saldo_awal sa ON tp.kdcoa = sa.kdcoa
+
+            UNION ALL
+            
+            SELECT 
+                jvdet.\"KDJV\" AS kdjv,
+                jvdet.\"KDCOA\" AS kdcoa,
+                jvdet.\"KET\" AS ket,
+                jvdet.\"JVDEBET\" AS jvdebet,
+                jvdet.\"JVKREDIT\" AS jvkredit,
+                jv.\"TGLJV\"::DATE AS tgl, 
+                jv.\"TH\" AS th, 
+                jv.\"BL\" AS bl 
+            FROM jvdet
+            JOIN jv ON jv.\"KDJV\" = jvdet.\"KDJV\"
+            WHERE jvdet.\"KET\" ILIKE ? AND jv.\"TH\" = ?
+            
+            ORDER BY kdcoa, tgl, kdjv;
+        ";
+
+        $getRows = $this->db->query($sql, ['%' . $ket . '%', $tahun, $tahun, '%' . $ket . '%', $tahun])->getResultArray();
+        $lists = [];
+
+        foreach ($getRows as $value) {
+            $lists[$value['kdcoa']][] = $value;
+        }
+
+        return $lists;
+    }
 }
