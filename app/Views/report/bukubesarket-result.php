@@ -45,10 +45,15 @@
 
                         $totalDebet += $debet;
                         $totalKredit += $kredit;
+                        $id = $row['kdjv'].'|'.$dbs;
+                        $kdjv = $row['kdjv'];
+                        if($row['kdjv'] != 'Saldo Awal'){
+                            $kdjv = '<a href="javascript:void(0)" title="Detail" onclick="detail_data(`'.$id.'`)">'.$row['kdjv'].'</a>';
+                        }
                     ?>
                     <tr>
                         <td><?= format_date($row['tgl']) ?></td>
-                        <td><?= $row['kdjv'] ?></td>
+                        <td><?= $kdjv ?></td>
                         <td><?= $row['ket'] ?></td>
                         <td><?= formatNegatif($debet) ?></td>
                         <td><?= formatNegatif($kredit) ?></td>

@@ -300,6 +300,7 @@ class ReportController extends BaseController
         }
 
         $data['periode'] = getMonths($bl).' '.$th;
+        $data['dbs'] = $db;
         $data['nmpt'] = $nmpt;
         $data['lists'] = $getBB;
         $data['akun'] = $mdl->where('KDCOA',$kdcoa)->first();
@@ -387,6 +388,7 @@ class ReportController extends BaseController
         }
 
         $data['periode'] = format_date($tanggal_awal).' s/d '.format_date($tanggal_akhir);
+        $data['dbs'] = $dbs;
         $data['nmpt'] = $nmpt;
         $data['lists'] = $getBB;
         $data['akun'] = $mdl->where('KDCOA',$rekening_id)->first();
@@ -438,6 +440,7 @@ class ReportController extends BaseController
         }
 
         $data['periode'] = $tahun;
+        $data['dbs'] = $dbs;
         $data['nmpt'] = $nmpt;
         $data['lists'] = $getBB;
         $data['mdl'] = $mdl;

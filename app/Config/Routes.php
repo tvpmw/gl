@@ -18,6 +18,12 @@ $routes->group('cms', ['filter' => 'auth'], function ($routes) {
 		$routes->get('coa', 'DashboardController::coa');
 	});
 
+	$routes->group("jurnal", function ($routes) {
+		$routes->get('/', 'JurnalController::index');
+		$routes->post('get-data', 'JurnalController::getData');
+		$routes->post('detail', 'JurnalController::getDetail');
+	});
+
 	$routes->group("report", function ($routes) {
 		$routes->get('labarugi/(:any)/(:any)/(:any)', 'ReportController::labaRugi/$1/$2/$3');
 		$routes->get('labarugi-filter', 'ReportController::filterLabaRugi');

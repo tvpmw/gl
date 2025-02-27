@@ -521,6 +521,12 @@
                         </a>            
                     </li>
 
+                    <li class="nav-item">
+                        <a class="nav-link <?= str_starts_with(current_url(), base_url('cms/jurnal')) ? 'active' : '' ?>" href="<?= base_url('cms/jurnal') ?>">
+                            <i class="fas fa-file-alt me-2"></i> Jurnal
+                        </a>            
+                    </li>
+
                     <!-- Dropdown Report -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle <?= str_starts_with(current_url(), base_url('cms/report')) ? 'active' : '' ?>" href="#" id="reportDropdown" role="button" data-bs-toggle="dropdown">

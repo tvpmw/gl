@@ -730,7 +730,7 @@ if (!function_exists('format_price')) {
 if (!function_exists('format_price2')) {
   function format_price2($price = NULL) {
     if(!empty($price)){
-      return "Rp ".number_format($price, 0, ',', '.');
+      return "Rp ".number_format($price, 2, ',', '.');
     }else{
       return "Rp0";
     }
@@ -772,7 +772,7 @@ if (!function_exists('getSelDb')) {
 
 
 if ( ! function_exists('tanggal_indo')) {
-  function tanggal_indo($tgl, $cetak_hari = false)
+  function tanggal_indo($tgl, $cetak_hari = false, $pendek= false)
   {
     if($tgl == "0000-00-00" OR $tgl == null){
       return '-';
@@ -788,6 +788,10 @@ if ( ! function_exists('tanggal_indo')) {
       $jam = '';
     }
 
+    if($jam == "00:00:00"){
+      $jam = '';
+    }
+
     $hari = array ( 1 =>    'Senin',
                 'Selasa',
                 'Rabu',
@@ -796,20 +800,36 @@ if ( ! function_exists('tanggal_indo')) {
                 'Sabtu',
                 'Minggu'
             );
-           
-    $bulan = array (1 =>   'Januari',
-                'Februari',
-                'Maret',
-                'April',
-                'Mei',
-                'Juni',
-                'Juli',
-                'Agustus',
-                'September',
-                'Oktober',
-                'November',
-                'Desember'
-            );
+
+    if($pendek){
+      $bulan = array (1 =>   'Jan',
+                  'Feb',
+                  'Mar',
+                  'Apr',
+                  'Mei',
+                  'Jun',
+                  'Jul',
+                  'Agt',
+                  'Sep',
+                  'Okt',
+                  'Nov',
+                  'Des'
+              );
+    }else{
+      $bulan = array (1 =>   'Januari',
+                  'Februari',
+                  'Maret',
+                  'April',
+                  'Mei',
+                  'Juni',
+                  'Juli',
+                  'Agustus',
+                  'September',
+                  'Oktober',
+                  'November',
+                  'Desember'
+              );
+    }
     $split    = explode('-', $tanggal);
     $tgl_indo = $split[2] . ' ' . $bulan[ (int)$split[1] ] . ' ' . $split[0];
    
@@ -873,7 +893,7 @@ if ( ! function_exists('getMonths')) {
           5   => 'Mei',
           6   => 'Jun',
           7   => 'Jul',
-          8   => 'Agu',
+          8   => 'Agt',
           9   => 'Sep',
           10  => 'Okt',
           11  => 'Nov',

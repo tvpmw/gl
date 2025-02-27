@@ -42,10 +42,11 @@
 
                         $totalDebet += $debet;
                         $totalKredit += $kredit;
+                        $id = $row['kdjv'].'|'.$dbs;
                     ?>
                     <tr>
                         <td><?= format_date($row['tgl']) ?></td>
-                        <td><?= $row['kdjv'] ?></td>
+                        <td><?= '<a href="javascript:void(0)" title="Detail" onclick="detail_data(`'.$id.'`)">'.$row['kdjv'].'</a>' ?></td>
                         <td><?= $row['ket'] ?></td>
                         <td><?= formatNegatif($debet) ?></td>
                         <td><?= formatNegatif($kredit) ?></td>

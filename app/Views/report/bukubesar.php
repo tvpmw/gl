@@ -47,10 +47,11 @@
 
                             $totalDebet += $debet;
                             $totalKredit += $kredit;
+                            $id = $row['kdjv'].'|'.$dbs;
                         ?>
                         <tr>
                             <td><?= format_date($row['tgl']) ?></td>
-                            <td><?= $row['kdjv'] ?></td>
+                            <td><?= '<a href="javascript:void(0)" title="Detail" onclick="detail_data(`'.$id.'`)">'.$row['kdjv'].'</a>' ?></td>
                             <td><?= $row['ket'] ?></td>
                             <td><?= formatNegatif($debet) ?></td>
                             <td><?= formatNegatif($kredit) ?></td>
@@ -80,7 +81,41 @@
     </div>
 </div>
 
+<!-- Modal Detail Jurnal -->
+<div class="modal fade" id="modal_detail" tabindex="-1" aria-labelledby="detailJurnalModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white text-white d-flex align-items-center">
+                <h5 class="modal-title" id="detailJurnalModalLabel">Detail Jurnal</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-body p-1" id="content_detail"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
+<script>
+function detail_data(id)
+{
+  $.ajax({
+    url : "<?= base_url('cms/jurnal/detail') ?>",
+    type: "POST",
+    data: {id:id},
+    success: function(data)
+    {
+      $('#content_detail').html(data);
+      $('#modal_detail').modal('show');
+    },
+    error: function (jqXHR, textStatus, errorThrown)
+    {
+      alert('<?=isLang('terjadi_kesalahan')?>');
+    }
+  });
+}
+</script>
 <?= $this->endSection() ?>
