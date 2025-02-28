@@ -7,7 +7,7 @@
 <div class="container mt-4">
     <div class="card shadow-lg">
         <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">Form Filter Laba Rugi</h5>
+            <h5 class="mb-0">Form Laporan Laba Rugi</h5>
         </div>
         <div class="card-body">
             <form id="form-filter" class="mb-3" autocomplete="off">

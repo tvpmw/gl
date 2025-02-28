@@ -53,7 +53,7 @@
 <div class="container mt-4">
     <div class="card shadow-lg">
         <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">Form Laporan Buku Besar Keterangan</h5>
+            <h5 class="mb-0">Form Laporan Perubahan Modal</h5>
         </div>
         <div class="card-body">
             <form id="filterForm" class="mb-3" autocomplete="off">
@@ -68,6 +68,15 @@
                         </select>
                     </div>
 
+                    <div class="col-md-2">
+                        <label for="bulan" class="form-label">Bulan</label>
+                        <select class="form-control" name="bulan" id="bulan">
+                            <?php foreach ($bln as $key => $value): ?>
+                                <option value="<?= $key ?>" <?= ($key == $blnSel) ? "selected" : "" ?>><?= $value ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
                     <!-- Dropdown Tahun -->
                     <div class="col-md-2">
                         <label for="tahun" class="form-label">Tahun</label>
@@ -76,12 +85,6 @@
                                 <option value="<?=$i?>" <?=($i == $thnSkg) ? "selected" : ""?>><?=$i?></option>
                             <?php endfor; ?>
                         </select>
-                    </div>
-
-                    <!-- Input Keterangan -->
-                    <div class="col-md-4">
-                        <label for="keterangan" class="form-label">Keterangan</label>
-                        <input type="text" class="form-control" name="keterangan" id="keterangan" placeholder="Cari keterangan..." required>
                     </div>
 
                     <!-- Tombol Filter & Reset -->
@@ -93,21 +96,6 @@
             </form>
             <hr>
             <div id="resultContainer" class="mt-3"></div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Detail Jurnal -->
-<div class="modal fade" id="modal_detail" tabindex="-1" aria-labelledby="detailJurnalModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white text-white d-flex align-items-center">
-                <h5 class="modal-title" id="detailJurnalModalLabel">Detail Jurnal</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="modal-body p-1" id="content_detail"></div>
-            </div>
         </div>
     </div>
 </div>
@@ -141,7 +129,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const data = Object.fromEntries(formData.entries());
 
         try {
-            const response = await fetch("<?= base_url('cms/report/bukubesar-filterket') ?>", {
+            const response = await fetch("<?= base_url('cms/report/perubahan-modal') ?>", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data)
@@ -169,24 +157,6 @@ document.addEventListener("DOMContentLoaded", function () {
         resultContainer.innerHTML = "";
     });
 });
-
-function detail_data(id)
-{
-  $.ajax({
-    url : "<?= base_url('cms/jurnal/detail') ?>",
-    type: "POST",
-    data: {id:id},
-    success: function(data)
-    {
-      $('#content_detail').html(data);
-      $('#modal_detail').modal('show');
-    },
-    error: function (jqXHR, textStatus, errorThrown)
-    {
-      alert('<?=isLang('terjadi_kesalahan')?>');
-    }
-  });
-}
 
 </script>
 <?= $this->endSection() ?>

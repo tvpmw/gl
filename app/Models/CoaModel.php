@@ -366,7 +366,7 @@ class CoaModel extends Model
         return $this->db->query($sql, $params)->getResultArray();
     }
 
-    public function getLaporanNeraca($tahun, $bulan)
+    public function getLaporanNeraca($tahun, $bulan, $tipe = null)
     {
         $sql = "
             WITH RekeningData AS (
@@ -394,7 +394,7 @@ class CoaModel extends Model
                 LEFT JOIN coadet ON coa.\"KDCOA\" = coadet.\"KDCOA\" 
                     AND coadet.\"TH\" = ? 
                     AND coadet.\"BL\" = ?
-                WHERE subcoa.\"TIPE\" < '4'
+                WHERE " . ($tipe === null ? "subcoa.\"TIPE\" < '4'" : "subcoa.\"TIPE\" = ?") . "
                 GROUP BY coa.\"KDCOA\", coa.\"NMCOA\", coa.\"kdparent\", coa.\"KDSUB\", subcoa.\"NMSUB\", subcoa.\"TIPE\", coa.root
             )
 
@@ -412,7 +412,10 @@ class CoaModel extends Model
             ORDER BY \"kdsub\", \"level\", \"kode_akun\", \"rekening\", \"parent_akun\" NULLS FIRST;
         ";
 
-        return $this->db->query($sql, [$tahun, $bulan])->getResultArray();
+        // Jika $tipe tidak null, tambahkan sebagai parameter query
+        $params = $tipe === null ? [$tahun, $bulan] : [$tahun, $bulan, $tipe];
+
+        return $this->db->query($sql, $params)->getResultArray();
     }
 
     public function getLabaRugiTahunBerjalan($tahun,$bulan)

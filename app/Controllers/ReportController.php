@@ -448,4 +448,120 @@ class ReportController extends BaseController
         // pr($data,1);
         return view('report/bukubesarket-result', $data);
     }
+
+    public function filterPerubahanModal()
+    {
+        $data['dbs'] = getSelDb();
+        $data['thnSkg'] = date('Y');
+        $data['startYear'] = 2009;
+        $data['blnSel'] = date('m');
+        $data['bln'] = getMonths();
+        return view('report/perubahanmodal-filter', $data);
+    }
+
+    public function resultPerubahanModal()
+    {
+        $input = json_decode(file_get_contents('php://input'), true);
+        $db = $input['dbs'] ?? 'sdkom';
+        $bl = $input['bulan'];
+        $th = $input['tahun'];
+        $thSblm = $th-1;
+        $blSblm = 12;
+        $tipe = 3;
+
+        if(empty($th) || empty($bl)){
+            return "Form wajib diisi";
+        }
+
+        // Ambil data berdasarkan pilihan database
+        switch ($db) {
+            case 'ariston':
+                $getNR = $this->coaModel2->getLaporanNeraca($thSblm,$blSblm,$tipe);
+                $getLbt = $this->coaModel2->getLabaRugiTahunBerjalan($th,$bl);
+                $getAkun = $this->subcoaModel2->getSubNeraca();
+                $mdl = $this->coaModel2;
+                $nmpt = 'Ariston';
+                break;
+            case 'wep':
+                $getNR = $this->coaModel3->getLaporanNeraca($thSblm,$blSblm,$tipe);
+                $getLbt = $this->coaModel3->getLabaRugiTahunBerjalan($th,$bl);
+                $getAkun = $this->subcoaModel3->getSubNeraca();
+                $mdl = $this->coaModel3;
+                $nmpt = 'Wahana Eka Pekasa';
+                break;
+            case 'dtf':
+                $getNR = $this->coaModel4->getLaporanNeraca($thSblm,$blSblm,$tipe);
+                $getLbt = $this->coaModel4->getLabaRugiTahunBerjalan($th,$bl);
+                $getAkun = $this->subcoaModel4->getSubNeraca();
+                $mdl = $this->coaModel4;
+                $nmpt = 'DTF';
+                break;
+            default:
+                $getNR = $this->coaModel->getLaporanNeraca($th,$bl,$tipe);
+                $getLbt = $this->coaModel->getLabaRugiTahunBerjalan($th,$bl);
+                $getAkun = $this->subcoaModel->getSubNeraca();
+                $mdl = $this->coaModel;
+                $nmpt = 'PT Sadar Jaya Mandiri';
+        }
+
+        $lists = [];
+        $listsKe3 = [];
+        if (!empty($getNR)) {
+            foreach ($getNR as $value) {
+                $tipe = $value['tipe'];
+                $kdsub = $value['kdsub'];
+                $parent_akun = $value['parent_akun'];
+                $level = $value['level'];
+                $id = $th.'/'.$bl.'/'.$db.'/'.$value['kode_akun'];
+                $kode_akun = $value['kode_akun'];
+                $nama_akun = $value['nama_akun'];
+                $setKet = $kode_akun.' '.$nama_akun;
+
+                if($level == 1){
+                    $lists[] = [
+                        'tipe' => $tipe,
+                        'kdsub' => $kdsub,
+                        'rekening' => $value['rekening'],
+                        'level' => $value['level'],
+                        'kode_akun' => $kode_akun,
+                        'parent_akun' => $value['parent_akun'],
+                        'nama_akun' => $nama_akun,
+                        'nilai' => $value['nilai'],
+                        'ket' => $setKet
+                    ];
+                }
+
+                if($level != 1){
+                    $listsKe3[$parent_akun][] = [
+                        'tipe' => $tipe,
+                        'kdsub' => $kdsub,
+                        'rekening' => $value['rekening'],
+                        'level' => $value['level'],
+                        'kode_akun' => $kode_akun,
+                        'parent_akun' => $value['parent_akun'],
+                        'nama_akun' => $nama_akun,
+                        'nilai' => $value['nilai'],
+                        'ket' => $setKet
+                    ];
+                }
+            }
+        }
+
+        $listModal = [];
+        foreach ($lists as $k => $row) {
+            $total = (isset($listsKe3[$row['kode_akun']]))?array_sum(array_column($listsKe3[$row['kode_akun']],'nilai')):$row['nilai'];
+            $listModal[] = [
+                'akun' => $row['nama_akun'],
+                'total' => $total,
+            ];
+        }
+
+        $data['periode_pilih'] = getMonths($bl).' '.$th;
+        $data['periode_lalu'] = getMonths($blSblm).' '.$thSblm;
+        $data['nmpt'] = $nmpt;
+        $data['lists'] = $listModal;
+        $data['lrtb'] = $getLbt;
+        // pr($data,1);
+        return view('report/perubahanmodal-result', $data);
+    }
 }
