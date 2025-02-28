@@ -143,4 +143,39 @@ class JvModel extends Model
 
         return $jurnal;
     }
+
+    public function getJurnalWithDetailsMonth($bulan, $tahun)
+    {
+        $lastDay = date('t', strtotime("$tahun-$bulan-01"));
+        
+        $builder = $this->db->table('jv AS jv')
+            ->select('jv.KDJV AS kdjv, jv.KETJV AS ketjv, jv.TGLJV AS tgljv, jv.TH AS th, jv.BL AS bl, jv.JVTOT AS jvtot, periode.POSTING AS posting')
+            ->join('periode', 'periode.TH = jv.TH AND periode.BL = jv.BL', 'LEFT')
+            ->where('jv.TGLJV >=', "$tahun-$bulan-01 00:00:00")
+            ->where('jv.TGLJV <=', "$tahun-$bulan-$lastDay 23:59:59")
+            ->orderBy('jv.TGLJV','ASC')
+            ->orderBy('jv.KDJV','ASC')
+            ->get();
+
+        $jurnal = $builder->getResultArray();
+
+        if (!$jurnal) {
+            return null;
+        }
+
+        // Menambahkan rincian jurnal untuk setiap entri dalam hasil query
+        foreach ($jurnal as &$entry) {
+            $rincian = $this->db->table('jvdet')
+                ->select('jvdet.KDJV as kdjv, jvdet.NOU as nou, jvdet.KDCOA as kdcoa, coa.NMCOA as nmcoa, jvdet.JVDEBET as jvdebet, jvdet.JVKREDIT as jvkredit, jvdet.KET as ket')
+                ->join('coa', 'coa.KDCOA = jvdet.KDCOA', 'LEFT')
+                ->where('jvdet.KDJV', $entry['kdjv'])
+                ->orderBy('jvdet.NOU', 'ASC')
+                ->get()
+                ->getResultArray();
+
+            $entry['rincian'] = $rincian;
+        }
+
+        return $jurnal;
+    }
 }

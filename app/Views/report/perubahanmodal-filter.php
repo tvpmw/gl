@@ -116,6 +116,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Tampilkan loading di tombol Filter
         filterButton.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Memproses...`;
         filterButton.disabled = true;
+        resetButton.disabled = true;
 
         // Tampilkan loading di resultContainer
         resultContainer.innerHTML = `
@@ -149,6 +150,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Kembalikan tombol seperti semula
         filterButton.innerHTML = "Filter";
         filterButton.disabled = false;
+        resetButton.disabled = false;
     });
 
     // Tombol Reset

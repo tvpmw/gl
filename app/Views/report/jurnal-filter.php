@@ -53,7 +53,7 @@
 <div class="container mt-4">
     <div class="card shadow-lg">
         <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">Form Laporan Buku Besar Keterangan</h5>
+            <h5 class="mb-0">Form Laporan Jurnal</h5>
         </div>
         <div class="card-body">
             <form id="filterForm" class="mb-3" autocomplete="off">
@@ -68,6 +68,15 @@
                         </select>
                     </div>
 
+                    <div class="col-md-2">
+                        <label for="bulan" class="form-label">Bulan</label>
+                        <select class="form-control" name="bulan" id="bulan">
+                            <?php foreach ($bln as $key => $value): ?>
+                                <option value="<?= $key ?>" <?= ($key == $blnSel) ? "selected" : "" ?>><?= $value ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
                     <!-- Dropdown Tahun -->
                     <div class="col-md-2">
                         <label for="tahun" class="form-label">Tahun</label>
@@ -76,12 +85,6 @@
                                 <option value="<?=$i?>" <?=($i == $thnSkg) ? "selected" : ""?>><?=$i?></option>
                             <?php endfor; ?>
                         </select>
-                    </div>
-
-                    <!-- Input Keterangan -->
-                    <div class="col-md-4">
-                        <label for="keterangan" class="form-label">Keterangan</label>
-                        <input type="text" class="form-control" name="keterangan" id="keterangan" placeholder="Cari keterangan..." required>
                     </div>
 
                     <!-- Tombol Filter & Reset -->
@@ -142,7 +145,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const data = Object.fromEntries(formData.entries());
 
         try {
-            const response = await fetch("<?= base_url('cms/report/bukubesar-filterket') ?>", {
+            const response = await fetch("<?= base_url('cms/report/jurnal-filter') ?>", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data)

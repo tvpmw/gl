@@ -37,6 +37,8 @@ $routes->group('cms', ['filter' => 'auth'], function ($routes) {
 		$routes->get('search-rekening', 'ReportController::searchRekening');
 		$routes->get('bukubesar-filterket', 'ReportController::filterBukuBesarKet');
 		$routes->post('bukubesar-filterket', 'ReportController::resultBukuBesarKet');
+		$routes->get('jurnal-filter', 'ReportController::filterJurnal');
+		$routes->post('jurnal-filter', 'ReportController::resultJurnal');
 		$routes->get('perubahan-modal', 'ReportController::filterPerubahanModal');
 		$routes->post('perubahan-modal', 'ReportController::resultPerubahanModal');
 	});

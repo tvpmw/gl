@@ -6,6 +6,7 @@ use App\Controllers\BaseController;
 use CodeIgniter\HTTP\ResponseInterface;
 use App\Models\CoaModel;
 use App\Models\SubcoaModel;
+use App\Models\JvModel;
 
 class ReportController extends BaseController
 {
@@ -17,6 +18,10 @@ class ReportController extends BaseController
     protected $subcoaModel2;
     protected $subcoaModel3;
     protected $subcoaModel4;
+    protected $JvModel;
+    protected $JvModel2;
+    protected $JvModel3;
+    protected $JvModel4;
 
     public function __construct()
     {
@@ -31,6 +36,11 @@ class ReportController extends BaseController
         $this->subcoaModel2 = new SubcoaModel('crm_ars');
         $this->subcoaModel3 = new SubcoaModel('crm_wep');
         $this->subcoaModel4 = new SubcoaModel('crm_dtf');
+
+        $this->jvMod = new JvModel('default');
+        $this->jvMod2 = new JvModel('crm_ars');
+        $this->jvMod3 = new JvModel('crm_wep');
+        $this->jvMod4 = new JvModel('crm_dtf');
     }
 
     public function index()
@@ -447,6 +457,58 @@ class ReportController extends BaseController
 
         // pr($data,1);
         return view('report/bukubesarket-result', $data);
+    }
+
+    public function filterJurnal()
+    {
+        $data['dbs'] = getSelDb();
+        $data['thnSkg'] = date('Y');
+        $data['startYear'] = 2009;
+        $data['blnSel'] = date('m');
+        $data['bln'] = getMonths();
+        return view('report/jurnal-filter', $data);
+    }
+
+    public function resultJurnal()
+    {
+        $input = json_decode(file_get_contents('php://input'), true);
+        $dbs = $input['dbs'] ?? 'sdkom';
+        $bl = $input['bulan'];
+        $th = $input['tahun'];
+        if(empty($bl) || empty($th)){
+            return "Form wajib diisi";
+        }
+
+        // Ambil data berdasarkan pilihan database
+        switch ($dbs) {
+            case 'ariston':
+                $getBB = $this->jvMod2->getJurnalWithDetailsMonth($bl,$th);
+                $mdl = $this->jvMod2;
+                $nmpt = 'Ariston';
+                break;
+            case 'wep':
+                $getBB = $this->jvMod3->getJurnalWithDetailsMonth($bl,$th);
+                $mdl = $this->jvMod3;
+                $nmpt = 'Wahana Eka Pekasa';
+                break;
+            case 'dtf':
+                $getBB = $this->jvMod4->getJurnalWithDetailsMonth($bl,$th);
+                $mdl = $this->jvMod4;
+                $nmpt = 'DTF';
+                break;
+            default:
+                $getBB = $this->jvMod->getJurnalWithDetailsMonth($bl,$th);
+                $mdl = $this->jvMod;
+                $nmpt = 'PT Sadar Jaya Mandiri';
+        }
+
+        $data['periode'] = $th;
+        $data['dbs'] = $dbs;
+        $data['nmpt'] = $nmpt;
+        $data['lists'] = $getBB;
+
+        // pr($data,1);
+        return view('report/jurnal-result', $data);
     }
 
     public function filterPerubahanModal()

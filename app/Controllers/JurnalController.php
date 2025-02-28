@@ -10,15 +10,6 @@ use App\Models\JvModel;
 
 class JurnalController extends BaseController
 {
-    protected $coaModel;
-    protected $coaModel2;
-    protected $coaModel3;
-    protected $coaModel4;
-    protected $subcoaModel;
-    protected $subcoaModel2;
-    protected $subcoaModel3;
-    protected $subcoaModel4;
-
     protected $JvModel;
     protected $JvModel2;
     protected $JvModel3;
@@ -27,16 +18,6 @@ class JurnalController extends BaseController
     public function __construct()
     {
         helper(['my_helper']);
-
-        $this->coaModel = new CoaModel('default');
-        $this->coaModel2 = new CoaModel('crm_ars');
-        $this->coaModel3 = new CoaModel('crm_wep');
-        $this->coaModel4 = new CoaModel('crm_dtf');
-
-        $this->subcoaModel = new SubcoaModel('default');
-        $this->subcoaModel2 = new SubcoaModel('crm_ars');
-        $this->subcoaModel3 = new SubcoaModel('crm_wep');
-        $this->subcoaModel4 = new SubcoaModel('crm_dtf');
 
         $this->jvMod = new JvModel('default');
         $this->jvMod2 = new JvModel('crm_ars');

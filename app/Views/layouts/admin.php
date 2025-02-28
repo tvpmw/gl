@@ -537,6 +537,7 @@
                             <li><a class="dropdown-item" href="<?= base_url('cms/report/neraca-filter') ?>"><i class="fas fa-balance-scale me-2"></i>Neraca</a></li>
                             <li><a class="dropdown-item" href="<?= base_url('cms/report/bukubesar-filter') ?>"><i class="fas fa-book-open me-2"></i>Buku Besar Rekening</a></li>
                             <li><a class="dropdown-item" href="<?= base_url('cms/report/bukubesar-filterket') ?>"><i class="fas fa-book-open me-2"></i>Buku Besar Keterangan</a></li>
+                            <li><a class="dropdown-item" href="<?= base_url('cms/report/jurnal-filter') ?>"><i class="fas fa-file-alt me-2"></i>Laporan Jurnal</a></li>
                             <li><a class="dropdown-item" href="<?= base_url('cms/report/perubahan-modal') ?>"><i class="fas fa-wallet me-2"></i>Perubahan Modal</a></li>
                         </ul>
                     </li>
