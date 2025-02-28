@@ -86,6 +86,21 @@
     canvas {
         max-height: 300px !important;
     }
+    .card-header {
+        background: var(--primary-color) !important;
+    }
+
+    .btn-primary {
+        background: var(--primary-color) !important;
+    }
+
+    .btn-primary:hover {
+        background: var(--primary-hover) !important;
+    }
+
+    .nav-link.active{
+        background: var(--primary-color) !important;
+    }
 </style>
 <?= $this->endSection() ?>
 

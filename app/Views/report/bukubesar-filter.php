@@ -46,6 +46,18 @@
 		width: auto;
 	}  
 
+    .card-header {
+        background: var(--primary-color) !important;
+    }
+
+    .btn-primary {
+        background: var(--primary-color) !important;
+    }
+
+    .btn-primary:hover {
+        background: var(--primary-hover) !important;
+    }
+
 </style>
 <?= $this->endSection() ?>
 

@@ -1,6 +1,19 @@
 <?= $this->extend('layouts/admin') ?>
 
 <?= $this->section('styles') ?>
+<style>
+    .card-header {
+        background: var(--primary-color) !important;
+    }
+
+    .btn-primary {
+        background: var(--primary-color) !important;
+    }
+
+    .btn-primary:hover {
+        background: var(--primary-hover) !important;
+    }
+</style>
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 <?= $this->endSection() ?>
 

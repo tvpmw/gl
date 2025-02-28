@@ -33,6 +33,18 @@
 	    z-index: 20;
 	}
 
+    .card-header {
+        background: var(--primary-color) !important;
+    }
+
+    .btn-primary {
+        background: var(--primary-color) !important;
+    }
+
+    .btn-primary:hover {
+        background: var(--primary-hover) !important;
+    }
+
 	.dateshow::-webkit-calendar-picker-indicator {
 		background: transparent;
 		bottom: 0;
