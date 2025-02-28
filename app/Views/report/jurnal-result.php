@@ -35,7 +35,7 @@
                 <?php foreach ($jurnal['rincian'] as $index => $rincian): ?>
                     <tr>
                         <?php if ($index === 0): ?>
-                            <td rowspan="<?= $rowspan ?>"><?= date('d-m-Y', strtotime($jurnal['tgljv'])) ?></td>
+                            <td rowspan="<?= $rowspan ?>"><?= format_date(($jurnal['tgljv'])) ?></td>
                             <td rowspan="<?= $rowspan ?>">
                                 <?= $jurnal['kdjv'] ?>
                                 <br>
