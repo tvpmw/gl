@@ -27,9 +27,11 @@ $routes->group('cms', ['filter' => 'auth'], function ($routes) {
 	$routes->group("report", function ($routes) {
 		$routes->get('labarugi/(:any)/(:any)/(:any)', 'ReportController::labaRugi/$1/$2/$3');
 		$routes->get('labarugi-filter', 'ReportController::filterLabaRugi');
+		$routes->get('labarugi-cetak/(:any)/(:any)/(:any)', 'ReportController::labaRugiCetak/$1/$2/$3');
 
 		$routes->get('neraca/(:any)/(:any)/(:any)', 'ReportController::neraca/$1/$2/$3');
 		$routes->get('neraca-filter', 'ReportController::filterNeraca');
+		$routes->get('neraca-cetak/(:any)/(:any)/(:any)', 'ReportController::neracaCetak/$1/$2/$3');
 
 		$routes->get('bukubesar/(:any)/(:any)/(:any)/(:any)', 'ReportController::bukuBesar/$1/$2/$3/$4');
 		$routes->get('bukubesar-filter', 'ReportController::filterBukuBesar');

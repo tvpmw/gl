@@ -434,7 +434,7 @@
         [data-bs-theme="dark"] .nilai,
         [data-bs-theme="dark"] .nilai2 {
             color: var(--text-main);
-            border-right: 1px solid var(--border-dark);
+/*            border-right: 1px solid var(--border-dark);*/
         }
 
         [data-bs-theme="dark"] tr[style*="border"] {
@@ -496,6 +496,17 @@
             text-align: center;
             border-top: 1px solid var(--border-color);
         }
+        .card-header {
+        background: var(--primary-color) !important;
+    }
+
+    .btn-primary {
+        background: var(--primary-color) !important;
+    }
+
+    .btn-primary:hover {
+        background: var(--primary-hover) !important;
+    }
     </style>
 
     <?= $this->renderSection('styles') ?>

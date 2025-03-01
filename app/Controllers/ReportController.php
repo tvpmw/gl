@@ -142,6 +142,7 @@ class ReportController extends BaseController
         $data['blnSel'] = $bl;
         $data['dbs'] = getSelDb();
         $data['dbSel'] = $db;
+        $data['id'] = $id;
         // pr($data,1);
 
         return view('report/labarugi', $data);
@@ -156,6 +157,100 @@ class ReportController extends BaseController
         $data['dbs'] = getSelDb();
         $data['dbSel'] = 'sdkom';
         return view('report/labarugi-filter', $data);
+    }
+
+    public function labaRugiCetak($th=null,$bl=null,$db=null)
+    {
+        if(empty($th) || empty($bl) || empty($db)){
+            return redirect()->to('cms/dashboard');
+        }
+
+        // Ambil data berdasarkan pilihan database
+        switch ($db) {
+            case 'ariston':
+                $getLR = $this->coaModel2->getLaporanRekening($th,$bl);
+                $getAkun = $this->subcoaModel2->getSubLabaRugi();
+                $nmpt = 'Ariston';
+                break;
+            case 'wep':
+                $getLR = $this->coaModel3->getLaporanRekening($th,$bl);
+                $getAkun = $this->subcoaModel3->getSubLabaRugi();
+                $nmpt = 'Wahana Eka Pekasa';
+                break;
+            case 'dtf':
+                $getLR = $this->coaModel4->getLaporanRekening($th,$bl);
+                $getAkun = $this->subcoaModel4->getSubLabaRugi();
+                $nmpt = 'DTF';
+                break;
+            default:
+                $getLR = $this->coaModel->getLaporanRekening($th,$bl);
+                $getAkun = $this->subcoaModel->getSubLabaRugi();
+                $nmpt = 'PT Sadar Jaya Mandiri';
+        }
+
+        $lists = [];
+        $listsKe3 = [];
+        if (!empty($getLR)) {
+            foreach ($getLR as $value) {
+                $tipe = $value['tipe'];
+                $kdsub = $value['kdsub'];
+                $parent_akun = $value['parent_akun'];
+                $level = $value['level'];
+                $id = $th.'/'.$bl.'/'.$db.'/'.$value['kode_akun'];
+                $kode_akun = $value['kode_akun'];
+                $nama_akun = $value['nama_akun'];
+                $setKet = $kode_akun.' '.$nama_akun;
+
+                if($level == 1){
+                    $lists[$tipe][$kdsub][] = [
+                        'tipe' => $tipe,
+                        'kdsub' => $kdsub,
+                        'rekening' => $value['rekening'],
+                        'level' => $value['level'],
+                        'kode_akun' => $kode_akun,
+                        'parent_akun' => $value['parent_akun'],
+                        'nama_akun' => $nama_akun,
+                        'nilai' => $value['nilai'],
+                        'ket' => $setKet,
+                    ];
+                }
+
+                if($level != 1){
+                    $listsKe3[$parent_akun][] = [
+                        'tipe' => $tipe,
+                        'kdsub' => $kdsub,
+                        'rekening' => $value['rekening'],
+                        'level' => $value['level'],
+                        'kode_akun' => $kode_akun,
+                        'parent_akun' => $value['parent_akun'],
+                        'nama_akun' => $nama_akun,
+                        'nilai' => $value['nilai'],
+                        'ket' => $setKet,
+                    ];
+                }
+            }
+        }
+
+        $listAkun = [];
+        foreach($getAkun as $akun){
+            $key = $akun['tipe'];
+            $listAkun[$key][] = $akun;
+        }
+
+        $data['periode'] = getMonths($bl).' '.$th;
+        $data['nmpt'] = $nmpt;
+        $data['akuns'] = $listAkun;
+        $data['lists'] = $lists;
+        $data['listsKe3'] = $listsKe3;
+        $data['startYear'] = 2009;
+        $data['thnSel'] = $th;
+        $data['bln'] = getMonths();
+        $data['blnSel'] = $bl;
+        $data['dbs'] = getSelDb();
+        $data['dbSel'] = $db;
+        // pr($data,1);
+
+        return view('report/labarugi-cetak', $data);
     }
 
     public function neraca($th=null,$bl=null,$db=null)
@@ -264,9 +359,116 @@ class ReportController extends BaseController
         $data['blnSel'] = $bl;
         $data['dbs'] = getSelDb();
         $data['dbSel'] = $db;
+        $data['id'] = $id;
         // pr($data,1);
 
         return view('report/neraca', $data);
+    }
+
+    public function neracaCetak($th=null,$bl=null,$db=null)
+    {
+        if(empty($th) || empty($bl) || empty($db)){
+            return redirect()->to('cms/dashboard/neraca');
+        }
+
+        // Ambil data berdasarkan pilihan database
+        switch ($db) {
+            case 'ariston':
+                $getNR = $this->coaModel2->getLaporanNeraca($th,$bl);
+                $getLbt = $this->coaModel2->getLabaRugiTahunBerjalan($th,$bl);
+                $getAkun = $this->subcoaModel2->getSubNeraca();
+                $mdl = $this->coaModel2;
+                $nmpt = 'Ariston';
+                break;
+            case 'wep':
+                $getNR = $this->coaModel3->getLaporanNeraca($th,$bl);
+                $getLbt = $this->coaModel3->getLabaRugiTahunBerjalan($th,$bl);
+                $getAkun = $this->subcoaModel3->getSubNeraca();
+                $mdl = $this->coaModel3;
+                $nmpt = 'Wahana Eka Pekasa';
+                break;
+            case 'dtf':
+                $getNR = $this->coaModel4->getLaporanNeraca($th,$bl);
+                $getLbt = $this->coaModel4->getLabaRugiTahunBerjalan($th,$bl);
+                $getAkun = $this->subcoaModel4->getSubNeraca();
+                $mdl = $this->coaModel4;
+                $nmpt = 'DTF';
+                break;
+            default:
+                $getNR = $this->coaModel->getLaporanNeraca($th,$bl);
+                $getLbt = $this->coaModel->getLabaRugiTahunBerjalan($th,$bl);
+                $getAkun = $this->subcoaModel->getSubNeraca();
+                $mdl = $this->coaModel;
+                $nmpt = 'PT Sadar Jaya Mandiri';
+        }
+
+        $lists = [];
+        $listsKe3 = [];
+        if (!empty($getNR)) {
+            foreach ($getNR as $value) {
+                $tipe = $value['tipe'];
+                $kdsub = $value['kdsub'];
+                $parent_akun = $value['parent_akun'];
+                $level = $value['level'];
+                $id = $th.'/'.$bl.'/'.$db.'/'.$value['kode_akun'];
+                $kode_akun = $value['kode_akun'];
+                $nama_akun = $value['nama_akun'];
+                $setKet = $kode_akun.' '.$nama_akun;
+
+                if($level == 1){
+                    $lists[$tipe][$kdsub][] = [
+                        'tipe' => $tipe,
+                        'kdsub' => $kdsub,
+                        'rekening' => $value['rekening'],
+                        'level' => $value['level'],
+                        'kode_akun' => $kode_akun,
+                        'parent_akun' => $value['parent_akun'],
+                        'nama_akun' => $nama_akun,
+                        'nilai' => $value['nilai'],
+                        'ket' => $setKet
+                    ];
+                }
+
+                if($level != 1){
+                    $listsKe3[$parent_akun][] = [
+                        'tipe' => $tipe,
+                        'kdsub' => $kdsub,
+                        'rekening' => $value['rekening'],
+                        'level' => $value['level'],
+                        'kode_akun' => $kode_akun,
+                        'parent_akun' => $value['parent_akun'],
+                        'nama_akun' => $nama_akun,
+                        'nilai' => $value['nilai'],
+                        'ket' => $setKet
+                    ];
+                }
+            }
+        }
+
+        $listAkun = [];
+        foreach($getAkun as $akun){
+            $cek = $mdl->where(['KDSUB'=>$akun['kdsub']])->first();
+            if(!empty($cek)){
+                $key = $akun['tipe'];
+                $listAkun[$key][] = $akun;
+            }
+        }
+
+        $data['periode'] = getMonths($bl).' '.$th;
+        $data['nmpt'] = $nmpt;
+        $data['akuns'] = $listAkun;
+        $data['lists'] = $lists;
+        $data['listsKe3'] = $listsKe3;
+        $data['lrtb'] = $getLbt;
+        $data['startYear'] = 2009;
+        $data['thnSel'] = $th;
+        $data['bln'] = getMonths();
+        $data['blnSel'] = $bl;
+        $data['dbs'] = getSelDb();
+        $data['dbSel'] = $db;
+        // pr($data,1);
+
+        return view('report/neraca-cetak', $data);
     }
 
     public function filterNeraca()

@@ -2,12 +2,6 @@
 
 <?= $this->section('styles') ?>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-            margin: 20px;
-            line-height: 1.3;
-        }
         .page {
         	background-color: white;
             width: 297mm;
@@ -69,7 +63,7 @@
             color: black;
         }
 		a {
-		    color: unset !important;
+/*		    color: unset !important;*/
 		    text-decoration: unset !important;
 		    transition: color 0.3s ease-in-out;
 		}
@@ -136,6 +130,7 @@
               <div class="col">
                 <button type="submit" class="btn btn-primary mb-2"><i class="fa fa-eye"></i> <?=isLang('tampilkan')?></button>
                 <button type="button" class="btn btn-light mb-2 btn-back"><i class="fa fa-rotate-left"></i> <?=isLang('dashboard')?></button>
+				<button type="button" class="btn btn-light mb-2" onclick="printPage('<?=$id?>')"><i class="fa fa-print"></i> Cetak</button>
               </div>
             </div>
           </form>
@@ -152,7 +147,7 @@
 	    </div>
 	    <div class="clear"></div>
 
-	    <div class="main-title bold" style="text-align: center; font-size: 14px;">LABA / RUGI</div>
+	    <div class="main-title bold" style="text-align: center; font-size: 18px;">LABA / RUGI</div>
 	    <div class="bold" style="font-size: 12px;">Level : 3</div>
 	    <div class="bold" style="font-size: 12px;">Periode : <?=$periode?></div>
 	    <table>
@@ -500,6 +495,11 @@ $(document).on('click', ".btn-back", function(event) {
   event.preventDefault();
   window.location.replace('<?=base_url('cms/dashboard')?>');
 });
+
+function printPage(id) {
+  let url = '<?=base_url('cms/report/labarugi-cetak')?>/'+id;
+  window.open(url, '_blank').focus();
+}
 </script>
 
 <?= $this->endSection() ?>
