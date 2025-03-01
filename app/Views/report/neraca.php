@@ -7,6 +7,7 @@
             width: 297mm;
             margin: 0 auto;
             padding: 20px;
+            font-size: 13px;
         }
         .header {
             margin-bottom: 15px;
