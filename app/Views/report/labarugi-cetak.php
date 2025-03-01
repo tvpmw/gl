@@ -59,32 +59,54 @@
         @media print {
             body {
                 margin: 0;
+            }            
+            thead {
+                display: table-header-group;
             }
-            .page {
-                page-break-after: always;
+            
+            .page-header {
+                display: table-header-group;
+            }
+            
+            .page-header-content {
+                display: table-row;
+            }
+            
+            .page-header-cell {
+                display: table-cell;
+                padding: 0 0 20px 0;
             }
         }
     </style>
 </head>
 <body>
     <div class="page">
-        <div class="header">
-            <div class="bold" style="float: left; font-size: 12px;"><?=$nmpt?></div>
-            <div class="header-right">
-                Tgl : <?=format_date(date('Y-m-d'))?><br>
-            </div>
-        </div>
-        <div class="clear"></div>
-
-        <div class="main-title bold" style="text-align: center; font-size: 18px;">LABA / RUGI</div>
-        <div class="bold" style="font-size: 12px;">Level : 3</div>
-        <div class="bold" style="font-size: 12px;">Periode : <?=$periode?></div>
         <table>
-            <tr class="table-header">
-                <td style="text-align: center; border-right: 1px solid black;">R E K E N I N G</td>          
-                <td style="text-align: right; border-left: 1px solid black;">N I&nbsp;</td>
-                <td style="text-align: left;">L A I</td>
-            </tr>
+            <!-- Header yang akan berulang -->
+            <thead class="page-header">
+                <tr class="page-header-content">
+                    <td colspan="3" class="page-header-cell">
+                        <div class="header">
+                            <div class="bold" style="float: left; font-size: 12px;"><?=$nmpt?></div>
+                            <div class="header-right">
+                                Tgl : <?=format_date(date('Y-m-d'))?><br>
+                            </div>
+                        </div>
+                        <div class="clear"></div>
+
+                        <div class="main-title bold" style="text-align: center; font-size: 18px;">LABA / RUGI</div>
+                        <div class="bold" style="font-size: 12px;">Level : 3</div>
+                        <div class="bold" style="font-size: 12px;">Periode : <?=$periode?></div>
+                    </td>
+                </tr>
+                <!-- Table header -->
+                <tr class="table-header">
+                    <td style="text-align: center; border-right: 1px solid black;">R E K E N I N G</td>          
+                    <td colspan="2" style="text-align: center; border-left: 1px solid black;">N I L A I</td>                    
+                </tr>
+            </thead>
+            
+            <tbody>
             <?php
             $totalPend = 0;
             foreach ($akuns[4] as $akun) {
@@ -397,6 +419,7 @@
                 <td class="nilai1 bold"><?= formatNegatif($lr) ?></td>
             </tr>
 
+            </tbody>
         </table>
     </div>
 </body>
