@@ -530,7 +530,7 @@ class ReportController extends BaseController
     public function searchRekening()
     {
         $search = $this->request->getGet('search');
-        $db = $this->request->getGet('db');
+        $db = $this->request->getGet('dbs');
 
         // Ambil data berdasarkan pilihan database
         switch ($db) {
