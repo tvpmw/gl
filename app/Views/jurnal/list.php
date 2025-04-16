@@ -217,6 +217,8 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <!-- Tambahkan CDN SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
         $('#btnAddJurnal').on('click', function () {
@@ -288,7 +290,11 @@
             },
             error: function (jqXHR, textStatus, errorThrown)
             {
-              alert('<?=isLang('terjadi_kesalahan')?>');
+              Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: '<?=isLang('terjadi_kesalahan')?>'
+              });
             }
           });
         }
@@ -336,7 +342,11 @@
                     callback(data);
                 },
                 error: function () {
-                    alert("Error fetching akun data.");
+                    Swal.fire({
+                      icon: 'error',
+                      title: 'Oops...',
+                      text: 'Error fetching akun data.'
+                    });
                 }
             });
         }
@@ -523,7 +533,11 @@
                 e.preventDefault();
 
                 if ($("#balanceStatus").text() !== "🟢 Balance") {
-                    alert("⚠️ Total Debit dan Kredit harus balance sebelum disimpan!");
+                    Swal.fire({
+                      icon: 'warning',
+                      title: 'Tidak Balance',
+                      text: '⚠️ Total Debit dan Kredit harus balance sebelum disimpan!'
+                    });
                     return;
                 }
 
@@ -540,7 +554,11 @@
                 });
 
                 if (totalDebit === 0 || totalKredit === 0) {
-                    alert("⚠️ Total Debit dan Kredit tidak boleh 0!");
+                    Swal.fire({
+                      icon: 'warning',
+                      title: 'Total 0',
+                      text: '⚠️ Total Debit dan Kredit tidak boleh 0!'
+                    });
                     return;
                 }
 
@@ -557,7 +575,10 @@
                     data: formData,
                     success: function (response) {
                         if(response.status == true){
-                            alert("✅ Jurnal berhasil disimpan!");
+                            Swal.fire({
+                              icon: 'success',
+                              title: 'Jurnal berhasil disimpan!'                              
+                            });
                             $("#jurnalForm")[0].reset();
                             $("#jurnalBody").html("");
 
@@ -569,11 +590,18 @@
                             // Refresh DataTable
                             $("#jurnalTable").DataTable().ajax.reload(null, false); // false = tetap di halaman sekarang
                         }else{
-                            alert("❌ Jurnal gagal disimpan!");
+                            Swal.fire({
+                              icon: 'error',
+                              title: 'Jurnal gagal disimpan!'                              
+                            });
                         }
                     },
                     error: function () {
-                        alert("❌ Terjadi kesalahan, coba lagi.");
+                        Swal.fire({
+                          icon: 'error',
+                          title: 'Oops...',
+                          text: '❌ Terjadi kesalahan, coba lagi.'
+                        });
                     }
                 });
             });
@@ -600,7 +628,10 @@
                         $("#kodeJurnalInput").val(response.kode);
                     },
                     error: function () {
-                        alert("❌ Gagal mengambil kode jurnal.");
+                        Swal.fire({
+                          icon: 'error',
+                          title: 'Gagal mengambil kode jurnal'                          
+                        });
                     }
                 });
 
@@ -679,36 +710,61 @@
                         });
 
                     } else {
-                        alert("❌ Gagal ambil data.");
+                        Swal.fire({
+                          icon: 'error',
+                          title: 'Gagal ambil data'                          
+                        });
                         isEditing = false;
                     }
                 },
                 error: function () {
-                    alert("❌ Terjadi kesalahan, coba lagi.");
+                    Swal.fire({
+                      icon: 'error',
+                      title: 'Oops...',
+                      text: '❌ Terjadi kesalahan, coba lagi.'
+                    });
                     isEditing = false;
                 }
             });
         }
 
         function delete_data(id) {
-            if (!confirm("⚠️ Yakin ingin menghapus jurnal ini?")) return;
-
-            $.ajax({
-                url: "<?= base_url('cms/jurnal/delete') ?>",
-                type: "POST",
-                data: { id: id },
-                dataType: "json",
-                success: function (res) {
+            Swal.fire({
+              title: 'Yakin ingin menghapus jurnal ini?',
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonText: 'Ya, hapus!',
+              cancelButtonText: 'Batal'
+            }).then((result) => {
+              if (result.isConfirmed) {
+                $.ajax({
+                  url: "<?= base_url('cms/jurnal/delete') ?>",
+                  type: "POST",
+                  data: { id: id },
+                  dataType: "json",
+                  success: function (res) {
                     if (res.status === true) {
-                        alert("✅ Jurnal berhasil dihapus.");
-                        $("#jurnalTable").DataTable().ajax.reload(null, false);
+                      Swal.fire({
+                        icon: 'success',
+                        title: 'Jurnal berhasil dihapus'                        
+                      });
+                      $("#jurnalTable").DataTable().ajax.reload(null, false);
                     } else {
-                        alert("❌ Gagal menghapus jurnal.");
+                      Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal menghapus jurnal'                        
+                      });
                     }
-                },
-                error: function () {
-                    alert("❌ Terjadi kesalahan saat menghapus jurnal.");
-                }
+                  },
+                  error: function () {
+                    Swal.fire({
+                      icon: 'error',
+                      title: 'Oops...',
+                      text: '❌ Terjadi kesalahan saat menghapus jurnal.'
+                    });
+                  }
+                });
+              }
             });
         }
     </script>
