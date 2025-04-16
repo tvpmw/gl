@@ -399,6 +399,16 @@
 
         // Tambah baris baru
         $("#addRow").click(function () {
+            // Cek database sudah dipilih atau belum
+            if (!$("#databaseSelect").val()) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Pilih Database',
+                    text: 'Silakan pilih database terlebih dahulu sebelum menambah baris jurnal.'
+                });
+                return;
+            }
+
             let totalDebit = 0, totalKredit = 0;
 
             $(".debit").each(function () {
