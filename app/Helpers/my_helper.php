@@ -858,8 +858,8 @@ if ( ! function_exists('formatTitle')) {
   }
 }
 
-if ( ! function_exists('getMonths')) {
-  function getMonths($id = NULL) {
+if ( ! function_exists('getMonths_old')) {
+  function getMonths_old($id = NULL) {
     $months = array(
         1   => 'Januari',
         2   => 'Februari',
@@ -922,6 +922,40 @@ if ( ! function_exists('getMonths')) {
     }
   }
 }
+
+if ( ! function_exists('generateKodeJurnal')) {
+  function generateKodeJurnal($db)
+  {
+      // Ambil bulan singkat dari helper (misalnya 'Mar') dan ubah ke kapital semua
+      $bulan = strtoupper(getMonths(date('n'), true)); // Misalnya: MAR
+
+      // Ambil 2 digit tahun
+      $tahun = date('y');
+
+      // Gabung jadi prefix
+      $prefix = $bulan . $tahun;
+
+      // Query PostgreSQL: ambil angka terakhir dari KDJV yang diawali dengan prefix
+      $query = $db->query("
+          SELECT MAX(RIGHT(\"KDJV\", 4)) AS max_kode 
+          FROM jv 
+          WHERE \"KDJV\" LIKE '{$prefix}%'
+      ");
+
+      $row = $query->getRow();
+      $lastNumber = $row && $row->max_kode ? (int)$row->max_kode : 0;
+      $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+
+      return $prefix . '-' . $newNumber;
+  }
+}
+
+if ( ! function_exists('clearNumber')) {
+  function clearNumber($num) {
+      return (float) str_replace([',', '.'], '', $num);
+  }
+}
+
 
 if ( ! function_exists('diff_date')) {
   function diff_date($tgl1='date("Y-m-d")',$tgl2='date("Y-m-d")') {

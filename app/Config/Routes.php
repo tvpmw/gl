@@ -22,6 +22,11 @@ $routes->group('cms', ['filter' => 'auth'], function ($routes) {
 		$routes->get('/', 'JurnalController::index');
 		$routes->post('get-data', 'JurnalController::getData');
 		$routes->post('detail', 'JurnalController::getDetail');
+		$routes->get('get-akun', 'JurnalController::getAkun');
+		$routes->post('get-kode', 'JurnalController::getKodeJurnal');
+		$routes->post('save', 'JurnalController::save');
+		$routes->get('edit', 'JurnalController::edit');
+		$routes->post('delete', 'JurnalController::delete');
 	});
 
 	$routes->group("report", function ($routes) {

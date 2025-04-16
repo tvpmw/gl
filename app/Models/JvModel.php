@@ -122,6 +122,7 @@ class JvModel extends Model
             ->select('jv.KDJV AS kdjv, jv.KETJV AS ketjv, jv.TGLJV AS tgljv, jv.TH AS th, jv.BL AS bl, jv.JVTOT AS jvtot, periode.POSTING AS posting')
             ->join('periode', 'periode.TH = jv.TH AND periode.BL = jv.BL', 'LEFT')
             ->where('jv.KDJV', $kdjv)
+            ->orderBy('jv.TGLJV','DESC')
             ->get();
 
         $jurnal = $builder->getRowArray();

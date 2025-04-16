@@ -655,4 +655,12 @@ class CoaModel extends Model
 
         return $lists;
     }
+
+    public function getAkun()
+    {
+        return $this->select('KDCOA as kode_akun,NMCOA as nama_akun')
+                    ->where('STAT', 1)
+                    ->orderBy('KDCOA', 'ASC')
+                    ->findAll();
+    }
 }
