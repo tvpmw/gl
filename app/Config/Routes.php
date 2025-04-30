@@ -10,12 +10,14 @@ $routes->get('login-sso', 'Home::loginSSO');
 $routes->get('login/with-sso', 'Home::loginWithSSO');
 $routes->get('logout', 'Home::logout');
 
-$routes->group('cms', ['filter' => 'auth'], function ($routes) {
+$routes->group('cms', ['filter' => 'auth'], function ($routes) {	
+
 	$routes->group("dashboard", function ($routes) {
 		$routes->get('/', 'DashboardController::index');
 		$routes->post('get-data', 'DashboardController::getData');
 		$routes->get('neraca', 'DashboardController::neraca');
 		$routes->get('coa', 'DashboardController::coa');
+		$routes->get('generate', 'FakturExcelGenerator::generate');
 	});
 
 	$routes->group("jurnal", function ($routes) {
