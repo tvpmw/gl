@@ -7,7 +7,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class FakturExcelGenerator extends Controller
 {
-    public function generate()
+    public function generate_excel()
     {
         try {
             // Load template first
@@ -100,32 +100,5 @@ class FakturExcelGenerator extends Controller
         }
 
         exit();
-    }
-
-    // Function untuk membuat worksheet DetailFaktur
-    private function generate_detail_faktur($spreadsheet)
-    {
-        $detailSheet = $spreadsheet->createSheet();
-        $detailSheet->setTitle('DetailFaktur');
-
-        // Header sesuai contoh pada gambar
-        $headers = [
-            'Baris', 'Barang/Jasa', 'Kode Barang Jasa', 'Nama Barang/Jasa', 'Nama Satuan Ukur', 'Harga Satuan', 'Jumlah Barang Jasa', 'Total Diskon', 'DPP', 'DPP Nilai Lain', 'Tarif PPN', 'PPN', 'Tarif PPnBM', 'PPnBM'
-        ];
-        $detailSheet->fromArray($headers, null, 'A1');
-
-        // Contoh data dummy, bisa diisi dari database atau input
-        $dataDetail = [
-            [1, 'A', '848180', 'SELANG AC FLEXIBLE HOSE 1/2"', 'UM.0018', 18436.7, 72, 0, 383727.6, 383727.6, 12, 46047.31, 0, 0],
-            [2, 'A', '000000', 'SEAL TAPE/ONDA 1/2" 20M (5101)"', 'UM.0018', 3173.05, 24, 0, 76153.2, 76153.2, 12, 9138.38, 0, 0],
-            // Tambahkan data lain sesuai kebutuhan
-            ['END', '', '', '', '', '', '', '', '', '', '', '', '', '']
-        ];
-
-        $row = 2;
-        foreach ($dataDetail as $detail) {
-            $detailSheet->fromArray($detail, null, 'A'.$row);
-            $row++;
-        }
     }
 }

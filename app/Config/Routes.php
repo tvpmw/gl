@@ -17,7 +17,7 @@ $routes->group('cms', ['filter' => 'auth'], function ($routes) {
 		$routes->post('get-data', 'DashboardController::getData');
 		$routes->get('neraca', 'DashboardController::neraca');
 		$routes->get('coa', 'DashboardController::coa');
-		$routes->get('generate', 'FakturExcelGenerator::generate');
+		$routes->get('generate', 'FakturExcelGenerator::generate_excel');
 	});
 
 	$routes->group("jurnal", function ($routes) {
