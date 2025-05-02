@@ -13,44 +13,23 @@
                 </div>
             <?php endif; ?>
 
-            <form action="<?= base_url('cms/faktur/generate') ?>" method="post">
+            <form id="form-filter">
                 <div class="row mb-3">
-                    <!-- Bulan -->
                     <div class="col-md-3">
-                        <label for="bulan" class="form-label">Bulan</label>
-                        <select class="form-select" name="bulan" id="bulan" required>
-                            <option value="">Pilih Bulan</option>
-                            <?php 
-                            $bulan_array = [
-                                1 => 'Januari', 2 => 'Februari', 3 => 'Maret',
-                                4 => 'April', 5 => 'Mei', 6 => 'Juni',
-                                7 => 'Juli', 8 => 'Agustus', 9 => 'September',
-                                10 => 'Oktober', 11 => 'November', 12 => 'Desember'
-                            ];
-                            foreach ($bulan_array as $value => $label) : ?>
-                                <option value="<?= $value ?>"><?= $label ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                        <label for="startDate" class="form-label">Tanggal Awal</label>
+                        <input type="date" class="form-control" name="startDate" id="startDate" value="<?=date('Y-m-d')?>" required>
                     </div>
 
-                    <!-- Tahun -->
                     <div class="col-md-3">
-                        <label for="tahun" class="form-label">Tahun</label>
-                        <select class="form-select" name="tahun" id="tahun" required>
-                            <option value="">Pilih Tahun</option>
-                            <?php 
-                            $tahun_sekarang = date('Y');
-                            for ($tahun = $tahun_sekarang; $tahun >= $tahun_sekarang - 5; $tahun--) : ?>
-                                <option value="<?= $tahun ?>"><?= $tahun ?></option>
-                            <?php endfor; ?>
-                        </select>
+                        <label for="endDate" class="form-label">Tanggal Akhir</label>
+                        <input type="date" class="form-control" name="endDate" id="endDate" value="<?=date('Y-m-d')?>" required>
                     </div>
 
                     <!-- Sales Type -->
                     <div class="col-md-3">
                         <label for="sales_type" class="form-label">Tipe Sales</label>
                         <select class="form-select" name="sales_type" id="sales_type" required>
-                            <option value="">Pilih Tipe Sales</option>
+                            <!-- <option value=""  hidden selected>Pilih Tipe Sales</option> -->
                             <option value="DISTRI">DISTRI</option>
                             <option value="ONLINE">ONLINE</option>
                         </select>
@@ -60,18 +39,17 @@
                     <div class="col-md-3">
                         <label for="sumber_data" class="form-label">Sumber Data</label>
                         <select class="form-select" name="sumber_data" id="sumber_data" required>
-                            <option value="">Pilih Sumber Data</option>
-                            <option value="SDKOM">SDKOM</option>
-                            <option value="ARISTON">ARISTON</option>
-                            <option value="WEP">WEP</option>
-                            <option value="DTF">DTF</option>
+                            <!-- <option value="" hidden selected>Pilih Sumber Data</option> -->
+                            <?php foreach ($dbs as $row): ?>
+                                <option value="<?= $row ?>"><?= $row ?></option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                 </div>
 
                 <div class="text-end">
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-file me-2"></i>Generate Data
+                        <i class="fas fa-file me-2"></i>Filter Data
                     </button>
                 </div>
             </form>
@@ -79,13 +57,12 @@
     </div>
 
     <!-- Table Card -->
-    <?php if(isset($bulan) && isset($tahun) && isset($sales_type)): ?>
-    <div class="card mb-4">
+    <div class="card mb-4" id="result-table" style=" display: none;">
         <div class="card-header">
             <div class="d-flex justify-content-between align-items-center text-white">
                 <div>
                     <i class="fas fa-table me-1"></i>
-                    Data Transaksi: <?= $bulan_array[$bulan] ?? '' ?> <?= $tahun ?> - <?= $sales_type ?>
+                    Data Transaksi
                 </div>
             </div>
         </div>
@@ -94,19 +71,13 @@
                 <table id="dataTrx" class="table table-striped table-bordered">
                     <thead>
                         <tr>
-                            <th>
-                                <div class="form-check d-flex justify-content-center">
-                                    <input class="form-check-input" type="checkbox" id="checkAll">
-                                </div>
-                            </th>
                             <th>No</th>
                             <th>Kode Trx</th>
                             <th>Tanggal</th>
                             <th>Grand Total</th>
                             <th>Kode Customer</th>
                             <th>Nama Customer</th>
-                            <th>Kode Sales</th>
-                            <th>Nama Sales</th>
+                            <th>NPWP</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -116,82 +87,83 @@
             </div>
         </div>
     </div>
-    <?php endif; ?>
 </div>
 
 <?= $this->section('scripts') ?>
 <script>
+    const startDate = document.getElementById("startDate");
+    const endDate = document.getElementById("endDate");
+
+    startDate.addEventListener("click", function () {
+        if (this.showPicker) {
+            this.showPicker();
+        } else {
+            this.focus();
+        }
+    });
+
+    endDate.addEventListener("click", function () {
+        if (this.showPicker) {
+            this.showPicker();
+        } else {
+            this.focus();
+        }
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const startDate = document.getElementById("startDate");
+        const endDate = document.getElementById("endDate");
+        const today = new Date().toISOString().split("T")[0];
+        startDate.max = today;
+        startDate.value = today; // Set nilai default ke hari ini
+        endDate.max = today;
+        endDate.value = today; // Set nilai default ke hari ini
+    });
+
 $(document).ready(function() {
-    <?php if(isset($bulan) && isset($tahun) && isset($sales_type)): ?>
-    var table = $('#dataTrx').DataTable({
-        "responsive": true,
+    $("#form-filter").submit(function (e) {
+        e.preventDefault();
+        $('#result-table').show();
+        loadTable();
+    });
+});
+
+function loadTable() {
+    $('#dataTrx').DataTable({
+        "destroy": true,
         "processing": true,
-        "language": {
-            "processing": "Memproses...",
-            "lengthMenu": "Tampilkan _MENU_ data per halaman",
-            "zeroRecords": "Data tidak ditemukan",
-            "info": "Menampilkan halaman _PAGE_ dari _PAGES_",
-            "infoEmpty": "Tidak ada data yang tersedia",
-            "infoFiltered": "(difilter dari _MAX_ total data)",
-            "search": "Cari:",
-            "paginate": {
-                "first": "Pertama",
-                "last": "Terakhir",
-                "next": "Selanjutnya",
-                "previous": "Sebelumnya"
+        "serverSide": true,
+        "aaSorting": [],
+        "ajax": {
+            "url": "<?= base_url('cms/faktur/get-data') ?>",
+            "type": "POST",
+            "data": function (d) {
+                d.startDate = $('#startDate').val();
+                d.endDate = $('#endDate').val();
+                d.sales_type = $('#sales_type').val();
+                d.sumber_data = $('#sumber_data').val();
+            },
+            "dataSrc": function (json) {
+                return json.data;
             }
         },
-        "columns": [
-            { 
-                "data": null,
-                "orderable": false,
-                "searchable": false,
-                "className": "text-center",
-                "render": function(data, type, row, meta) {
-                    return '<div class="form-check">' +
-                           '<input class="form-check-input row-checkbox" type="checkbox" value="" id="check_' + meta.row + '">' +
-                           '</div>';
-                }
-            },
-            { 
-                "data": null,
-                "searchable": false,
-                "className": "text-center",
-                "render": function(data, type, row, meta) {
-                    return meta.row + meta.settings._iDisplayStart + 1;
-                }
-            },
-            { "data": "kode_trx" },
-            { "data": "tanggal" },
-            { "data": "grand_total" },
-            { "data": "kode_customer" },
-            { "data": "nama_customer" },
-            { "data": "kode_sales" },
-            { "data": "nama_sales" },
-            { 
-                "data": null,
-                "orderable": false,
-                "searchable": false,
-                "render": function(data, type, row) {
-                    return '<button class="btn btn-success btn-sm excel-btn" data-id="'+ row.kode_trx +'"><i class="fas fa-file-excel"></i> Generate Excel</button>';
-                }
-            }
+        "columnDefs": [
+          { 
+            "targets": [ 0, -1 ], 
+            "orderable": false, 
+          },
+          {
+            "targets": [0, -1],
+            "className": 'text-center'
+          },
+          {
+            "targets": [3],
+            "className": 'text-end'
+          },
         ],
-        "order": [[ 1, "asc" ]]
     });
+}
 
-    // Handle Check All checkbox
-    $('#checkAll').on('change', function() {
-        $('.row-checkbox').prop('checked', $(this).prop('checked'));
-    });
-
-    // Handle individual checkbox change
-    $('#dataTrx tbody').on('change', '.row-checkbox', function() {
-        var allChecked = $('.row-checkbox:checked').length === $('.row-checkbox').length;
-        $('#checkAll').prop('checked', allChecked);
-    });
-    <?php endif; ?>
-});
 </script>
 <?= $this->endSection() ?>
 

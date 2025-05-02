@@ -5,18 +5,112 @@ namespace App\Controllers;
 use CodeIgniter\Controller;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use App\Models\MstrModel;
 
 class FakturController extends Controller
 {
+    protected $mstrModel;
+    protected $mstrModel2;
+    protected $mstrModel3;
+    protected $mstrModel4;
 
     public function __construct()
     {
         helper(['my_helper']);
+
+        $this->mstrModel = new MstrModel('default');
+        $this->mstrModel2 = new MstrModel('crm_ars');        
+        $this->mstrModel3 = new MstrModel('crm_wep');
+        $this->mstrModel4 = new MstrModel('crm_dtf');
     }
 
     public function index()
     {
-        return view('faktur/form');
+        $data['dbs'] = getSelDb();
+        return view('faktur/form',$data);
+    }
+
+    public function getData()
+    {
+        $request = service('request');
+
+        $draw = $request->getPost('draw');
+        $start = $request->getPost('start');
+        $length = $request->getPost('length');
+        $search = $request->getPost('search')['value'];
+
+        // Sorting
+        $orderColumnIndex = $request->getPost('order')[0]['column'] ?? 0;
+        $orderDir = $request->getPost('order')[0]['dir'] ?? 'asc';
+
+        // Filter dari frontend
+        $startDate = $request->getPost('startDate');
+        $endDate = $request->getPost('endDate');
+        $sales_type = $request->getPost('sales_type');
+        $dbs = $request->getPost('sumber_data');
+
+        if(empty($startDate)){
+            $startDate = date('Y-m-d');
+        }
+
+        if(empty($endDate)){
+            $endDate = $startDate;
+        }
+
+        if($startDate > $endDate){
+            $endDate = $startDate;
+        }
+
+        // Validasi database yang dipilih
+        switch ($dbs) {
+            case 'ariston':
+                $mdl = $this->mstrModel2;
+                $prefix = 'A';
+                break;
+            case 'wep':
+                $mdl = $this->mstrModel3;
+                $prefix = 'W';
+                break;
+            case 'dtf':
+                $mdl = $this->mstrModel4;
+                $prefix = 'B';
+                break;
+            default:
+                $mdl = $this->mstrModel;
+                $prefix = 'K';
+        }
+
+        // Query Data dengan filter
+        $totalRecords = $mdl->countAll();
+        $totalRecordsFiltered = $mdl->countFilter($search, $startDate, $endDate, $sales_type, $prefix);
+        $data = $mdl->getData($start, $length, $search, $orderColumnIndex, $orderDir, $startDate, $endDate, $sales_type, $prefix);
+
+        $formattedData = [];
+        $no = $start+1;
+        $tampil = true;
+        foreach ($data as $row) {
+            $aksiTable = '';
+            $lists = [];
+            $lists[]  = $no++;
+            $lists[]  = $row->kdtr;
+            $lists[]  = format_date($row->tgl,'m/d/Y');
+            $lists[]  = format_price($row->gtot);
+            $lists[]  = $row->kdcust;
+            $lists[]  = $row->nmcust;
+            $lists[]  = $row->npwp;
+            $lists[]  = $aksiTable;
+
+            $formattedData[] = $lists;
+        }
+
+        $response = [
+            "draw" => intval($draw),
+            "recordsTotal" => $totalRecords,
+            "recordsFiltered" => $totalRecordsFiltered,
+            "data" => $formattedData,
+        ];
+
+        return $this->response->setJSON($response);
     }
 
     public function generate()
