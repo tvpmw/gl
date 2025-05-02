@@ -10,7 +10,7 @@ $routes->get('login-sso', 'Home::loginSSO');
 $routes->get('login/with-sso', 'Home::loginWithSSO');
 $routes->get('logout', 'Home::logout');
 
-$routes->group('cms', ['filter' => 'auth'], function ($routes) {	
+$routes->group('cms', ['filter' => 'auth'], function ($routes) {    
 
 	$routes->group("dashboard", function ($routes) {
 		$routes->get('/', 'DashboardController::index');
@@ -50,5 +50,10 @@ $routes->group('cms', ['filter' => 'auth'], function ($routes) {
 		$routes->post('jurnal-filter', 'ReportController::resultJurnal');
 		$routes->get('perubahan-modal', 'ReportController::filterPerubahanModal');
 		$routes->post('perubahan-modal', 'ReportController::resultPerubahanModal');
+	});
+
+	$routes->group("faktur", function ($routes) {
+		$routes->get('/', 'FakturController::index');
+		$routes->post('generate', 'FakturController::generate');
 	});
 });
