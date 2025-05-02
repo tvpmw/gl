@@ -10,6 +10,11 @@ $routes->get('login-sso', 'Home::loginSSO');
 $routes->get('login/with-sso', 'Home::loginWithSSO');
 $routes->get('logout', 'Home::logout');
 
+$routes->group("api", function ($routes) {
+	$routes->get('npwp/check', 'NpwpController::apiCheckSingle');
+	$routes->get('npwp/check-bulk', 'NpwpController::apiCheckBulk');
+});
+
 $routes->group('cms', ['filter' => 'auth'], function ($routes) {    
 
 	$routes->group("dashboard", function ($routes) {
@@ -51,6 +56,13 @@ $routes->group('cms', ['filter' => 'auth'], function ($routes) {
 		$routes->get('perubahan-modal', 'ReportController::filterPerubahanModal');
 		$routes->post('perubahan-modal', 'ReportController::resultPerubahanModal');
 	});
+
+	$routes->group("npwp", function ($routes) {
+		$routes->get('/', 'NpwpController::index');
+		$routes->post('check-single', 'NpwpController::checkSingle');
+		$routes->post('check-bulk', 'NpwpController::checkBulk');
+		$routes->post('check-nitku', 'NpwpController::checkNitku');		
+	});	
 
 	$routes->group("faktur", function ($routes) {
 		$routes->get('/', 'FakturController::index');
