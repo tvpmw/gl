@@ -16,7 +16,7 @@
             <form action="<?= base_url('cms/faktur/generate') ?>" method="post">
                 <div class="row mb-3">
                     <!-- Bulan -->
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label for="bulan" class="form-label">Bulan</label>
                         <select class="form-select" name="bulan" id="bulan" required>
                             <option value="">Pilih Bulan</option>
@@ -34,7 +34,7 @@
                     </div>
 
                     <!-- Tahun -->
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label for="tahun" class="form-label">Tahun</label>
                         <select class="form-select" name="tahun" id="tahun" required>
                             <option value="">Pilih Tahun</option>
@@ -47,12 +47,24 @@
                     </div>
 
                     <!-- Sales Type -->
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label for="sales_type" class="form-label">Tipe Sales</label>
                         <select class="form-select" name="sales_type" id="sales_type" required>
                             <option value="">Pilih Tipe Sales</option>
                             <option value="DISTRI">DISTRI</option>
                             <option value="ONLINE">ONLINE</option>
+                        </select>
+                    </div>
+
+                    <!-- Sumber Data -->
+                    <div class="col-md-3">
+                        <label for="sumber_data" class="form-label">Sumber Data</label>
+                        <select class="form-select" name="sumber_data" id="sumber_data" required>
+                            <option value="">Pilih Sumber Data</option>
+                            <option value="SDKOM">SDKOM</option>
+                            <option value="ARISTON">ARISTON</option>
+                            <option value="WEP">WEP</option>
+                            <option value="DTF">DTF</option>
                         </select>
                     </div>
                 </div>
@@ -82,6 +94,11 @@
                 <table id="dataTrx" class="table table-striped table-bordered">
                     <thead>
                         <tr>
+                            <th>
+                                <div class="form-check d-flex justify-content-center">
+                                    <input class="form-check-input" type="checkbox" id="checkAll">
+                                </div>
+                            </th>
                             <th>No</th>
                             <th>Kode Trx</th>
                             <th>Tanggal</th>
@@ -106,7 +123,7 @@
 <script>
 $(document).ready(function() {
     <?php if(isset($bulan) && isset($tahun) && isset($sales_type)): ?>
-    $('#dataTrx').DataTable({
+    var table = $('#dataTrx').DataTable({
         "responsive": true,
         "processing": true,
         "language": {
@@ -125,7 +142,25 @@ $(document).ready(function() {
             }
         },
         "columns": [
-            { "data": null, "orderable": false },
+            { 
+                "data": null,
+                "orderable": false,
+                "searchable": false,
+                "className": "text-center",
+                "render": function(data, type, row, meta) {
+                    return '<div class="form-check">' +
+                           '<input class="form-check-input row-checkbox" type="checkbox" value="" id="check_' + meta.row + '">' +
+                           '</div>';
+                }
+            },
+            { 
+                "data": null,
+                "searchable": false,
+                "className": "text-center",
+                "render": function(data, type, row, meta) {
+                    return meta.row + meta.settings._iDisplayStart + 1;
+                }
+            },
             { "data": "kode_trx" },
             { "data": "tanggal" },
             { "data": "grand_total" },
@@ -142,13 +177,18 @@ $(document).ready(function() {
                 }
             }
         ],
-        "order": [[ 1, "desc" ]],
-        "columnDefs": [{
-            "targets": 0,
-            "render": function (data, type, row, meta) {
-                return meta.row + meta.settings._iDisplayStart + 1;
-            }
-        }]
+        "order": [[ 1, "asc" ]]
+    });
+
+    // Handle Check All checkbox
+    $('#checkAll').on('change', function() {
+        $('.row-checkbox').prop('checked', $(this).prop('checked'));
+    });
+
+    // Handle individual checkbox change
+    $('#dataTrx tbody').on('change', '.row-checkbox', function() {
+        var allChecked = $('.row-checkbox:checked').length === $('.row-checkbox').length;
+        $('#checkAll').prop('checked', allChecked);
     });
     <?php endif; ?>
 });
