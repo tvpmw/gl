@@ -11,7 +11,7 @@ class FakturExcelGenerator extends Controller
     {
         try {
             // Load template first
-            $templatePath = WRITEPATH . 'uploads' . DIRECTORY_SEPARATOR . 'template.xlsx';
+            $templatePath = FCPATH . 'assets' . DIRECTORY_SEPARATOR . 'template.xlsx';
             if (!file_exists($templatePath)) {
                 throw new \Exception('File template.xlsx not found at: ' . $templatePath);
             }
