@@ -196,23 +196,59 @@ class MstrModel extends Model
         return $builder->get()->getResult();
     }
 
-    public function getData($start, $length, $search, $orderColumn, $orderDir, $startDate = null, $endDate = null, $sales_type = null,$prefix = null)
+    public function getAllData($startDate = null, $endDate = null, $sales_type = null, $prefix = null)
+{
+    $builder = $this->db->table($this->table)
+        ->select('mstr.kdtr, mstr.tgl, mstr.gtot, cust.nmcust, cust.npwp, n.npwp as newnpwp, n.jenis, n.name, n.status_wp')
+        ->join("cust", "cust.kdcust = mstr.kdcust", 'LEFT')
+        ->join("crm.cust_npwp as n", "n.npwpcust = cust.npwp", 'LEFT')
+        ->join("crm.tidak_dibuat td", "td.kode_trx = mstr.kdtr", 'LEFT')
+        ->where('mstr.tipe', 'J')
+        ->where('mstr.trans', '1')
+        ->where('td.kode_trx IS NULL');
+
+    // Apply date filters
+    if (!empty($startDate)) {
+        $builder->where('mstr.tgl >=', $startDate);
+    }
+
+    if (!empty($endDate)) {
+        $builder->where('mstr.tgl <=', $endDate);
+    }
+
+    // Apply sales type filter
+    if ($sales_type == 'ONLINE') {
+        $builder->whereIn('cust.wil', $this->online);
+    } else {
+        $builder->whereNotIn('cust.wil', $this->online);
+    }
+
+    // Apply prefix filter if provided
+    if (!empty($prefix)) {
+        $builder->where("SUBSTRING(mstr.kdtr, 1, 1) = '{$prefix}'", null, false);
+    }
+
+    // Order by date descending for most recent first
+    $builder->orderBy('mstr.tgl', 'DESC');
+
+    // Execute query and return results
+    return $builder->get()->getResult();
+}
+
+    public function getData($start, $length, $search, $orderColumn, $orderDir, $startDate = null, $endDate = null, $sales_type = null, $prefix = null)
     {
-        $builder = $this->db->table($this->table)->select('mstr.*,cust.nmcust,cust.npwp,n.npwp as newnpwp,n.jenis,n.name,n.address,n.status_wp');
-        $builder->join("cust","cust.kdcust = mstr.kdcust", 'LEFT');
-        $builder->join("crm.cust_npwp as n","n.npwpcust = cust.npwp", 'LEFT');
+        $builder = $this->db->table($this->table)
+            ->select('mstr.*,cust.nmcust,cust.npwp,n.npwp as newnpwp,n.jenis,n.name,n.address,n.status_wp')
+            ->join("cust", "cust.kdcust = mstr.kdcust", 'LEFT')
+            ->join("crm.cust_npwp as n", "n.npwpcust = cust.npwp", 'LEFT')
+            // Add LEFT JOIN with tidak_dibuat to check existence
+            ->join("crm.tidak_dibuat td", "td.kode_trx = mstr.kdtr", 'LEFT')
+            ->where('mstr.tipe', 'J')
+            ->where('mstr.trans', '1')
+            // Add condition to exclude records that exist in tidak_dibuat
+            ->where('td.kode_trx IS NULL');
 
-        $builder->where('mstr.tipe', 'J');
-        $builder->where('mstr.trans', '1');
-        // if (!empty($prefix)) {
-        //     $builder->where("SUBSTRING(kdtr, 1, 1) = '{$prefix}'", null, false);
-        // }
-
-        // Ambil daftar kolom dari tabel
-        // $columns = $this->db->getFieldNames($this->table);
-        // array_unshift($columns, null);
-
-        // Pencarian dinamis
+        // Rest of conditions
         if (!empty($search)) {
             $builder->groupStart();
             foreach ($this->column_search as $column) {
@@ -258,13 +294,18 @@ class MstrModel extends Model
         return $builder->limit($length, $start)->get()->getResult();
     }
 
-    public function countFilter($search, $startDate = null, $endDate = null, $sales_type = null,$prefix = null)
+    public function countFilter($search, $startDate = null, $endDate = null, $sales_type = null, $prefix = null)
     {
-        $builder = $this->db->table($this->table)->select('mstr.kdtr');
-        $builder->join("cust","cust.kdcust = mstr.kdcust", 'LEFT');
-        $builder->join("crm.cust_npwp as n","n.npwpcust = cust.npwp", 'LEFT');
-        $builder->where('mstr.tipe', 'J');
-        $builder->where('mstr.trans', '1');
+    $builder = $this->db->table($this->table)
+        ->select('mstr.kdtr')
+        ->join("cust", "cust.kdcust = mstr.kdcust", 'LEFT')
+        ->join("crm.cust_npwp as n", "n.npwpcust = cust.npwp", 'LEFT')
+        // Add LEFT JOIN with tidak_dibuat
+        ->join("crm.tidak_dibuat td", "td.kode_trx = mstr.kdtr", 'LEFT')
+        ->where('mstr.tipe', 'J')
+        ->where('mstr.trans', '1')
+        // Add condition to exclude records that exist in tidak_dibuat
+        ->where('td.kode_trx IS NULL');
         // if (!empty($prefix)) {
         //     $builder->where("SUBSTRING(kdtr, 1, 1) = '{$prefix}'", null, false);
         // }

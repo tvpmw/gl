@@ -68,5 +68,6 @@ $routes->group('cms', ['filter' => 'auth'], function ($routes) {
 		$routes->get('/', 'FakturController::index');
 		$routes->post('generate', 'FakturController::generate');
 		$routes->post('get-data', 'FakturController::getData');
+		$routes->post('tidak-dibuat', 'FakturController::tidakDibuat');
 	});
 });

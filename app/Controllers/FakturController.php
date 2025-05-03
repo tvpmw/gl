@@ -34,104 +34,197 @@ class FakturController extends Controller
     }
 
     public function getData()
-    {
-        $request = service('request');
+{
+    $request = service('request');
+    
+    // Filter dari frontend
+    $startDate = $request->getPost('startDate') ?? date('Y-m-d');
+    $endDate = $request->getPost('endDate') ?? $startDate;
+    $sales_type = $request->getPost('sales_type');
+    $dbs = $request->getPost('sumber_data');
 
-        $draw = $request->getPost('draw');
-        $start = $request->getPost('start');
-        $length = $request->getPost('length');
-        $search = $request->getPost('search')['value'];
+    if($startDate > $endDate){
+        $endDate = $startDate;
+    }
 
-        // Sorting
-        $orderColumnIndex = $request->getPost('order')[0]['column'] ?? 0;
-        $orderDir = $request->getPost('order')[0]['dir'] ?? 'asc';
+    // Validasi database yang dipilih
+    switch ($dbs) {
+        case 'ariston':
+            $mdl = $this->mstrModel2;
+            $prefix = 'A';
+            break;
+        case 'wep':
+            $mdl = $this->mstrModel3;
+            $prefix = 'W';
+            break;
+        case 'dtf':
+            $mdl = $this->mstrModel4;
+            $prefix = 'B';
+            break;
+        default:
+            $mdl = $this->mstrModel;
+            $prefix = 'K';
+    }
 
-        // Filter dari frontend
-        $startDate = $request->getPost('startDate');
-        $endDate = $request->getPost('endDate');
-        $sales_type = $request->getPost('sales_type');
-        $dbs = $request->getPost('sumber_data');
+    $getNpwp = $mdl->getDataNpwp($startDate, $endDate, $sales_type, $prefix);
+    if(!empty($getNpwp)){
+        $listNpwp = [];
+        foreach ($getNpwp as $value) {
+            $npwp = cleanString($value->npwp);
+            $listNpwp[$npwp] = $value->npwp;
+        }
+        $this->prosesNpwp($listNpwp);
+    }
 
-        if(empty($startDate)){
-            $startDate = date('Y-m-d');
+    // Get all data without pagination
+    $data = $mdl->getAllData($startDate, $endDate, $sales_type, $prefix);
+    
+    $formattedData = [];
+    foreach ($data as $row) {
+        $akt = '<span class="badge text-bg-danger">INVALID</span>';
+        if($row->status_wp == 'VALID'){
+            $akt = '<span class="badge text-bg-success">VALID</span>';
         }
 
-        if(empty($endDate)){
-            $endDate = $startDate;
-        }
-
-        if($startDate > $endDate){
-            $endDate = $startDate;
-        }
-
-        // Validasi database yang dipilih
-        switch ($dbs) {
-            case 'ariston':
-                $mdl = $this->mstrModel2;
-                $prefix = 'A';
-                break;
-            case 'wep':
-                $mdl = $this->mstrModel3;
-                $prefix = 'W';
-                break;
-            case 'dtf':
-                $mdl = $this->mstrModel4;
-                $prefix = 'B';
-                break;
-            default:
-                $mdl = $this->mstrModel;
-                $prefix = 'K';
-        }
-
-        $getNpwp = $mdl->getDataNpwp($startDate, $endDate, $sales_type,$prefix);
-        if(!empty($getNpwp)){
-            $listNpwp = [];
-            foreach ($getNpwp as $value) {
-                $npwp = cleanString($value->npwp);
-                $listNpwp[$npwp] = $value->npwp;
-            }
-
-            $this->prosesNpwp($listNpwp);
-        }
-
-        // Query Data dengan filter
-        $totalRecords = $mdl->countAll();
-        $totalRecordsFiltered = $mdl->countFilter($search, $startDate, $endDate, $sales_type, $prefix);
-        $data = $mdl->getData($start, $length, $search, $orderColumnIndex, $orderDir, $startDate, $endDate, $sales_type, $prefix);
-
-        $formattedData = [];
-        $no = $start+1;
-        $tampil = true;
-        foreach ($data as $row) {
-            $akt = '<span class="badge text-bg-danger"> INVALID</span>';
-            if($row->status_wp == 'VALID'){
-                $akt = '<span class="badge text-bg-success"> VALID</span>';
-            }
-
-            $aksiTable = '';
-            $lists = [];
-            $lists[]  = $no++;
-            $lists[]  = $row->kdtr;
-            $lists[]  = format_date($row->tgl,'m/d/Y');
-            $lists[]  = format_price($row->gtot);
-            $lists[]  = $row->nmcust;
-            $lists[]  = $row->newnpwp;
-            $lists[]  = $row->name;
-            $lists[]  = $row->jenis;
-            $lists[]  = $akt;
-            $lists[]  = $aksiTable;
-
-            $formattedData[] = $lists;
-        }
-
-        $response = [
-            "draw" => intval($draw),
-            "recordsTotal" => $totalRecords,
-            "recordsFiltered" => $totalRecordsFiltered,
-            "data" => $formattedData,
+        $formattedData[] = [
+            '',  // For checkbox column
+            $row->kdtr,
+            format_date($row->tgl,'m/d/Y'),
+            format_price($row->gtot),
+            $row->nmcust,
+            $row->newnpwp,
+            $row->name,
+            $row->jenis,
+            $akt,
+            ''  // For action column
         ];
+    }
 
-        return $this->response->setJSON($response);
+    return $this->response->setJSON([
+        'data' => $formattedData
+    ]);
+}
+
+    public function tidakDibuat()
+    {
+        try {
+            $rawInput = $this->request->getBody();
+            $request = json_decode($rawInput, true);
+            
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new \Exception('Invalid JSON data received');
+            }
+
+            if (empty($request['data'])) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Tidak ada data yang dipilih'
+                ]);
+            }
+
+            $insertData = [];
+            $updateData = [];
+            $now = date('Y-m-d H:i:s');
+
+            foreach ($request['data'] as $row) {
+                // Parse date from m/d/Y format to Y-m-d
+                $dateParts = explode('/', $row['tanggal']);
+                if (count($dateParts) === 3) {
+                    $month = $dateParts[0];
+                    $day = $dateParts[1];
+                    $year = $dateParts[2];
+                    $tanggal = sprintf('%s-%02d-%02d', $year, $month, $day);
+                } else {
+                    throw new \Exception('Invalid date format received: ' . $row['tanggal']);
+                }
+
+                // Clean price format - remove Rp, dots and commas
+                $grand_total = preg_replace('/[^0-9]/', '', $row['grand_total']);
+                
+                $data = [
+                    'kode_trx' => trim($row['kode_trx']),
+                    'tanggal' => $tanggal,
+                    'grand_total' => (float) $grand_total,
+                    'nama_customer' => $row['nama_customer'],
+                    'sumber_data' => $row['sumber_data']
+                ];
+
+                // Check if record exists
+                $existing = $this->db_default->table('crm.tidak_dibuat')
+                    ->where('kode_trx', $data['kode_trx'])
+                    ->get()
+                    ->getRow();
+
+                if ($existing) {
+                    $data['updated_at'] = $now;
+                    $updateData[] = $data;
+                } else {
+                    $data['created_at'] = $now;
+                    $data['updated_at'] = null;
+                    $insertData[] = $data;
+                }
+            }
+
+            $success = true;
+            $message = [];
+
+            // Process inserts if any
+            if (!empty($insertData)) {
+                $insertResult = $this->db_default->table('crm.tidak_dibuat')
+                    ->insertBatch($insertData);
+                
+                if (!$insertResult) {
+                    $success = false;
+                    $message[] = 'Gagal menyimpan data baru';
+                } else {
+                    $message[] = count($insertData) . ' data baru berhasil disimpan';
+                }
+            }
+
+            // Process updates if any
+            if (!empty($updateData)) {
+                // Cast date field explicitly for update
+                $this->db_default->query('CREATE TEMPORARY TABLE tmp_update AS SELECT * FROM crm.tidak_dibuat WITH NO DATA');
+                
+                foreach ($updateData as $row) {
+                    $this->db_default->table('tmp_update')->insert($row);
+                }
+
+                $sql = "UPDATE crm.tidak_dibuat t 
+                        SET tanggal = CAST(u.tanggal AS date),
+                            grand_total = u.grand_total,
+                            nama_customer = u.nama_customer,
+                            sumber_data = u.sumber_data,
+                            updated_at = u.updated_at
+                        FROM tmp_update u 
+                        WHERE t.kode_trx = u.kode_trx";
+
+                $updateResult = $this->db_default->query($sql);
+                
+                if (!$updateResult) {
+                    $success = false;
+                    $message[] = 'Gagal mengupdate data';
+                } else {
+                    $message[] = count($updateData) . ' data berhasil diupdate';
+                }
+
+                // Clean up
+                $this->db_default->query('DROP TABLE IF EXISTS tmp_update');
+            }
+
+            return $this->response->setJSON([
+                'success' => $success,
+                'message' => implode(', ', $message)
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error saving tidak dibuat: ' . $e->getMessage());
+            log_message('error', 'Raw input: ' . $rawInput);
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
     }
 
     private function prosesNpwp($listNpwp)
