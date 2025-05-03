@@ -1172,6 +1172,12 @@ if ( ! function_exists('get_youtube_embed')) {
   }
 }
 
+if ( ! function_exists('cleanString')) {
+  function cleanString($str) {
+      return preg_replace('/[^0-9]/', '', $str);
+  }
+}
+
 if ( ! function_exists('potong_huruf')) {
   function potong_huruf($kalimat, $lenth) {
     $num_char = $lenth;

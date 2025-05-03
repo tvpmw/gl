@@ -225,12 +225,12 @@ class NpwpController extends BaseController
                 $request = new Request($method, getenv('NPWP_API_BASE_URL') . $path . $queryParam, $headers);
                 $response = $this->client->send($request);
 
-                $results[] = [
+                $results[$npwp] = [
                     'npwp' => $npwp,
                     'response' => json_decode($response->getBody(), true)
                 ];
             } catch (\Exception $e) {
-                $results[] = [
+                $results[$npwp] = [
                     'npwp' => $npwp,
                     'error' => $e->getMessage(),
                     'details' => $e->hasResponse() ? json_decode($e->getResponse()->getBody(), true) : null
