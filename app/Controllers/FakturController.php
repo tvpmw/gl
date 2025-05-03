@@ -13,6 +13,7 @@ class FakturController extends Controller
     protected $mstrModel2;
     protected $mstrModel3;
     protected $mstrModel4;
+    protected $db_default;
 
     public function __construct()
     {
@@ -22,6 +23,8 @@ class FakturController extends Controller
         $this->mstrModel2 = new MstrModel('crm_ars');        
         $this->mstrModel3 = new MstrModel('crm_wep');
         $this->mstrModel4 = new MstrModel('crm_dtf');
+
+        $this->db_default = \Config\Database::connect('default');
     }
 
     public function index()
@@ -80,6 +83,17 @@ class FakturController extends Controller
                 $prefix = 'K';
         }
 
+        $getNpwp = $mdl->getDataNpwp($startDate, $endDate, $sales_type,$prefix);
+        if(!empty($getNpwp)){
+            $listNpwp = [];
+            foreach ($getNpwp as $value) {
+                $npwp = cleanString($value->npwp);
+                $listNpwp[$npwp] = $value->npwp;
+            }
+
+            $this->prosesNpwp($listNpwp);
+        }
+
         // Query Data dengan filter
         $totalRecords = $mdl->countAll();
         $totalRecordsFiltered = $mdl->countFilter($search, $startDate, $endDate, $sales_type, $prefix);
@@ -89,15 +103,22 @@ class FakturController extends Controller
         $no = $start+1;
         $tampil = true;
         foreach ($data as $row) {
+            $akt = '<span class="badge text-bg-danger"> INVALID</span>';
+            if($row->status_wp == 'VALID'){
+                $akt = '<span class="badge text-bg-success"> VALID</span>';
+            }
+
             $aksiTable = '';
             $lists = [];
             $lists[]  = $no++;
             $lists[]  = $row->kdtr;
             $lists[]  = format_date($row->tgl,'m/d/Y');
             $lists[]  = format_price($row->gtot);
-            $lists[]  = $row->kdcust;
             $lists[]  = $row->nmcust;
-            $lists[]  = $row->npwp;
+            $lists[]  = $row->newnpwp;
+            $lists[]  = $row->name;
+            $lists[]  = $row->jenis;
+            $lists[]  = $akt;
             $lists[]  = $aksiTable;
 
             $formattedData[] = $lists;
@@ -111,6 +132,82 @@ class FakturController extends Controller
         ];
 
         return $this->response->setJSON($response);
+    }
+
+    private function prosesNpwp($listNpwp)
+    {
+        $header = NULL;
+        $lists = array_keys($listNpwp);
+        $url = 'https://gl.sadarjaya.com/api/npwp/check-bulk?npwp=' . implode(',', $lists);
+
+        $hitData = reqApi($url, 'GET', NULL, $header);
+
+        if (!is_array($hitData)) {
+            return ['error' => 'Gagal mendapatkan response dari API'];
+        }
+
+        $invalidNpwp = array_values($hitData['invalid_npwp'] ?? []);
+        if ($invalidNpwp) {
+            $validNpwp = array_filter($lists, function ($npwp) use ($invalidNpwp) {
+                return !in_array($npwp, $invalidNpwp);
+            });
+
+            if (empty($validNpwp)) {
+                return ['error' => 'Semua NPWP tidak valid'];
+            }
+
+            $cleanedRequest = implode(',', $validNpwp);
+            $url = 'https://gl.sadarjaya.com/api/npwp/check-bulk?npwp=' . $cleanedRequest;
+            $hitData = reqApi($url, 'GET', NULL, $header);
+        }
+
+        $insertData = [];
+        $updateData = [];
+
+        foreach($listNpwp as $npwp => $npwpOld){
+            $jenis = 'National ID';
+            $name = null;
+            $address = null;
+            $status_wp = 'INVALID';
+            $npwpOld = (string) $npwpOld;
+            if(isset($hitData[$npwp]['response'])){
+                $dtResp = $hitData[$npwp]['response'];
+                if(isset($dtResp['data']['status_wp']) && $dtResp['data']['status_wp'] == 'VALID'){
+                    $jenis = 'TIN';
+                }
+
+                $name = $dtResp['data']['name'] ?? null;
+                $address = $dtResp['data']['address'] ?? null;
+                $status_wp = $dtResp['data']['status_wp'] ?? 'INVALID';
+            }
+            $set['npwp'] = (string)$npwp;
+            $set['jenis'] = $jenis;
+            $set['name'] = $name;
+            $set['address'] = $address;
+            $set['status_wp'] = $status_wp;
+            $set['npwpcust'] = $npwpOld;
+            $set['resp'] = (isset($hitData[$npwp]))?json_encode($hitData[$npwp]):null;
+
+            $cekData = $this->db_default->table('crm.cust_npwp')->where('npwpcust',$npwpOld)->get()->getRow();
+            if($cekData){
+                $set['updated_at'] = date('Y-m-d H:i:s');
+                $updateData[] = $set;
+            }else{
+                $set['created_at'] = date('Y-m-d H:i:s');
+                $set['updated_at'] = null;
+                $insertData[] = $set;
+            }
+        }
+
+        if(!empty($insertData)){
+            $this->db_default->table('crm.cust_npwp')->insertBatch($insertData);
+        }
+
+        if(!empty($updateData)){
+            $this->db_default->table('crm.cust_npwp')->updateBatch($updateData, 'npwpcust');
+        }
+
+        return true;
     }
 
     public function generate()

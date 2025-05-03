@@ -56,7 +56,7 @@ if ( ! function_exists('reqApi')) {
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => "",
             CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
+            CURLOPT_TIMEOUT => 60,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_SSL_VERIFYPEER => false,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
@@ -1174,7 +1174,11 @@ if ( ! function_exists('get_youtube_embed')) {
 
 if ( ! function_exists('cleanString')) {
   function cleanString($str) {
-      return preg_replace('/[^0-9]/', '', $str);
+      // Ubah ke string, hapus semua karakter non-angka
+      $str = preg_replace('/[^0-9]/', '', (string) $str);
+
+      // Tambah 0 di depan jika kurang dari 16 digit
+      return str_pad($str, 16, '0', STR_PAD_LEFT);
   }
 }
 

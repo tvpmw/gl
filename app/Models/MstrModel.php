@@ -44,8 +44,8 @@ class MstrModel extends Model
     protected $beforeDelete   = [];
     protected $afterDelete    = [];
 
-    protected $column_order = [null,'mstr.kdtr', 'mstr.tgl', 'mstr.gtot', 'mstr.kdcust', 'cust.nmcust', 'cust.npwp'];
-    protected $column_search = ['mstr.kdtr', 'mstr.tgl', 'mstr.gtot', 'mstr.kdcust', 'cust.nmcust', 'cust.npwp'];
+    protected $column_order = [null,'mstr.kdtr', 'mstr.tgl', 'mstr.gtot', 'cust.nmcust', 'n.npwp', 'n.name','n.jenis', 'n.status_wp'];
+    protected $column_search = ['mstr.kdtr', 'mstr.tgl', 'mstr.gtot', 'cust.nmcust', 'n.npwp', 'n.name','n.jenis', 'n.status_wp'];
     protected $order = ['mstr.kdtr' => 'ASC'];
     protected $online = ['BHINEKA', 'BHINNEKA', 'BLIBLI.COM', 'BUKALAPAK', 'EKATALOG', 'ETALASE', 'IG', 'GOSHOP', 'FACEBOOK', 'JD.ID', 'LAZADA', 'OLX', 'OLXACD', 'ONLINE', 'SHOPEE', 'SHOPEEACD', 'SHOPEES', 'SHOPPOFF', 'TIKTOKSHOP', 'TOKOPEDIA', 'TOKPEDACD', 'TOKPEDDDL', 'TOKPEDOFFL', 'TOKPEDS', 'WEBSITE', 'SHOPEEOFF', 'TOKPEDOFF', 'SHOPEEBLP'];
 
@@ -162,16 +162,51 @@ class MstrModel extends Model
         }
     }
 
-    public function getData($start, $length, $search, $orderColumn, $orderDir, $startDate = null, $endDate = null, $sales_type = null,$prefix = null)
+    public function getDataNpwp($startDate = null, $endDate = null, $sales_type = null, $prefix = null)
     {
-        $builder = $this->db->table($this->table)->select('mstr.*,cust.nmcust,cust.npwp');
-        $builder->join("cust","cust.kdcust = mstr.kdcust", 'LEFT');
+        $builder = $this->db->table($this->table)->select('cust.npwp');
+        $builder->join("cust", "cust.kdcust = mstr.kdcust", 'LEFT');
 
         $builder->where('mstr.tipe', 'J');
         $builder->where('mstr.trans', '1');
-        if (!empty($prefix)) {
-            $builder->where("SUBSTRING(kdtr, 1, 1) = '{$prefix}'", null, false);
+        $builder->where('cust.npwp !=', '');
+
+        // if (!empty($prefix)) {
+        //     $builder->where("SUBSTRING(kdtr, 1, 1) = '{$prefix}'", null, false);
+        // }
+
+        if (!empty($startDate)) {
+            $builder->where('mstr.tgl >=', $startDate);
         }
+
+        if (!empty($endDate)) {
+            $builder->where('mstr.tgl <=', $endDate);
+        }
+
+        if ($sales_type == 'ONLINE') {
+            $builder->whereIn('cust.wil', $this->online);
+        } else {
+            $builder->whereNotIn('cust.wil', $this->online);
+        }
+
+        // Filter: NPWP yang belum pernah masuk ke tabel crm.cust_npwp
+        $subquery = $this->db->table('crm.cust_npwp')->select('npwpcust');
+        $builder->whereNotIn('cust.npwp', $subquery);
+
+        return $builder->get()->getResult();
+    }
+
+    public function getData($start, $length, $search, $orderColumn, $orderDir, $startDate = null, $endDate = null, $sales_type = null,$prefix = null)
+    {
+        $builder = $this->db->table($this->table)->select('mstr.*,cust.nmcust,cust.npwp,n.npwp as newnpwp,n.jenis,n.name,n.address,n.status_wp');
+        $builder->join("cust","cust.kdcust = mstr.kdcust", 'LEFT');
+        $builder->join("crm.cust_npwp as n","n.npwpcust = cust.npwp", 'LEFT');
+
+        $builder->where('mstr.tipe', 'J');
+        $builder->where('mstr.trans', '1');
+        // if (!empty($prefix)) {
+        //     $builder->where("SUBSTRING(kdtr, 1, 1) = '{$prefix}'", null, false);
+        // }
 
         // Ambil daftar kolom dari tabel
         // $columns = $this->db->getFieldNames($this->table);
@@ -185,9 +220,12 @@ class MstrModel extends Model
                     if (str_contains($column, 'mstr')) {
                         $column = str_replace('mstr.', '', $column);
                         $builder->orWhere("CAST(mstr.\"$column\" AS TEXT) ILIKE '%$search%'");
-                    }else{
+                    }else if (str_contains($column, 'cust')) {
                         $column = str_replace('cust.', '', $column);
                         $builder->orWhere("CAST(cust.\"$column\" AS TEXT) ILIKE '%$search%'");
+                    }else{
+                        $column = str_replace('n.', '', $column);
+                        $builder->orWhere("CAST(n.\"$column\" AS TEXT) ILIKE '%$search%'");
                     }
                 }
             }
@@ -222,13 +260,14 @@ class MstrModel extends Model
 
     public function countFilter($search, $startDate = null, $endDate = null, $sales_type = null,$prefix = null)
     {
-        $builder = $this->db->table($this->table)->select('mstr.*,cust.nmcust,cust.npwp');
+        $builder = $this->db->table($this->table)->select('mstr.kdtr');
         $builder->join("cust","cust.kdcust = mstr.kdcust", 'LEFT');
+        $builder->join("crm.cust_npwp as n","n.npwpcust = cust.npwp", 'LEFT');
         $builder->where('mstr.tipe', 'J');
         $builder->where('mstr.trans', '1');
-        if (!empty($prefix)) {
-            $builder->where("SUBSTRING(kdtr, 1, 1) = '{$prefix}'", null, false);
-        }
+        // if (!empty($prefix)) {
+        //     $builder->where("SUBSTRING(kdtr, 1, 1) = '{$prefix}'", null, false);
+        // }
 
         if (!empty($search)) {
             $builder->groupStart();
@@ -237,9 +276,12 @@ class MstrModel extends Model
                     if (str_contains($column, 'mstr')) {
                         $column = str_replace('mstr.', '', $column);
                         $builder->orWhere("CAST(mstr.\"$column\" AS TEXT) ILIKE '%$search%'");
-                    }else{
+                    }else if (str_contains($column, 'cust')) {
                         $column = str_replace('cust.', '', $column);
                         $builder->orWhere("CAST(cust.\"$column\" AS TEXT) ILIKE '%$search%'");
+                    }else{
+                        $column = str_replace('n.', '', $column);
+                        $builder->orWhere("CAST(n.\"$column\" AS TEXT) ILIKE '%$search%'");
                     }
                 }
             }

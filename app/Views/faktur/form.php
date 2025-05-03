@@ -1,4 +1,6 @@
 <?= $this->extend('layouts/admin') ?>
+<?= $this->section('styles') ?>
+<?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
 <div class="container-fluid px-4">
@@ -75,9 +77,11 @@
                             <th>Kode Trx</th>
                             <th>Tanggal</th>
                             <th>Grand Total</th>
-                            <th>Kode Customer</th>
                             <th>Nama Customer</th>
                             <th>NPWP</th>
+                            <th>NPWP Nama</th>
+                            <th>Jenis</th>
+                            <th>Status</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
