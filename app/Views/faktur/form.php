@@ -135,6 +135,41 @@ if ($isUnderDevelopment) {
     </div>
 </div>
 
+<!-- Detail Modal -->
+<div class="modal fade" id="detailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detail Transaksi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered" id="detailTable">
+                        <thead>
+                            <tr>
+                                <th>Kode Barang</th>
+                                <th>Nama Barang</th>
+                                <th>Satuan</th>
+                                <th>Qty</th>
+                                <th>Harga</th>
+                                <th>Diskon</th>
+                                <th>DPP</th>
+                                <th>DPP Lain</th>
+                                <th>PPN</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <?= $this->section('scripts') ?>
 <script>
     const startDate = document.getElementById("startDate");
@@ -217,7 +252,16 @@ function loadTable() {
             { data: 6 }, // NPWP Nama 
             { data: 7 }, // Jenis
             { data: 8 }, // Status
-            { data: 9, orderable: false, className: 'text-center' } // Aksi
+            { 
+                data: null,
+                orderable: false, 
+                className: 'text-center',
+                render: function(data, type, row) {
+                    return `<button type="button" class="btn btn-sm btn-dark text-white btn-detail" data-kdtr="${row[1]}">
+                                <i class="fas fa-eye text-white"></i>
+                            </button>`;
+                }
+            }
         ],
         drawCallback: function(settings) {
             // Reattach event handlers
@@ -400,6 +444,76 @@ $('#btnGenerateExcel').on('click', function() {
     window.location.href = `<?= base_url('cms/faktur/generate_excel') ?>?${params.toString()}`;
 });
 
+// Initialize detail modal
+let detailModal = new bootstrap.Modal(document.getElementById('detailModal'));
+let detailTable;
+
+// Handle detail button click
+$(document).on('click', '.btn-detail', function() {
+    const kdtr = $(this).data('kdtr');
+    const sumber_data = $('#sumber_data').val();
+    
+    // Initialize DataTable if not already initialized
+    if (!detailTable) {
+        detailTable = $('#detailTable').DataTable({
+            processing: true,
+            searching: false,
+            paging: false,
+            info: false
+        });
+    } else {
+        detailTable.clear();
+    }
+
+    // Fetch detail data
+    $.ajax({
+        url: '<?= base_url('cms/faktur/get-detail') ?>',
+        type: 'POST',
+        data: {
+            kdtr: kdtr,
+            sumber_data: sumber_data
+        },
+        success: function(response) {
+            if (response.success) {
+                response.data.forEach(function(item) {
+                    detailTable.row.add([
+                        item.kode_brg ? item.kode_brg : '000000',
+                        item.nama_brg,
+                        item.satuan,
+                        item.qty,
+                        formatPrice(item.hrg),
+                        item.diskon + '%',
+                        formatPrice(item.dpp),
+                        formatPrice(item.dpp_lain),
+                        formatPrice(item.nominal_ppn)
+                    ]).draw(false);
+                });
+                detailModal.show();
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: response.message
+                });
+            }
+        },
+        error: function(xhr, status, error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Terjadi kesalahan saat mengambil data detail'
+            });
+        }
+    });
+});
+
+// Helper function to format price
+function formatPrice(price) {
+    return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR'
+    }).format(price);
+}
 </script>
 <?= $this->endSection() ?>
 

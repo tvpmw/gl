@@ -419,6 +419,7 @@ class FakturController extends Controller
 
             // Get data langsung dari model
             $rawData = $mdl->getAllData($startDate, $endDate, $sales_type, $prefix);            
+            $rawData = collect($rawData)->sortBy('kdtr')->values()->all();
 
             // Filter data berdasarkan transaksi yang dipilih jika ada
             if (!empty($selectedTrx)) {
@@ -426,6 +427,101 @@ class FakturController extends Controller
                 $rawData = array_filter($rawData, function($row) use ($selectedTrxArray) {
                     return in_array($row->kdtr, $selectedTrxArray);
                 });
+            }
+
+            // Get list of existing transactions
+            $existingTrx = $db->table('crm.tax_generate')
+                ->select('kode_trx')
+                ->get()
+                ->getResultArray();
+
+            // Convert to simple array of kode_trx
+            $existingTrxList = array_column($existingTrx, 'kode_trx');
+
+            // Filter out existing transactions from $rawData
+            $rawData = array_filter($rawData, function($row) use ($existingTrxList) {
+                return !in_array($row->kdtr, $existingTrxList);
+            });
+
+            // If all transactions exist, return with message
+            if (empty($rawData)) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Semua transaksi sudah ada di database'
+                ]);
+            }
+
+            try {
+                // Get the appropriate database connection based on selected source
+                switch ($dbs) {
+                    case 'ariston':
+                        $db = $this->db_crm_ars;
+                        break;
+                    case 'wep':
+                        $db = $this->db_crm_wep;
+                        break;
+                    case 'dtf':
+                        $db = $this->db_crm_dtf;
+                        break;
+                    default:
+                        $db = $this->db_default;
+                }
+
+                // Begin transaction
+                $db->transStart();
+                
+                $now = date('Y-m-d H:i:s');
+                $userId = session()->get('user_id') ?? 1; // Adjust based on your auth system
+                
+                // Process each transaction for tax_generate
+                foreach ($rawData as $row) {
+                    // Calculate total tax from details
+                    $sql = "SELECT 
+                        SUM((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))/1.11 * tr.qty * 0.11) as total_tax
+                    FROM tr
+                    WHERE tr.kdtr = ?";
+                    
+                    $taxResult = $db->query($sql, [$row->kdtr])->getRow();
+                    
+                    // Prepare data for insertion
+                    $taxGenerateData = [
+                        'kode_trx' => $row->kdtr,
+                        'tanggal' => $row->tgl,
+                        'jam' => date('H:i:s'), // Current time as we don't have original time
+                        'total_tax' => (float)($taxResult->total_tax ?? 0),
+                        'created_at' => $now,
+                        'user_id' => $userId
+                    ];
+                    
+                    // Check if record already exists
+                    $existing = $db->table('crm.tax_generate')
+                                  ->where('kode_trx', $row->kdtr)
+                                  ->get()
+                                  ->getRow();
+                    
+                    if ($existing) {
+                        // Update existing record
+                        $taxGenerateData['updated_at'] = $now;
+                        $db->table('crm.tax_generate')
+                           ->where('kode_trx', $row->kdtr)
+                           ->update($taxGenerateData);
+                    } else {
+                        // Insert new record
+                        $db->table('crm.tax_generate')
+                           ->insert($taxGenerateData);
+                    }
+                }
+                
+                // Complete transaction
+                $db->transComplete();
+                
+                if ($db->transStatus() === false) {
+                    throw new \Exception('Error saving tax_generate data');
+                }
+                
+            } catch (\Exception $e) {
+                log_message('error', 'Error saving tax_generate: ' . $e->getMessage());
+                throw $e; // Re-throw to be caught by outer try-catch
             }
                 
             // Format data untuk excel
@@ -480,64 +576,133 @@ class FakturController extends Controller
                 throw new \Exception('Worksheet "DetailFaktur" not found in template');
             }
             
-            // Reset counter untuk DetailFaktur
-            $rowDetail = 2; // Starting row for DetailFaktur
-            $fakturCounter = 1; // Counter sesuai nomor di sheet Faktur
-            
-            switch ($dbs) {
-                case 'ariston':
-                    $db = $this->db_crm_ars;
-                    break;
-                case 'wep':
-                    $db = $this->db_crm_wep; 
-                    break;
-                case 'dtf':
-                    $db = $this->db_crm_dtf;
-                    break;
-                default:
-                    $db = $this->db_default;
-            }
-            
-            foreach ($rawData as $trx) {
-                // Get transaction details from tr table 
-                $sql = "SELECT 
-                    tr.nmbrg,
-                    tr.qty,
-                    tr.hrg,
-                    (tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))/1.11 as dpp_unit,
-                    ((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))/1.11)*11/12 as dpp_nl,
-                    tr.tot,
-                    brg.nama as nama_brg,
-                    mc.kdtax
-                FROM tr
-                JOIN brg ON tr.nmbrg = brg.nmbrg 
-                LEFT JOIN crm.mapping_coretax mc ON tr.nmbrg = mc.kdbrg
-                WHERE tr.kdtr = ?";        
+            try {
+                // Reset counter untuk DetailFaktur
+                $rowDetail = 2; // Starting row for DetailFaktur
+                $fakturCounter = 1; // Counter sesuai nomor di sheet Faktur
                 
-                $details = $db->query($sql, [$trx->kdtr])->getResult();                
-            
-                foreach ($details as $detail) {
-                    $detailFaktur = [
-                        $fakturCounter, 
-                        'A', 
-                        $detail->kdtax ?? '', 
-                        $detail->nama_brg, 
-                        'UM.0018', 
-                        $detail->dpp_unit,
-                        $detail->qty, 
-                        '0.00', 
-                        $detail->dpp_unit*$detail->qty, 
-                        $detail->dpp_nl*$detail->qty, 
-                        12, 
-                        ($detail->dpp_nl*$detail->qty * 0.12), 
-                        '0',
-                        '0.00' 
-                    ];
-            
-                    $detailSheet->fromArray($detailFaktur, null, 'A' . $rowDetail++);
+                // Get database connection based on selected source
+                switch ($dbs) {
+                    case 'ariston':
+                        $db = $this->db_crm_ars;
+                        break;
+                    case 'wep':
+                        $db = $this->db_crm_wep; 
+                        break;
+                    case 'dtf':
+                        $db = $this->db_crm_dtf;
+                        break;
+                    default:
+                        $db = $this->db_default;
                 }
+
+                // Begin transaction
+                $db->transStart();
                 
-                $fakturCounter++; // Increment counter setelah semua detail transaksi selesai
+                $now = date('Y-m-d H:i:s');
+                $userId = session()->get('user_id') ?? 1;
+                
+                foreach ($rawData as $trx) {
+                    // Get transaction details from tr table 
+                    $sql = "SELECT 
+                        tr.nmbrg,
+                        tr.qty,
+                        tr.hrg,
+                        tr.disc,
+                        (tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))/1.11 as dpp_unit,
+                        ((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))/1.11)*11/12 as dpp_nl,
+                        tr.tot,
+                        brg.nama as nama_brg,
+                        mc.kdtax
+                    FROM tr
+                    JOIN brg ON tr.nmbrg = brg.nmbrg 
+                    LEFT JOIN crm.mapping_coretax mc ON tr.nmbrg = mc.kdbrg
+                    WHERE tr.kdtr = ?
+                    ORDER BY tr.kdtr ASC, tr.nmbrg ASC"; // Add order by clause
+                    
+                    $details = $db->query($sql, [$trx->kdtr])->getResult();                
+                
+                    foreach ($details as $detail) {
+                        $dpp = $detail->dpp_unit * $detail->qty;
+                        $dpp_lain = $detail->dpp_nl * $detail->qty;
+                        $nominal_ppn = $dpp_lain * 0.12;
+
+                        // Prepare data for tax_generate_brg
+                        $taxGenerateDetail = [
+                            'faktur_counter' => $fakturCounter,
+                            'jenis_barang' => 'A',
+                            'kode_brg' => $detail->kdtax ?? '000000',
+                            'nama_brg' => $detail->nama_brg,
+                            'satuan' => 'UM.0018',
+                            'qty' => $detail->qty,
+                            'diskon' => $detail->disc,
+                            'dpp' => $dpp,
+                            'dpp_lain' => $dpp_lain,
+                            'tarif_ppn' => 12.00,
+                            'nominal_ppn' => $nominal_ppn,
+                            'tarif_ppnbm' => 0,
+                            'nominal_ppnbm' => 0.00,
+                            'created_at' => $now,
+                            'user_id' => $userId,
+                            'hrg' => $detail->hrg,
+                            'kode_trx' => $trx->kdtr,
+                            'nmbrg' => $detail->nmbrg
+                        ];
+
+                        // Check if record exists
+                        $existing = $db->table('crm.tax_generate_brg')
+                                      ->where('kode_trx', $trx->kdtr)
+                                      ->where('nmbrg', $detail->nmbrg)
+                                      ->get()
+                                      ->getRow();
+
+                        if ($existing) {
+                            // Update existing record
+                            $taxGenerateDetail['updated_at'] = $now;
+                            $db->table('crm.tax_generate_brg')
+                               ->where('kode_trx', $trx->kdtr)
+                               ->where('nmbrg', $detail->nmbrg)
+                               ->update($taxGenerateDetail);
+                        } else {
+                            // Insert new record
+                            $db->table('crm.tax_generate_brg')
+                               ->insert($taxGenerateDetail);
+                        }
+
+                        // Add to Excel sheet
+                        $detailFaktur = [
+                            $fakturCounter, 
+                            'A', 
+                            $detail->kdtax ?? '000000', 
+                            $detail->nama_brg, 
+                            'UM.0018', 
+                            $detail->dpp_unit,
+                            $detail->qty, 
+                            '0.00', 
+                            $dpp, 
+                            $dpp_lain, 
+                            12, 
+                            $nominal_ppn, 
+                            '0',
+                            '0.00' 
+                        ];
+                
+                        $detailSheet->fromArray($detailFaktur, null, 'A' . $rowDetail++);
+                    }
+                    
+                    $fakturCounter++; // Increment counter setelah semua detail transaksi selesai
+                }
+
+                // Complete transaction
+                $db->transComplete();
+                
+                if ($db->transStatus() === false) {
+                    throw new \Exception('Error saving tax_generate_brg data');
+                }
+
+            } catch (\Exception $e) {
+                log_message('error', 'Error saving tax_generate_brg: ' . $e->getMessage());
+                throw $e; // Re-throw to be caught by outer try-catch
             }
             
             // Add END marker row
@@ -578,13 +743,27 @@ class FakturController extends Controller
             }
 
             $noFakturList = $request['data'];
-            
-            // Check if any of the invoice numbers exist
-            $db = \Config\Database::connect();
+            $dbs = $request['sumber_data'] ?? 'default';
+
+            // Select the appropriate database connection
+            switch ($dbs) {
+                case 'ariston':
+                    $db = $this->db_crm_ars;
+                    break;
+                case 'wep':
+                    $db = $this->db_crm_wep;
+                    break;
+                case 'dtf':
+                    $db = $this->db_crm_dtf;
+                    break;
+                default:
+                    $db = $this->db_default;
+            }
+
             $exists = $db->table('crm.data_coretax')
-                ->whereIn('no_faktur', $noFakturList)
-                ->get()
-                ->getResult();
+                        ->whereIn('no_faktur', $noFakturList)
+                        ->get()
+                        ->getResult();
 
             return $this->response->setJSON([
                 'success' => true,
@@ -700,6 +879,24 @@ class FakturController extends Controller
                 throw new \Exception('Tidak ada data yang akan disimpan');
             }
 
+            // Get database selection
+            $dbs = $json['sumber_data'] ?? 'default';
+
+            // Select the appropriate database connection
+            switch ($dbs) {
+                case 'ariston':
+                    $db = $this->db_crm_ars;
+                    break;
+                case 'wep':
+                    $db = $this->db_crm_wep;
+                    break;
+                case 'dtf':
+                    $db = $this->db_crm_dtf;
+                    break;
+                default:
+                    $db = $this->db_default;
+            }
+
             $insertData = [];
             $updateData = [];
             $now = date('Y-m-d H:i:s');
@@ -732,19 +929,16 @@ class FakturController extends Controller
                     'dilaporkan_penjual' => $row['dilaporkan_penjual']
                 ];
 
-                // Check if record exists
-                $db = \Config\Database::connect();
+                // Check if record exists in the selected database
                 $existing = $db->table('crm.data_coretax')
                             ->where('no_faktur', $data['no_faktur'])
                             ->get()
                             ->getRow();
 
                 if ($existing) {
-                    // Untuk update, hanya tambahkan updated_at
                     $data['updated_at'] = $now;
                     $updateData[] = $data;
                 } else {
-                    // Untuk insert baru, tambahkan created_at dan set updated_at null
                     $data['created_at'] = $now;
                     $data['updated_at'] = null;
                     $insertData[] = $data;
@@ -779,11 +973,6 @@ class FakturController extends Controller
                 }
             }
 
-            // If no data was processed at all
-            if (empty($insertData) && empty($updateData)) {
-                throw new \Exception('Tidak ada data yang valid untuk diproses');
-            }
-
             return $this->response->setJSON([
                 'success' => $success,
                 'message' => implode(', ', $message)
@@ -794,6 +983,63 @@ class FakturController extends Controller
                 'success' => false,
                 'message' => $e->getMessage()
             ]);
-            }
         }
+    }
+
+    public function getDetail()
+    {
+        try {
+            $request = service('request');
+            $kdtr = $request->getPost('kdtr');
+            $dbs = $request->getPost('sumber_data');
+
+            // Select the appropriate database connection
+            switch ($dbs) {
+                case 'ariston':
+                    $db = $this->db_crm_ars;
+                    break;
+                case 'wep':
+                    $db = $this->db_crm_wep;
+                    break;
+                case 'dtf':
+                    $db = $this->db_crm_dtf;
+                    break;
+                default:
+                    $db = $this->db_default;
+            }
+
+            // Get transaction details
+            $sql = "SELECT 
+                tr.nmbrg,
+                tr.qty,
+                tr.hrg,
+                tr.disc as diskon,
+                (tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))/1.11 as dpp_unit,
+                ((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))/1.11)*11/12 as dpp_nl,
+                brg.nama as nama_brg,
+                mc.kdtax as kode_brg,
+                'UM.0018' as satuan,
+                (tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))/1.11 * tr.qty as dpp,
+                ((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))/1.11)*11/12 * tr.qty as dpp_lain,
+                ((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))/1.11)*11/12 * tr.qty * 0.12 as nominal_ppn
+            FROM tr
+            JOIN brg ON tr.nmbrg = brg.nmbrg 
+            LEFT JOIN crm.mapping_coretax mc ON tr.nmbrg = mc.kdbrg
+            WHERE tr.kdtr = ?
+            ORDER BY tr.kdtr ASC, tr.nmbrg ASC";
+
+            $details = $db->query($sql, [$kdtr])->getResult();
+
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => $details
+            ]);
+
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
 }

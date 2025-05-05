@@ -11,6 +11,8 @@
     <link href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" rel="stylesheet">
     <link href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
     
     <!-- Theme Variables & Layout Styles -->
     <style>
@@ -507,6 +509,19 @@
     .btn-primary:hover {
         background: var(--primary-hover) !important;
     }
+
+    .select2-container {
+        width: 100% !important;
+        z-index: 9999 !important;
+    }
+    
+    .select2-dropdown {
+        z-index: 10000 !important;
+    }
+
+    .modal {
+        z-index: 8888 !important;
+    }
     </style>
 
     <?= $this->renderSection('styles') ?>
@@ -551,6 +566,7 @@
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="<?= base_url('cms/faktur') ?>"><i class="fas fa-file-export me-2"></i>Generate</a></li>
                             <li><a class="dropdown-item" href="<?= base_url('cms/faktur/import') ?>"><i class="fas fa-file-import me-2"></i>Import</a></li>
+                            <li><a class="dropdown-item" href="<?= base_url('cms/mapping-coretax') ?>"><i class="fas fa-map me-2"></i>Master Kode Tax</a></li>
                         </ul>
                     </li>
 
@@ -624,6 +640,7 @@
 
     <!-- JavaScript Dependencies -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

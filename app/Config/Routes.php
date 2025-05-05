@@ -17,6 +17,9 @@ $routes->group("api", function ($routes) {
 
 $routes->group('cms', ['filter' => 'auth'], function ($routes) {    
 
+	$routes->get('barang/search', 'BarangController::search');
+    $routes->get('barang/tax-codes', 'BarangController::getTaxCodes');
+
 	$routes->group("dashboard", function ($routes) {
 		$routes->get('/', 'DashboardController::index');
 		$routes->post('get-data', 'DashboardController::getData');
@@ -64,9 +67,18 @@ $routes->group('cms', ['filter' => 'auth'], function ($routes) {
 		$routes->post('check-nitku', 'NpwpController::checkNitku');		
 	});	
 
+	$routes->group('mapping-coretax', function($routes) {
+		$routes->get('', 'MappingCoretaxController::index');
+		$routes->post('data', 'MappingCoretaxController::getData');
+		$routes->get('kode-tax', 'MappingCoretaxController::getKodeTax');
+		$routes->post('save', 'MappingCoretaxController::save');
+		$routes->post('delete', 'MappingCoretaxController::delete');
+	});
+
 	$routes->group("faktur", function ($routes) {
 		$routes->get('/', 'FakturController::index');
 		$routes->get('import', 'FakturController::import');
+		$routes->post('get-detail', 'FakturController::getDetail');
 		$routes->post('check-existing', 'FakturController::checkExisting');
 		$routes->post('generate', 'FakturController::generate');
 		$routes->post('get-data', 'FakturController::getData');

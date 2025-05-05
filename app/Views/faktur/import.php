@@ -52,6 +52,20 @@ if ($isUnderDevelopment) {
             <?php endif; ?>
 
             <form id="form-import" enctype="multipart/form-data">
+                <div class="row mb-3 justify-content-center">
+                    <!-- Database Selection -->
+                    <div class="col-md-6 text-center">
+                        <label for="sumber_data" class="form-label">Pilih Database</label>
+                        <select class="form-select" name="sumber_data" id="sumber_data" required>
+                            <option value="">Pilih Database</option>
+                            <option value="default">SDKOM</option>
+                            <option value="ariston">Ariston</option>
+                            <option value="wep">WEP</option>
+                            <option value="dtf">DTF</option>
+                        </select>
+                    </div>
+                </div>
+
                 <div class="row mb-3 justify-content-center">    
                     <!-- File Upload -->
                     <div class="col-md-6 text-center">
@@ -155,7 +169,8 @@ $(document).ready(function() {
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify({
-                        data: previewData.map(item => item.no_faktur)
+                        data: previewData.map(item => item.no_faktur),
+                        sumber_data: $('#sumber_data').val()
                     }),
                     success: function(checkResponse) {
                         // Update button state based on existence check
@@ -280,7 +295,8 @@ $(document).ready(function() {
                     contentType: 'application/json',
                     data: JSON.stringify({
                         data: previewData,
-                        is_update: isUpdate
+                        is_update: isUpdate,
+                        sumber_data: $('#sumber_data').val()
                     }),
                     success: function(response) {
                         if (response.success) {

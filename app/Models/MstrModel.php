@@ -203,9 +203,12 @@ class MstrModel extends Model
             ->join("cust", "cust.kdcust = mstr.kdcust", 'LEFT')
             ->join("crm.cust_npwp as n", "n.npwpcust = cust.npwp", 'LEFT')
             ->join("crm.tidak_dibuat td", "td.kode_trx = mstr.kdtr", 'LEFT')
+            ->join("crm.tax_generate tg", "tg.kode_trx = mstr.kdtr", 'LEFT')
             ->where('mstr.tipe', 'J')
             ->where('mstr.trans', '1')
-            ->where('td.kode_trx IS NULL');
+            ->where('td.kode_trx IS NULL')
+            ->where('tg.kode_trx IS NULL')
+            ->orderBy('mstr.kdtr', 'ASC'); // Add this line
 
         // Apply date filters
         if (!empty($startDate)) {
@@ -247,12 +250,14 @@ class MstrModel extends Model
             ->select('mstr.*,cust.nmcust,cust.npwp,n.npwp as newnpwp,n.jenis,n.name,n.address,n.status_wp')
             ->join("cust", "cust.kdcust = mstr.kdcust", 'LEFT')
             ->join("crm.cust_npwp as n", "n.npwpcust = cust.npwp", 'LEFT')
-            // Add LEFT JOIN with tidak_dibuat to check existence
+            // Add LEFT JOIN with tidak_dibuat and tax_generate to check existence
             ->join("crm.tidak_dibuat td", "td.kode_trx = mstr.kdtr", 'LEFT')
+            ->join("crm.tax_generate tg", "tg.kode_trx = mstr.kdtr", 'LEFT')
             ->where('mstr.tipe', 'J')
             ->where('mstr.trans', '1')
-            // Add condition to exclude records that exist in tidak_dibuat
-            ->where('td.kode_trx IS NULL');
+            // Add conditions to exclude records that exist in tidak_dibuat and tax_generate
+            ->where('td.kode_trx IS NULL')
+            ->where('tg.kode_trx IS NULL');
 
         // Rest of conditions
         if (!empty($search)) {
@@ -302,19 +307,18 @@ class MstrModel extends Model
 
     public function countFilter($search, $startDate = null, $endDate = null, $sales_type = null, $prefix = null)
     {
-    $builder = $this->db->table($this->table)
-        ->select('mstr.kdtr')
-        ->join("cust", "cust.kdcust = mstr.kdcust", 'LEFT')
-        ->join("crm.cust_npwp as n", "n.npwpcust = cust.npwp", 'LEFT')
-        // Add LEFT JOIN with tidak_dibuat
-        ->join("crm.tidak_dibuat td", "td.kode_trx = mstr.kdtr", 'LEFT')
-        ->where('mstr.tipe', 'J')
-        ->where('mstr.trans', '1')
-        // Add condition to exclude records that exist in tidak_dibuat
-        ->where('td.kode_trx IS NULL');
-        // if (!empty($prefix)) {
-        //     $builder->where("SUBSTRING(kdtr, 1, 1) = '{$prefix}'", null, false);
-        // }
+        $builder = $this->db->table($this->table)
+            ->select('mstr.kdtr')
+            ->join("cust", "cust.kdcust = mstr.kdcust", 'LEFT')
+            ->join("crm.cust_npwp as n", "n.npwpcust = cust.npwp", 'LEFT')
+            // Add LEFT JOIN with tidak_dibuat and tax_generate
+            ->join("crm.tidak_dibuat td", "td.kode_trx = mstr.kdtr", 'LEFT')
+            ->join("crm.tax_generate tg", "tg.kode_trx = mstr.kdtr", 'LEFT')
+            ->where('mstr.tipe', 'J')
+            ->where('mstr.trans', '1')
+            // Add conditions to exclude records that exist in tidak_dibuat and tax_generate
+            ->where('td.kode_trx IS NULL')
+            ->where('tg.kode_trx IS NULL');
 
         if (!empty($search)) {
             $builder->groupStart();
