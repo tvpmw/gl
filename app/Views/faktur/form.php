@@ -1,6 +1,6 @@
 <?php
 // Cek apakah sistem dalam mode development
-$isUnderDevelopment = false; // Anda bisa mengubah ini menjadi variabel dari environment atau config
+$isUnderDevelopment = true; // Anda bisa mengubah ini menjadi variabel dari environment atau config
 
 if ($isUnderDevelopment) {
     // Tampilkan halaman under development
