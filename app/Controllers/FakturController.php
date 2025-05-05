@@ -551,7 +551,37 @@ class FakturController extends Controller
             $sheet = $spreadsheet->getActiveSheet();
             $data = $sheet->toArray();
 
-            // Skip header row
+            // Expected headers (kolom yang diharapkan)
+            $expectedHeaders = [
+                'NPWP Pembeli / Identitas lainnya',
+                'Nama Pembeli',
+                'Kode Transaksi',
+                'Nomor Faktur Pajak',
+                'Tanggal Faktur Pajak', 
+                'Masa Pajak',
+                'Tahun',
+                'Status Faktur',
+                'ESignStatus',
+                'Harga Jual/Penggantian/DPP',
+                'DPP Nilai Lain/DPP',
+                'PPN',
+                'PPnBM',
+                'Penandatangan',
+                'Referensi',
+                'Dilaporkan oleh Penjual',
+                'Dilaporkan oleh Pemungut PPN'
+            ];
+
+            // Get headers from first row
+            $headers = $data[0];
+
+            // Check if headers match
+            $missingColumns = array_diff($expectedHeaders, $headers);
+            if (!empty($missingColumns)) {
+                throw new \Exception('Format file tidak sesuai template.');
+            }
+
+            // Skip header row after validation
             array_shift($data);
 
             $formattedData = [];
@@ -560,7 +590,7 @@ class FakturController extends Controller
                 
                 $formattedData[] = [
                     'npwp' => $row[0],
-                    'nama_pembeli' => $row[1],
+                    'nama_pembeli' => $row[1], 
                     'kode_transaksi' => $row[2],
                     'no_faktur' => $row[3],
                     'tanggal_faktur' => $row[4],
