@@ -48,10 +48,16 @@ class NpwpController extends BaseController
             
             return $this->response->setJSON(json_decode($response->getBody()));
         } catch (\Exception $e) {
-            return $this->response->setJSON([
-                'error' => $e->getMessage(),
-                'details' => $e->hasResponse() ? json_decode($e->getResponse()->getBody()) : null
-            ]);
+            // Extract error message if response contains error details
+            if ($e->hasResponse()) {
+                $errorBody = json_decode($e->getResponse()->getBody());
+                if (isset($errorBody->message)) {
+                    return $this->response->setJSON(['error' => 'NPWP Number is invalid']);
+                }
+            }
+            
+            // Default error response
+            return $this->response->setJSON(['error' => $e->getMessage()]);
         }
     }
 
@@ -94,10 +100,22 @@ class NpwpController extends BaseController
                 $responseData['npwp'] = $npwp;
                 $results[] = $responseData;
             } catch (\Exception $e) {
+                // Extract error message if response contains error details
+                if ($e->hasResponse()) {
+                    $errorBody = json_decode($e->getResponse()->getBody());
+                    if (isset($errorBody->message)) {
+                        $results[] = [
+                            'npwp' => $npwp,
+                            'error' => $errorBody->message
+                        ];
+                        continue;
+                    }
+                }
+                
+                // Default error response
                 $results[] = [
                     'npwp' => $npwp,
-                    'error' => $e->getMessage(),
-                    'details' => $e->hasResponse() ? json_decode($e->getResponse()->getBody()) : null
+                    'error' => $e->getMessage()
                 ];
             }
         }
@@ -148,10 +166,13 @@ class NpwpController extends BaseController
             
             return $this->response->setJSON(json_decode($response->getBody()));
         } catch (\Exception $e) {
-            return $this->response->setJSON([
-                'error' => $e->getMessage(),
-                'details' => $e->hasResponse() ? json_decode($e->getResponse()->getBody()) : null
-            ]);
+            if ($e->hasResponse()) {
+                $errorBody = json_decode($e->getResponse()->getBody());
+                if (isset($errorBody->message)) {
+                    return $this->response->setJSON(['error' => $errorBody->message]);
+                }
+            }
+            return $this->response->setJSON(['error' => $e->getMessage()]);
         }
     }
 
@@ -180,11 +201,24 @@ class NpwpController extends BaseController
             
             return $this->response->setJSON(json_decode($response->getBody()));
         } catch (\Exception $e) {
+            $errorMessage = "NPWP number is invalid";
+            $errorDetails = null;
+            
+            if ($e->hasResponse()) {
+                $responseBody = json_decode($e->getResponse()->getBody());
+                if (isset($responseBody->code) && isset($responseBody->message)) {
+                    $errorDetails = [
+                        'code' => $responseBody->code,
+                        'message' => $responseBody->message
+                    ];
+                }
+            }
+            
             return $this->response
                 ->setStatusCode(500)
                 ->setJSON([
-                    'error' => $e->getMessage(),
-                    'details' => $e->hasResponse() ? json_decode($e->getResponse()->getBody()) : null
+                    'error' => $errorMessage,
+                    'details' => $errorDetails
                 ]);
         }
     }
@@ -230,10 +264,23 @@ class NpwpController extends BaseController
                     'response' => json_decode($response->getBody(), true)
                 ];
             } catch (\Exception $e) {
+                $errorMessage = "NPWP number is invalid";
+                $errorDetails = null;
+                
+                if ($e->hasResponse()) {
+                    $responseBody = json_decode($e->getResponse()->getBody());
+                    if (isset($responseBody->code) && isset($responseBody->message)) {
+                        $errorDetails = [
+                            'code' => $responseBody->code,
+                            'message' => $responseBody->message
+                        ];
+                    }
+                }
+                
                 $results[$npwp] = [
                     'npwp' => $npwp,
-                    'error' => $e->getMessage(),
-                    'details' => $e->hasResponse() ? json_decode($e->getResponse()->getBody(), true) : null
+                    'error' => $errorMessage,
+                    'details' => $errorDetails
                 ];
             }
         }
