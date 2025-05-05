@@ -197,49 +197,49 @@ class MstrModel extends Model
     }
 
     public function getAllData($startDate = null, $endDate = null, $sales_type = null, $prefix = null, $selectedTrx = null)
-{
-    $builder = $this->db->table($this->table)
-        ->select('mstr.kdtr, mstr.tgl, mstr.gtot, cust.nmcust, cust.npwp, n.npwp as newnpwp, n.address as address, n.jenis, n.name, n.status_wp')
-        ->join("cust", "cust.kdcust = mstr.kdcust", 'LEFT')
-        ->join("crm.cust_npwp as n", "n.npwpcust = cust.npwp", 'LEFT')
-        ->join("crm.tidak_dibuat td", "td.kode_trx = mstr.kdtr", 'LEFT')
-        ->where('mstr.tipe', 'J')
-        ->where('mstr.trans', '1')
-        ->where('td.kode_trx IS NULL');
+    {
+        $builder = $this->db->table($this->table)
+            ->select('mstr.kdtr, mstr.tgl, mstr.gtot, cust.nmcust, cust.npwp, n.npwp as newnpwp, n.address as address, n.jenis, n.name, n.status_wp')
+            ->join("cust", "cust.kdcust = mstr.kdcust", 'LEFT')
+            ->join("crm.cust_npwp as n", "n.npwpcust = cust.npwp", 'LEFT')
+            ->join("crm.tidak_dibuat td", "td.kode_trx = mstr.kdtr", 'LEFT')
+            ->where('mstr.tipe', 'J')
+            ->where('mstr.trans', '1')
+            ->where('td.kode_trx IS NULL');
 
-    // Apply date filters
-    if (!empty($startDate)) {
-        $builder->where('mstr.tgl >=', $startDate);
+        // Apply date filters
+        if (!empty($startDate)) {
+            $builder->where('mstr.tgl >=', $startDate);
+        }
+
+        if (!empty($endDate)) {
+            $builder->where('mstr.tgl <=', $endDate);
+        }
+
+        // Apply sales type filter
+        if ($sales_type == 'ONLINE') {
+            $builder->whereIn('cust.wil', $this->online);
+        } else {
+            $builder->whereNotIn('cust.wil', $this->online);
+        }
+
+        // Apply prefix filter if provided
+        if (!empty($prefix)) {
+            $builder->where("SUBSTRING(mstr.kdtr, 1, 1) = '{$prefix}'", null, false);
+        }
+
+        // Tambahkan filter untuk kode transaksi yang dipilih
+        if (!empty($selectedTrx)) {
+            $selectedTrxArray = explode(',', $selectedTrx);
+            $builder->whereIn('mstr.kdtr', $selectedTrxArray);
+        }
+
+        // Order by date descending for most recent first
+        $builder->orderBy('mstr.tgl', 'DESC');
+
+        // Execute query and return results
+        return $builder->get()->getResult();
     }
-
-    if (!empty($endDate)) {
-        $builder->where('mstr.tgl <=', $endDate);
-    }
-
-    // Apply sales type filter
-    if ($sales_type == 'ONLINE') {
-        $builder->whereIn('cust.wil', $this->online);
-    } else {
-        $builder->whereNotIn('cust.wil', $this->online);
-    }
-
-    // Apply prefix filter if provided
-    if (!empty($prefix)) {
-        $builder->where("SUBSTRING(mstr.kdtr, 1, 1) = '{$prefix}'", null, false);
-    }
-
-    // Tambahkan filter untuk kode transaksi yang dipilih
-    if (!empty($selectedTrx)) {
-        $selectedTrxArray = explode(',', $selectedTrx);
-        $builder->whereIn('mstr.kdtr', $selectedTrxArray);
-    }
-
-    // Order by date descending for most recent first
-    $builder->orderBy('mstr.tgl', 'DESC');
-
-    // Execute query and return results
-    return $builder->get()->getResult();
-}
 
     public function getData($start, $length, $search, $orderColumn, $orderDir, $startDate = null, $endDate = null, $sales_type = null, $prefix = null)
     {

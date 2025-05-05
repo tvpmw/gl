@@ -399,18 +399,22 @@ class FakturController extends Controller
                 case 'ariston':
                     $mdl = $this->mstrModel2;
                     $prefix = 'A';
+                    $tku = '0210642716526000000000';
                     break;
                 case 'wep':
                     $mdl = $this->mstrModel3;
                     $prefix = 'W';
+                    $tku = '0137755021526000000000';
                     break;
                 case 'dtf':
                     $mdl = $this->mstrModel4;
                     $prefix = 'B';
+                    $tku = '0316396407526000000000';
                     break;
                 default:
                     $mdl = $this->mstrModel;
                     $prefix = 'K';
+                    $tku = '0316396407526000000000';
             }
 
             // Get data langsung dari model
@@ -442,7 +446,7 @@ class FakturController extends Controller
                     '',                            
                     $row->kdtr,                                                            
                     '',
-                    "0316396407526000000000",
+                    $tku,
                     '="' . $npwp . '"', // Format sebagai string dengan formula Excel
                     ($row->status_wp == "VALID" ? "TIN" : "National ID"),
                     'IDN',
