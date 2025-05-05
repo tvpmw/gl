@@ -471,6 +471,74 @@ class FakturController extends Controller
             $fakturSheet->getStyle('N4:N' . ($row-1))->getNumberFormat()->setFormatCode('@');
             $fakturSheet->getStyle('R4:R' . ($row-1))->getNumberFormat()->setFormatCode('@');
 
+            $detailSheet = $spreadsheet->getSheetByName('DetailFaktur');
+            if (!$detailSheet) {
+                throw new \Exception('Worksheet "DetailFaktur" not found in template');
+            }
+            
+            // Reset counter untuk DetailFaktur
+            $rowDetail = 2; // Starting row for DetailFaktur
+            $fakturCounter = 1; // Counter sesuai nomor di sheet Faktur
+            
+            switch ($dbs) {
+                case 'ariston':
+                    $db = $this->db_crm_ars;
+                    break;
+                case 'wep':
+                    $db = $this->db_crm_wep; 
+                    break;
+                case 'dtf':
+                    $db = $this->db_crm_dtf;
+                    break;
+                default:
+                    $db = $this->db_default;
+            }
+            
+            foreach ($rawData as $trx) {
+                // Get transaction details from tr table 
+                $sql = "SELECT 
+                    tr.nmbrg,
+                    tr.qty,
+                    tr.hrg,
+                    (tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))/1.11 as dpp_unit,
+                    ((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))/1.11)*11/12 as dpp_nl,
+                    tr.tot,
+                    brg.nama as nama_brg,
+                    mc.kdtax
+                FROM tr
+                JOIN brg ON tr.nmbrg = brg.nmbrg 
+                LEFT JOIN crm.mapping_coretax mc ON tr.nmbrg = mc.kdbrg
+                WHERE tr.kdtr = ?";        
+                
+                $details = $db->query($sql, [$trx->kdtr])->getResult();                
+            
+                foreach ($details as $detail) {
+                    $detailFaktur = [
+                        $fakturCounter, 
+                        'A', 
+                        $detail->kdtax ?? '', 
+                        $detail->nama_brg, 
+                        'UM.0018', 
+                        $detail->dpp_unit,
+                        $detail->qty, 
+                        '0.00', 
+                        $detail->dpp_unit*$detail->qty, 
+                        $detail->dpp_nl*$detail->qty, 
+                        12, 
+                        ($detail->dpp_nl*$detail->qty * 0.12), 
+                        '0',
+                        '0.00' 
+                    ];
+            
+                    $detailSheet->fromArray($detailFaktur, null, 'A' . $rowDetail++);
+                }
+                
+                $fakturCounter++; // Increment counter setelah semua detail transaksi selesai
+            }
+            
+            // Add END marker row
+            $detailSheet->fromArray(['END', '', '', '', '', '', '', '', '', '', '', '', '', ''], null, 'A' . $rowDetail);
+
             // Set active sheet to Faktur
             $spreadsheet->setActiveSheetIndexByName('Faktur');
 
