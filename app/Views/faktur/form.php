@@ -1,3 +1,33 @@
+<?php
+// Cek apakah sistem dalam mode development
+$isUnderDevelopment = true; // Anda bisa mengubah ini menjadi variabel dari environment atau config
+
+if ($isUnderDevelopment) {
+    // Tampilkan halaman under development
+    ?>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Under Development</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    </head>
+    <body class="bg-light">
+        <div class="container min-vh-100 d-flex align-items-center justify-content-center">
+            <div class="text-center">
+                <h1 class="display-4 mb-4">🚧 Under Development</h1>
+                <p class="lead mb-4">Halaman ini sedang dalam tahap pengembangan.</p>
+                <p class="text-muted">Silakan kembali beberapa saat lagi.</p>
+                <a href="<?= base_url() ?>" class="btn btn-primary mt-3">Kembali ke Beranda</a>
+            </div>
+        </div>
+    </body>
+    </html>
+    <?php
+    exit;
+}
+?>
 <?= $this->extend('layouts/admin') ?>
 <?= $this->section('styles') ?>
 <?= $this->endSection() ?>
