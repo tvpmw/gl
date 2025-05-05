@@ -542,12 +542,16 @@
                         <a class="nav-link <?= str_starts_with(current_url(), base_url('cms/npwp')) ? 'active' : '' ?>" href="<?= base_url('cms/npwp') ?>">
                             <i class="fas fa-id-card me-2"></i> NPWP
                         </a>            
-                    </li>                                            
-
-                    <li class="nav-item">
-                        <a class="nav-link <?= str_starts_with(current_url(), base_url('cms/faktur'))? 'active' : ''?>" href="<?= base_url('cms/faktur')?>">
-                            <i class="fas fa-balance-scale me-2"></i> Faktur
+                    </li>       
+                    
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle <?= str_starts_with(current_url(), base_url('cms/faktur')) ? 'active' : '' ?>" href="#" id="fakturDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-balance-scale me-2"></i>Faktur
                         </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="<?= base_url('cms/faktur') ?>"><i class="fas fa-file-export me-2"></i>Generate</a></li>
+                            <li><a class="dropdown-item" href="<?= base_url('cms/faktur/import') ?>"><i class="fas fa-file-import me-2"></i>Import</a></li>
+                        </ul>
                     </li>
 
                     <!-- Dropdown Report -->

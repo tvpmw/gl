@@ -39,6 +39,12 @@ class FakturController extends Controller
         return view('faktur/form',$data);
     }
 
+    public function import()
+    {        
+        $data['dbs'] = getSelDb();
+        return view('faktur/import',$data);
+    }
+
     public function getData()
     {
         $request = service('request');
@@ -482,6 +488,131 @@ class FakturController extends Controller
             
             $writer->save('php://output');
             exit();
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    public function previewImport()
+    {
+        try {
+            $file = $this->request->getFile('file_import');
+            
+            if (!$file->isValid()) {
+                throw new \Exception('File tidak valid');
+            }
+
+            if ($file->getSize() > 5242880) { // 5MB
+                throw new \Exception('Ukuran file melebihi batas maksimal (5MB)');
+            }
+
+            $ext = $file->getExtension();
+            if (!in_array($ext, ['xls', 'xlsx'])) {
+                throw new \Exception('Format file tidak didukung');
+            }
+
+            $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader(ucfirst($ext));
+            $spreadsheet = $reader->load($file->getTempName());
+            $sheet = $spreadsheet->getActiveSheet();
+            $data = $sheet->toArray();
+
+            // Skip header row
+            array_shift($data);
+
+            $formattedData = [];
+            foreach ($data as $row) {
+                if (empty($row[0])) continue; // Skip empty rows
+                
+                $formattedData[] = [
+                    'npwp' => $row[0],
+                    'nama_pembeli' => $row[1],
+                    'kode_transaksi' => $row[2],
+                    'no_faktur' => $row[3],
+                    'tanggal_faktur' => $row[4],
+                    'masa_pajak' => $row[5],
+                    'tahun' => $row[6],
+                    'status_faktur' => $row[7],
+                    'harga_jual' => (float)$row[9],
+                    'dpp' => (float)$row[10],
+                    'ppn' => (float)$row[11],
+                    'ppnbm' => (float)$row[12],
+                    'referensi' => $row[14],
+                    'dilaporkan_penjual' => $row[15]
+                ];
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => $formattedData
+            ]);
+
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    public function saveImport()
+    {
+        try {
+            $json = $this->request->getJSON(true);
+            
+            if (empty($json['data'])) {
+                throw new \Exception('Tidak ada data yang akan disimpan');
+            }
+
+            $insertData = [];
+            $now = date('Y-m-d H:i:s');
+
+            foreach ($json['data'] as $row) {
+                // Ambil kode transaksi (hanya angka 04)
+                $kodeTransaksi = preg_replace('/^(\d+).*$/', '$1', $row['kode_transaksi']);
+                
+                // Parse tanggal dari format datetime string
+                $tanggal = null;
+                if (!empty($row['tanggal_faktur'])) {
+                    $dateObj = new \DateTime($row['tanggal_faktur']);
+                    $tanggal = $dateObj->format('Y-m-d');
+                }
+
+                $insertData[] = [
+                    'npwp' => $row['npwp'],
+                    'nama_pembeli' => $row['nama_pembeli'],
+                    'kode_transaksi' => $kodeTransaksi,
+                    'no_faktur' => $row['no_faktur'],
+                    'tanggal_faktur' => $tanggal,
+                    'masa_pajak' => $row['masa_pajak'],
+                    'tahun' => $row['tahun'],
+                    'status_faktur' => $row['status_faktur'],
+                    'harga_jual' => $row['harga_jual'],
+                    'dpp' => $row['dpp'],
+                    'ppn' => $row['ppn'],
+                    'ppnbm' => $row['ppnbm'],
+                    'referensi' => $row['referensi'],
+                    'dilaporkan_penjual' => $row['dilaporkan_penjual'],
+                    'created_at' => $now
+                ];
+            }
+
+            // Simpan ke database
+            $db = \Config\Database::connect();
+            $builder = $db->table('crm.data_coretax');
+            $result = $builder->insertBatch($insertData);
+
+            if (!$result) {
+                throw new \Exception('Gagal menyimpan data');
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Data berhasil disimpan'
+            ]);
+
         } catch (\Exception $e) {
             return $this->response->setJSON([
                 'success' => false,
