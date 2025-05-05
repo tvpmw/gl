@@ -196,10 +196,10 @@ class MstrModel extends Model
         return $builder->get()->getResult();
     }
 
-    public function getAllData($startDate = null, $endDate = null, $sales_type = null, $prefix = null)
+    public function getAllData($startDate = null, $endDate = null, $sales_type = null, $prefix = null, $selectedTrx = null)
 {
     $builder = $this->db->table($this->table)
-        ->select('mstr.kdtr, mstr.tgl, mstr.gtot, cust.nmcust, cust.npwp, n.npwp as newnpwp, n.jenis, n.name, n.status_wp')
+        ->select('mstr.kdtr, mstr.tgl, mstr.gtot, cust.nmcust, cust.npwp, n.npwp as newnpwp, n.address as address, n.jenis, n.name, n.status_wp')
         ->join("cust", "cust.kdcust = mstr.kdcust", 'LEFT')
         ->join("crm.cust_npwp as n", "n.npwpcust = cust.npwp", 'LEFT')
         ->join("crm.tidak_dibuat td", "td.kode_trx = mstr.kdtr", 'LEFT')
@@ -226,6 +226,12 @@ class MstrModel extends Model
     // Apply prefix filter if provided
     if (!empty($prefix)) {
         $builder->where("SUBSTRING(mstr.kdtr, 1, 1) = '{$prefix}'", null, false);
+    }
+
+    // Tambahkan filter untuk kode transaksi yang dipilih
+    if (!empty($selectedTrx)) {
+        $selectedTrxArray = explode(',', $selectedTrx);
+        $builder->whereIn('mstr.kdtr', $selectedTrxArray);
     }
 
     // Order by date descending for most recent first

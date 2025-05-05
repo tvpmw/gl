@@ -53,7 +53,7 @@
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-file me-2"></i>Filter Data
                     </button>
-                </div>
+                </div>                
             </form>
         </div>
     </div>
@@ -68,9 +68,12 @@
                 </div>
                 <div>
                     <button type="button" id="btnTidakDibuat" class="btn btn-warning">
-                        <i class="fas fa-ban me-2"></i>Tidak Dibuatkan
+                        <i class="fas fa-ban me-2"></i>Tidak Dibuat
                     </button>
-                </div>
+                    <button type="button" class="btn btn-success" id="btnGenerateExcel">
+                        <i class="fas fa-file-excel me-2"></i>Generate
+                    </button>
+                </div>                
             </div>
         </div>
         </div>
@@ -253,7 +256,11 @@ function updateSelectAllState() {
 // Modify btnTidakDibuat click handler
 $('#btnTidakDibuat').on('click', function() {
     if (checkedRows.size === 0) {
-        alert('Pilih transaksi yang akan ditandai tidak dibuatkan');
+        Swal.fire({
+            icon: 'warning',
+            title: 'Peringatan',
+            text: 'Pilih transaksi yang akan ditandai tidak dibuatkan'
+        });
         return;
     }
 
@@ -273,25 +280,47 @@ $('#btnTidakDibuat').on('click', function() {
         }
     });
 
-    if (confirm('Apakah Anda yakin akan menandai ' + selectedRows.length + ' transaksi sebagai tidak dibuatkan?')) {
-        $.ajax({
-            url: '<?= base_url('cms/faktur/tidak-dibuat') ?>',
-            type: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify({ data: selectedRows }),
-            success: function(response) {
-                if (response.success) {
-                    alert('Data berhasil disimpan/update!');
-                    $('#dataTrx').DataTable().ajax.reload();
-                } else {
-                    alert('Gagal menyimpan data: ' + response.message);
+    Swal.fire({
+        title: 'Konfirmasi',
+        text: 'Apakah Anda yakin akan menandai ' + selectedRows.length + ' transaksi sebagai tidak dibuatkan?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Tandai',
+        cancelButtonText: 'Batal',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: '<?= base_url('cms/faktur/tidak-dibuat') ?>',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ data: selectedRows }),
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: 'Data berhasil disimpan/update!'
+                        });
+                        $('#dataTrx').DataTable().ajax.reload();
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: 'Gagal menyimpan data: ' + response.message
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Terjadi kesalahan: ' + error
+                    });
                 }
-            },
-            error: function(xhr, status, error) {
-                alert('Terjadi kesalahan: ' + error);
-            }
-        });
-    }
+            });
+        }
+    });
 });
 
 // Reset checkedRows when form is submitted
@@ -300,6 +329,45 @@ $("#form-filter").submit(function (e) {
     checkedRows.clear();
     $('#result-table').show();
     loadTable();
+});
+
+// Modifikasi tombol Generate Excel
+$('#btnGenerateExcel').on('click', function() {
+    // Cek apakah ada data di tabel
+    if (!window.completeData || window.completeData.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Peringatan',
+            text: 'Tidak ada data yang dapat di-generate ke Excel'
+        });
+        return;
+    }
+
+    let selectedRows = [];
+
+    // If there are checked rows, only include those
+    if (checkedRows.size > 0) {
+        window.completeData.forEach(row => {
+            if (checkedRows.has(row[1])) {
+                selectedRows.push(row[1]); // Get transaction code
+            }
+        });
+    } else {
+        // If no rows checked, include all transaction codes
+        window.completeData.forEach(row => {
+            selectedRows.push(row[1]);
+        });
+    }
+
+    const params = new URLSearchParams({
+        startDate: $('#startDate').val(),
+        endDate: $('#endDate').val(),
+        sales_type: $('#sales_type').val(),
+        sumber_data: $('#sumber_data').val(),
+        selected_trx: selectedRows.join(',')
+    });
+    
+    window.location.href = `<?= base_url('cms/faktur/generate_excel') ?>?${params.toString()}`;
 });
 
 </script>
