@@ -144,66 +144,89 @@ $(document).ready(function() {
             processData: false,
             contentType: false,
             success: function(response) {
-                Swal.close();
+            Swal.close();
+            
+            if (response.success) {
+                previewData = response.data;
                 
-                if (response.success) {
-                    previewData = response.data;
-                    
-                    // Initialize DataTable
-                    $('#previewTable').DataTable({
-                        destroy: true,
-                        data: previewData,
-                        columns: [
-                            { data: 'npwp' },
-                            { data: 'nama_pembeli' },
-                            { data: 'kode_transaksi' },
-                            { data: 'no_faktur' },
-                            { data: 'tanggal_faktur' },
-                            { data: 'masa_pajak' },
-                            { data: 'tahun' },
-                            { data: 'status_faktur' },
-                            { 
-                                data: 'harga_jual',
-                                className: 'text-end',
-                                render: function(data) {
-                                    return formatRupiah(data);
-                                }
-                            },
-                            { 
-                                data: 'dpp',
-                                className: 'text-end',
-                                render: function(data) {
-                                    return formatRupiah(data);
-                                }
-                            },
-                            { 
-                                data: 'ppn',
-                                className: 'text-end',
-                                render: function(data) {
-                                    return formatRupiah(data);
-                                }
-                            },
-                            { 
-                                data: 'ppnbm',
-                                className: 'text-end',
-                                render: function(data) {
-                                    return formatRupiah(data);
-                                }
-                            },
-                            { data: 'referensi' },
-                            { data: 'dilaporkan_penjual' }
-                        ]
-                    });
-                    
-                    $('#preview-table').show();
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Gagal',
-                        text: response.message
-                    });
-                }
-            },
+                // Check existing data first before showing preview
+                $.ajax({
+                    url: '<?= base_url('cms/faktur/check-existing') ?>',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        data: previewData.map(item => item.no_faktur)
+                    }),
+                    success: function(checkResponse) {
+                        // Update button state based on existence check
+                        if (checkResponse.exists) {
+                            $('#btnSave')
+                                .html('<i class="fas fa-sync me-2"></i>Update Data')
+                                .removeClass('btn-success')
+                                .addClass('btn-warning');
+                        } else {
+                            $('#btnSave')
+                                .html('<i class="fas fa-save me-2"></i>Simpan Data')
+                                .removeClass('btn-warning')
+                                .addClass('btn-success');
+                        }
+                                                
+                        $('#previewTable').DataTable({
+                            destroy: true,
+                            data: previewData,
+                            columns: [
+                                { data: 'npwp' },
+                                { data: 'nama_pembeli' },
+                                { data: 'kode_transaksi' },
+                                { data: 'no_faktur' },
+                                { data: 'tanggal_faktur' },
+                                { data: 'masa_pajak' },
+                                { data: 'tahun' },
+                                { data: 'status_faktur' },
+                                { 
+                                    data: 'harga_jual',
+                                    render: function(data) {
+                                        return formatRupiah(data);
+                                    }
+                                },
+                                { 
+                                    data: 'dpp',
+                                    render: function(data) {
+                                        return formatRupiah(data);
+                                    }
+                                },
+                                { 
+                                    data: 'ppn',
+                                    render: function(data) {
+                                        return formatRupiah(data);
+                                    }
+                                },
+                                { 
+                                    data: 'ppnbm',
+                                    render: function(data) {
+                                        return formatRupiah(data);
+                                    }
+                                },
+                                { data: 'referensi' },
+                                { data: 'dilaporkan_penjual' }
+                            ],
+                            pageLength: 10,
+                            ordering: true,
+                            searching: true,
+                            responsive: true,                            
+                        });
+                        
+                        $('#preview-table').show();
+                    }
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: response.message
+                });
+            }
+        },
             error: function(xhr, status, error) {
                 Swal.close();
                 Swal.fire({
@@ -225,19 +248,22 @@ $(document).ready(function() {
             return;
         }
 
+        // Get current button state
+        const isUpdate = $(this).hasClass('btn-warning');
+        
         Swal.fire({
-            title: 'Konfirmasi',
-            text: 'Apakah Anda yakin akan menyimpan data ini?',
+            title: isUpdate ? 'Update Data' : 'Simpan Data',
+            text: isUpdate ? 'Apakah Anda yakin akan mengupdate data ini?' : 'Apakah Anda yakin akan menyimpan data ini?',
             icon: 'question',
             showCancelButton: true,
-            confirmButtonText: 'Ya, Simpan',
+            confirmButtonText: isUpdate ? 'Ya, Update' : 'Ya, Simpan',
             cancelButtonText: 'Batal',
             reverseButtons: true
         }).then((result) => {
             if (result.isConfirmed) {
                 // Show loading
                 Swal.fire({
-                    title: 'Menyimpan Data',
+                    title: 'Memproses Data',
                     text: 'Mohon tunggu sebentar...',
                     allowOutsideClick: false,
                     allowEscapeKey: false,
@@ -253,26 +279,31 @@ $(document).ready(function() {
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify({
-                        sumber_data: $('#sumber_data').val(),
-                        data: previewData
+                        data: previewData,
+                        is_update: isUpdate
                     }),
                     success: function(response) {
                         if (response.success) {
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Berhasil',
-                                text: 'Data berhasil disimpan!'
+                                text: response.message
                             }).then(() => {
                                 // Reset form dan table
                                 $('#form-import')[0].reset();
                                 $('#preview-table').hide();
                                 previewData = [];
+                                // Reset button state
+                                $('#btnSave')
+                                    .html('<i class="fas fa-save me-2"></i>Simpan Data')
+                                    .removeClass('btn-warning')
+                                    .addClass('btn-success');
                             });
                         } else {
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Gagal',
-                                text: 'Gagal menyimpan data: ' + response.message
+                                text: 'Gagal memproses data: ' + response.message
                             });
                         }
                     },

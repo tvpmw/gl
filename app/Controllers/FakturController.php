@@ -496,6 +496,38 @@ class FakturController extends Controller
         }
     }
 
+    public function checkExisting()
+    {
+        try {
+            $request = $this->request->getJSON(true);
+            
+            if (empty($request['data'])) {
+                throw new \Exception('No data provided');
+            }
+
+            $noFakturList = $request['data'];
+            
+            // Check if any of the invoice numbers exist
+            $db = \Config\Database::connect();
+            $exists = $db->table('crm.data_coretax')
+                ->whereIn('no_faktur', $noFakturList)
+                ->get()
+                ->getResult();
+
+            return $this->response->setJSON([
+                'success' => true,
+                'exists' => !empty($exists),
+                'count' => count($exists)
+            ]);
+
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
     public function previewImport()
     {
         try {
@@ -567,6 +599,7 @@ class FakturController extends Controller
             }
 
             $insertData = [];
+            $updateData = [];
             $now = date('Y-m-d H:i:s');
 
             foreach ($json['data'] as $row) {
@@ -580,7 +613,7 @@ class FakturController extends Controller
                     $tanggal = $dateObj->format('Y-m-d');
                 }
 
-                $insertData[] = [
+                $data = [
                     'npwp' => $row['npwp'],
                     'nama_pembeli' => $row['nama_pembeli'],
                     'kode_transaksi' => $kodeTransaksi,
@@ -594,23 +627,64 @@ class FakturController extends Controller
                     'ppn' => $row['ppn'],
                     'ppnbm' => $row['ppnbm'],
                     'referensi' => $row['referensi'],
-                    'dilaporkan_penjual' => $row['dilaporkan_penjual'],
-                    'created_at' => $now
+                    'dilaporkan_penjual' => $row['dilaporkan_penjual']
                 ];
+
+                // Check if record exists
+                $db = \Config\Database::connect();
+                $existing = $db->table('crm.data_coretax')
+                            ->where('no_faktur', $data['no_faktur'])
+                            ->get()
+                            ->getRow();
+
+                if ($existing) {
+                    // Untuk update, hanya tambahkan updated_at
+                    $data['updated_at'] = $now;
+                    $updateData[] = $data;
+                } else {
+                    // Untuk insert baru, tambahkan created_at dan set updated_at null
+                    $data['created_at'] = $now;
+                    $data['updated_at'] = null;
+                    $insertData[] = $data;
+                }
             }
 
-            // Simpan ke database
-            $db = \Config\Database::connect();
-            $builder = $db->table('crm.data_coretax');
-            $result = $builder->insertBatch($insertData);
+            $success = true;
+            $message = [];
 
-            if (!$result) {
-                throw new \Exception('Gagal menyimpan data');
+            // Process inserts if any
+            if (!empty($insertData)) {
+                $result = $db->table('crm.data_coretax')->insertBatch($insertData);
+                if (!$result) {
+                    throw new \Exception('Gagal menyimpan data baru');
+                }
+                $message[] = count($insertData) . ' data baru berhasil disimpan';
+            }
+
+            // Process updates if any
+            if (!empty($updateData)) {
+                foreach ($updateData as $data) {
+                    $result = $db->table('crm.data_coretax')
+                                ->where('no_faktur', $data['no_faktur'])
+                                ->update($data);
+                    if (!$result) {
+                        $success = false;
+                        $message[] = 'Gagal mengupdate data dengan no faktur: ' . $data['no_faktur'];
+                    }
+                }
+                if ($success) {
+                    $message[] = count($updateData) . ' data berhasil diupdate';
+                }
+            }
+
+            // If no data was processed at all
+            if (empty($insertData) && empty($updateData)) {
+                throw new \Exception('Tidak ada data yang valid untuk diproses');
             }
 
             return $this->response->setJSON([
-                'success' => true,
-                'message' => 'Data berhasil disimpan'
+                'success' => $success,
+                'message' => implode(', ', $message)
             ]);
 
         } catch (\Exception $e) {
@@ -618,6 +692,6 @@ class FakturController extends Controller
                 'success' => false,
                 'message' => $e->getMessage()
             ]);
+            }
         }
-    }
 }

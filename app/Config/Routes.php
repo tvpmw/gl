@@ -67,6 +67,7 @@ $routes->group('cms', ['filter' => 'auth'], function ($routes) {
 	$routes->group("faktur", function ($routes) {
 		$routes->get('/', 'FakturController::index');
 		$routes->get('import', 'FakturController::import');
+		$routes->post('check-existing', 'FakturController::checkExisting');
 		$routes->post('generate', 'FakturController::generate');
 		$routes->post('get-data', 'FakturController::getData');
 		$routes->post('tidak-dibuat', 'FakturController::tidakDibuat');
