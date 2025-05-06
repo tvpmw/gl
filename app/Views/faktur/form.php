@@ -97,6 +97,9 @@ if ($isUnderDevelopment) {
                     Data Transaksi
                 </div>
                 <div>
+                    <button type="button" id="btnBatalGenerate" class="btn btn-danger">
+                        <i class="fas fa-undo me-2"></i>Batal Generate
+                    </button>
                     <button type="button" id="btnTidakDibuat" class="btn btn-warning">
                         <i class="fas fa-ban me-2"></i>Tidak Dibuat
                     </button>
@@ -502,6 +505,56 @@ $(document).on('click', '.btn-detail', function() {
                 icon: 'error',
                 title: 'Error',
                 text: 'Terjadi kesalahan saat mengambil data detail'
+            });
+        }
+    });
+});
+
+// Handler untuk batal generate
+$('#btnBatalGenerate').on('click', function() {
+    Swal.fire({
+        title: 'Konfirmasi Pembatalan',
+        text: 'Anda yakin ingin membatalkan generate data untuk periode ini?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Batalkan',
+        cancelButtonText: 'Tidak',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: '<?= base_url('cms/faktur/batal-generate') ?>',
+                type: 'POST',
+                data: {
+                    startDate: $('#startDate').val(),
+                    endDate: $('#endDate').val(),
+                    sumber_data: $('#sumber_data').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: response.message
+                        }).then(() => {
+                            // Reload table data
+                            $('#dataTrx').DataTable().ajax.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: response.message
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Terjadi kesalahan sistem'
+                    });
+                }
             });
         }
     });

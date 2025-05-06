@@ -1109,4 +1109,85 @@ class FakturController extends Controller
             ]);
         }
     }
+
+    public function batalGenerate()
+    {
+        try {
+            $request = service('request');
+            
+            $startDate = $request->getPost('startDate');
+            $endDate = $request->getPost('endDate');
+            $dbs = $request->getPost('sumber_data');
+
+            if (!$startDate || !$endDate || !$dbs) {
+                throw new \Exception('Parameter tidak lengkap');
+            }
+
+            // Pilih database berdasarkan sumber data
+            switch ($dbs) {
+                case 'ariston':
+                    $db = $this->db_crm_ars;
+                    break;
+                case 'wep':
+                    $db = $this->db_crm_wep;
+                    break;
+                case 'dtf':
+                    $db = $this->db_crm_dtf;
+                    break;
+                default:
+                    $db = $this->db_default;
+            }
+
+            // Mulai transaksi
+            $db->transStart();
+
+            // 1. Dapatkan kode_trx dari tax_generate berdasarkan tanggal
+            $kodeTransaksi = $db->table('crm.tax_generate')
+                ->select('kode_trx')
+                ->where('tanggal >=', $startDate)
+                ->where('tanggal <=', $endDate)
+                ->get()
+                ->getResultArray();
+
+            if (empty($kodeTransaksi)) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'Tidak ada data yang perlu dibatalkan untuk periode tersebut'
+                ]);
+            }
+
+            $kodeList = array_column($kodeTransaksi, 'kode_trx');
+
+            // 2. Hapus data dari tax_generate_brg
+            $db->table('crm.tax_generate_brg')
+               ->whereIn('kode_trx', $kodeList)
+               ->delete();
+
+            // 3. Hapus data dari tax_generate
+            $db->table('crm.tax_generate')
+               ->where('tanggal >=', $startDate)
+               ->where('tanggal <=', $endDate)
+               ->delete();
+
+            // Selesaikan transaksi
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                throw new \Exception('Gagal membatalkan generate data');
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Berhasil membatalkan generate data untuk periode ' . 
+                            format_date($startDate, 'd/m/Y') . ' sampai ' . 
+                            format_date($endDate, 'd/m/Y')
+            ]);
+
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
 }

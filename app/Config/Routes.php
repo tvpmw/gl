@@ -86,5 +86,6 @@ $routes->group('cms', ['filter' => 'auth'], function ($routes) {
 		$routes->get('generate_excel', 'FakturController::generate_excel');
 		$routes->post('preview-import', 'FakturController::previewImport');
 		$routes->post('save-import', 'FakturController::saveImport');
+		$routes->post('batal-generate', 'FakturController::batalGenerate');
 	});
 });
