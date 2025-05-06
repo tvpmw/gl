@@ -567,6 +567,7 @@
                             <li><a class="dropdown-item" href="<?= base_url('cms/faktur') ?>"><i class="fas fa-file-export me-2"></i>Generate</a></li>
                             <li><a class="dropdown-item" href="<?= base_url('cms/faktur/import') ?>"><i class="fas fa-file-import me-2"></i>Import</a></li>
                             <li><a class="dropdown-item" href="<?= base_url('cms/mapping-coretax') ?>"><i class="fas fa-map me-2"></i>Master Kode Tax</a></li>
+                            <li><a class="dropdown-item" href="<?= base_url('cms/tax-generate') ?>"><i class="fas fa-file-invoice-dollar me-2"></i>Check Data</a></li>
                         </ul>
                     </li>
 

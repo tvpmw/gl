@@ -88,4 +88,10 @@ $routes->group('cms', ['filter' => 'auth'], function ($routes) {
 		$routes->post('save-import', 'FakturController::saveImport');
 		$routes->post('batal-generate', 'FakturController::batalGenerate');
 	});
+
+	$routes->group('tax-generate', function ($routes) {
+		$routes->get('/', 'TaxGenerateCheckController::index');
+		$routes->post('get-data', 'TaxGenerateCheckController::getData');
+		$routes->post('get-detail', 'TaxGenerateCheckController::getDetail');
+	});
 });
