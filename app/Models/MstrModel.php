@@ -47,7 +47,7 @@ class MstrModel extends Model
     protected $column_order = [null,'mstr.kdtr', 'mstr.tgl', 'mstr.gtot', 'cust.nmcust', 'n.npwp', 'n.name','n.jenis', 'n.status_wp'];
     protected $column_search = ['mstr.kdtr', 'mstr.tgl', 'mstr.gtot', 'cust.nmcust', 'n.npwp', 'n.name','n.jenis', 'n.status_wp'];
     protected $order = ['mstr.kdtr' => 'ASC'];
-    protected $online = ['BHINEKA', 'BHINNEKA', 'BLIBLI.COM', 'BUKALAPAK', 'EKATALOG', 'ETALASE', 'IG', 'GOSHOP', 'FACEBOOK', 'JD.ID', 'LAZADA', 'OLX', 'OLXACD', 'ONLINE', 'SHOPEE', 'SHOPEEACD', 'SHOPEES', 'SHOPPOFF', 'TIKTOKSHOP', 'TOKOPEDIA', 'TOKPEDACD', 'TOKPEDDDL', 'TOKPEDOFFL', 'TOKPEDS', 'WEBSITE', 'SHOPEEOFF', 'TOKPEDOFF', 'SHOPEEBLP'];
+    protected $online = ['BHINEKA', 'BHINNEKA', 'BLIBLI.COM', 'BUKALAPAK', 'EKATALOG', 'ETALASE', 'IG', 'GOSHOP', 'FACEBOOK', 'JD.ID', 'LAZADA', 'OLX', 'OLXACD', 'ONLINE', 'SHOPEE', 'SHOPEEACD', 'SHOPEES', 'SHOPPOFF', 'TIKTOKSHOP', 'TOKOPEDIA', 'TOKPEDACD', 'TOKPEDDDL', 'TOKPEDOFFL', 'TOKPEDS', 'WEBSITE', 'SHOPEEOFF', 'TOKPEDOFF', 'SHOPEEBLP', 'MANGGA', 'TIKTOKMIST'];
 
 
     public function __construct($connectionName = null)

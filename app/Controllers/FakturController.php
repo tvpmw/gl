@@ -419,7 +419,9 @@ class FakturController extends Controller
 
             // Get data langsung dari model
             $rawData = $mdl->getAllData($startDate, $endDate, $sales_type, $prefix);            
-            $rawData = collect($rawData)->sortBy('kdtr')->values()->all();
+            usort($rawData, function ($a, $b) {
+                return strcmp($a->kdtr, $b->kdtr);
+            });
 
             // Filter data berdasarkan transaksi yang dipilih jika ada
             if (!empty($selectedTrx)) {
@@ -427,6 +429,20 @@ class FakturController extends Controller
                 $rawData = array_filter($rawData, function($row) use ($selectedTrxArray) {
                     return in_array($row->kdtr, $selectedTrxArray);
                 });
+            }
+
+            switch ($dbs) {
+                case 'ariston':
+                    $db = $this->db_crm_ars;
+                    break;
+                case 'wep':
+                    $db = $this->db_crm_wep;
+                    break;
+                case 'dtf':
+                    $db = $this->db_crm_dtf;
+                    break;
+                default:
+                    $db = $this->db_default;
             }
 
             // Get list of existing transactions
@@ -577,54 +593,79 @@ class FakturController extends Controller
             }
             
             try {
-                // Reset counter untuk DetailFaktur
-                $rowDetail = 2; // Starting row for DetailFaktur
-                $fakturCounter = 1; // Counter sesuai nomor di sheet Faktur
+                $rowDetail = 2; 
+                $fakturCounter = 1;
                 
-                // Get database connection based on selected source
+                // Define queries once
+                $baseQuery = "SELECT 
+                    tr.nmbrg,
+                    tr.qty,
+                    tr.hrg,
+                    tr.disc,
+                    (tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))/1.11 as dpp_unit,
+                    ((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))/1.11)*11/12 as dpp_nl,
+                    tr.tot,
+                    brg.nama as nama_brg,
+                    mc.kdtax
+                FROM tr
+                JOIN brg ON tr.nmbrg = brg.nmbrg 
+                LEFT JOIN crm.mapping_coretax mc ON tr.nmbrg = mc.kdbrg
+                WHERE tr.kdtr = ?
+                ORDER BY tr.kdtr ASC, tr.nmbrg ASC";
+            
+                $aristonWepQuery = "SELECT 
+                    tr.nmbrg,
+                    tr.qty,
+                    tr.hrg,
+                    tr.disc,                    
+                    ((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))*tr.qty - (mstr.disc/(SELECT SUM(tr2.qty) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr)*tr.qty))/1.11/tr.qty as dpp_unit,                    
+                    (((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))*tr.qty - (mstr.disc/(SELECT SUM(tr2.qty) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr)*tr.qty))/1.11)*11/12 as dpp_nl,
+                    ((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))*tr.qty - (mstr.disc/(SELECT SUM(tr2.qty) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr)*tr.qty))/1.11 as dpp,
+                    tr.tot,
+                    brg.nama as nama_brg,
+                    mc.kdtax,
+                    mstr.disc as disc_faktur
+                FROM tr
+                JOIN brg ON tr.nmbrg = brg.nmbrg 
+                LEFT JOIN crm.mapping_coretax mc ON tr.nmbrg = mc.kdbrg
+                LEFT JOIN mstr ON tr.kdtr = mstr.kdtr
+                WHERE tr.kdtr = ?
+                ORDER BY tr.kdtr ASC, tr.nmbrg ASC";
+            
+                // Get database connection and appropriate query once
                 switch ($dbs) {
                     case 'ariston':
                         $db = $this->db_crm_ars;
+                        $sql = $aristonWepQuery;
                         break;
                     case 'wep':
                         $db = $this->db_crm_wep; 
+                        $sql = $aristonWepQuery;
                         break;
                     case 'dtf':
                         $db = $this->db_crm_dtf;
+                        $sql = $baseQuery;
                         break;
                     default:
                         $db = $this->db_default;
+                        $sql = $baseQuery;
                 }
-
-                // Begin transaction
+            
                 $db->transStart();
                 
-                $now = date('Y-m-d H:i:s');
-                $userId = session()->get('user_id') ?? 1;
-                
                 foreach ($rawData as $trx) {
-                    // Get transaction details from tr table 
-                    $sql = "SELECT 
-                        tr.nmbrg,
-                        tr.qty,
-                        tr.hrg,
-                        tr.disc,
-                        (tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))/1.11 as dpp_unit,
-                        ((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))/1.11)*11/12 as dpp_nl,
-                        tr.tot,
-                        brg.nama as nama_brg,
-                        mc.kdtax
-                    FROM tr
-                    JOIN brg ON tr.nmbrg = brg.nmbrg 
-                    LEFT JOIN crm.mapping_coretax mc ON tr.nmbrg = mc.kdbrg
-                    WHERE tr.kdtr = ?
-                    ORDER BY tr.kdtr ASC, tr.nmbrg ASC"; // Add order by clause
-                    
-                    $details = $db->query($sql, [$trx->kdtr])->getResult();                
-                
+                    $details = $db->query($sql, [$trx->kdtr])->getResult();
+            
                     foreach ($details as $detail) {
-                        $dpp = $detail->dpp_unit * $detail->qty;
-                        $dpp_lain = $detail->dpp_nl * $detail->qty;
+                        // Perhitungan berbeda untuk Ariston/WEP
+                        if (in_array($dbs, ['ariston', 'wep'])) {
+                            $dpp = $detail->dpp;
+                            $dpp_lain = $detail->dpp_nl;
+                        } else {
+                            $dpp = $detail->dpp_unit * $detail->qty;
+                            $dpp_lain = $detail->dpp_nl * $detail->qty; 
+                        }
+                        
                         $nominal_ppn = $dpp_lain * 0.12;
 
                         // Prepare data for tax_generate_brg
@@ -993,23 +1034,8 @@ class FakturController extends Controller
             $kdtr = $request->getPost('kdtr');
             $dbs = $request->getPost('sumber_data');
 
-            // Select the appropriate database connection
-            switch ($dbs) {
-                case 'ariston':
-                    $db = $this->db_crm_ars;
-                    break;
-                case 'wep':
-                    $db = $this->db_crm_wep;
-                    break;
-                case 'dtf':
-                    $db = $this->db_crm_dtf;
-                    break;
-                default:
-                    $db = $this->db_default;
-            }
-
-            // Get transaction details
-            $sql = "SELECT 
+            // Base query that will be used for DTF and default/SDKOM
+            $baseQuery = "SELECT 
                 tr.nmbrg,
                 tr.qty,
                 tr.hrg,
@@ -1028,7 +1054,48 @@ class FakturController extends Controller
             WHERE tr.kdtr = ?
             ORDER BY tr.kdtr ASC, tr.nmbrg ASC";
 
-            $details = $db->query($sql, [$kdtr])->getResult();
+            // Special query for Ariston and WEP with additional calculations
+            $aristonWepQuery = "SELECT 
+                tr.nmbrg,
+                tr.qty,
+                tr.hrg,
+                tr.disc as diskon,
+                mstr.disc/(SELECT SUM(tr2.qty) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr)*tr.qty as disc_per_unit,
+                (tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))/1.11 as dpp_unit,
+                ((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))/1.11)*11/12 as dpp_nl,
+                brg.nama as nama_brg,
+                mc.kdtax as kode_brg,
+                'UM.0018' as satuan,                
+                ((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))*tr.qty - (mstr.disc/(SELECT SUM(tr2.qty) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr)*tr.qty))/1.11 as dpp,
+                (((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))*tr.qty - (mstr.disc/(SELECT SUM(tr2.qty) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr)*tr.qty))/1.11)*11/12 as dpp_lain,
+                (((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))*tr.qty - (mstr.disc/(SELECT SUM(tr2.qty) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr)*tr.qty))/1.11)*11/12*0.12 as nominal_ppn
+            FROM tr
+            JOIN brg ON tr.nmbrg = brg.nmbrg 
+            LEFT JOIN crm.mapping_coretax mc ON tr.nmbrg = mc.kdbrg
+            LEFT JOIN mstr ON tr.kdtr = mstr.kdtr
+            WHERE tr.kdtr = ?
+            ORDER BY tr.kdtr ASC, tr.nmbrg ASC";
+
+            // Select the appropriate database connection and query
+            switch ($dbs) {
+                case 'ariston':
+                    $db = $this->db_crm_ars;
+                    $sql = $aristonWepQuery;
+                    break;
+                case 'wep':
+                    $db = $this->db_crm_wep;
+                    $sql = $aristonWepQuery;
+                    break;
+                case 'dtf':
+                    $db = $this->db_crm_dtf;
+                    $sql = $baseQuery;
+                    break;
+                default:
+                    $db = $this->db_default;
+                    $sql = $baseQuery;
+            }
+
+            $details = $db->query($sql, [$kdtr])->getResult();                
 
             return $this->response->setJSON([
                 'success' => true,
