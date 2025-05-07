@@ -44,14 +44,26 @@
     <!-- Table Card -->
     <div class="card mb-4" id="result-table" style="display: none;">
         <div class="card-header text-white">
-            <i class="fas fa-table me-1"></i>
-            Data Tax Generate
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-table me-1"></i>
+                    Data Tax Generate
+                </div>
+                <div>
+                    <button type="button" id="btnBatalGenerate" class="btn btn-danger">
+                        <i class="fas fa-undo me-2"></i>Batal Generate
+                    </button>
+                </div>
+            </div>
         </div>
         <div class="card-body">
             <div class="table-responsive">
                 <table id="dataTaxGenerate" class="table table-striped table-bordered">
                     <thead>
                         <tr>
+                            <th>
+                                <input type="checkbox" id="select-all" class="form-check-input">
+                            </th>
                             <th>Kode Transaksi</th>
                             <th>Tanggal</th>
                             <th>Jam</th>
@@ -83,17 +95,18 @@
                         <thead>
                             <tr>
                                 <th>Kode Barang</th>
-                                <th>Nama Barang</th>
-                                <th>Satuan</th>
+                                <th>Nama Barang</th>                                
                                 <th>Qty</th>
                                 <th>Harga</th>
-                                <th>Diskon</th>
+                                <th>Diskon <small>(mstr)</small></th>
+                                <th>Diskon <small>(tr)</small></th>
                                 <th>DPP</th>
                                 <th>DPP Lain</th>
                                 <th>PPN</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
+                        <small><i class="text-danger">* Perubahan baru akan ditandai dengan warna merah</i></small>                                                                                
                     </table>
                 </div>
             </div>
@@ -109,17 +122,154 @@
 let dataTable;
 let detailTable;
 let detailModal;
+let checkedRows = new Set();
 
 $(document).ready(function() {
     detailModal = new bootstrap.Modal(document.getElementById('detailModal'));
     
-    // Initialize detail table
-    detailTable = $('#detailTable').DataTable({
-        processing: true,
-        searching: false,
-        paging: false,
-        info: false
-    });
+    // Replace the existing detailTable initialization with:
+detailTable = $('#detailTable').DataTable({
+    processing: true,
+    searching: false,
+    paging: false,
+    info: false,
+    columns: [
+        { 
+            data: 'nmbrg',      // Kode Barang
+            className: 'align-middle',
+            render: function(data, type, row) {
+                if (row.status === 'deleted') {
+                    return `<span class="text-danger"><del>${row.stored.nmbrg}</del></span>`;
+                }
+                return row.current?.nmbrg || row.stored?.nmbrg || '-';
+            }
+        },
+        { 
+            data: 'nama_brg',   // Nama Barang
+            className: 'align-middle',
+            render: function(data, type, row) {
+                if (row.status === 'deleted') {
+                    return `<span class="text-danger"><del>${row.stored.nama_brg}</del></span>`;
+                } else if (row.changes?.nama_brg) {
+                    return `<span class="text-danger">${row.current.nama_brg}</span>
+                           <small class="d-block text-muted"><del>${row.stored.nama_brg}</del></small>`;
+                }
+                return row.current?.nama_brg || row.stored?.nama_brg || '-';
+            }
+        },        
+        { 
+            data: 'qty',        // Qty
+            className: 'text-end align-middle',
+            render: function(data, type, row) {
+                if (row.status === 'deleted') {
+                    return `<span class="text-danger"><del>${row.stored.qty}</del></span>`;
+                } else if (row.changes?.qty) {
+                    return `<span class="text-danger">${row.current.qty}</span>
+                           <small class="d-block text-muted"><del>${row.stored.qty}</del></small>`;
+                }
+                return row.current?.qty || row.stored?.qty || '0';
+            }
+        },
+        { 
+            data: 'hrg',        // Harga
+            className: 'text-end align-middle',
+            render: function(data, type, row) {
+                if (row.status === 'deleted') {
+                    return `<span class="text-danger"><del>${formatNumber(row.stored.hrg)}</del></span>`;
+                } else if (row.changes?.hrg) {
+                    return `<span class="text-danger">${formatNumber(row.current.hrg)}</span>
+                           <small class="d-block text-muted"><del>${formatNumber(row.stored.hrg)}</del></small>`;
+                }
+                return formatNumber(row.current?.hrg || row.stored?.hrg || 0);
+            }
+        },
+        { 
+            data: 'diskon',     // Diskon Mstr
+            className: 'text-end align-middle',
+            render: function(data, type, row) {
+                if (row.status === 'deleted') {
+                    return `<span class="text-danger">
+                        <del>${formatNumber(row.stored.diskon)}</del></span>`;
+                } else if (row.changes?.diskon) {
+                    return `<span class="text-danger">${formatNumber(row.current.diskon)}</span>
+                           <small class="d-block text-muted">
+                               <del>${formatNumber(row.stored.diskon)}</del>
+                           </small>`;
+                }
+                return formatNumber(row.current?.diskon || row.stored?.diskon || 0);
+            }
+        },
+        { 
+            data: 'diskon_tr',  // Diskon TR
+            className: 'text-end align-middle',
+            render: function(data, type, row) {
+                if (row.status === 'deleted') {
+                    return `<span class="text-danger">
+                        <del>${row.stored.diskon_tr}%</del></span>`;
+                } else if (row.changes?.diskon_tr) {
+                    return `<span class="text-danger">${row.current.diskon_tr}%</span>
+                           <small class="d-block text-muted">
+                               <del>${row.stored.diskon_tr}%</del>
+                           </small>`;
+                }
+                return `${row.current?.diskon_tr || row.stored?.diskon_tr || 0}%`;
+            }
+        },
+        { 
+            data: 'dpp',        // DPP
+            className: 'text-end align-middle',
+            render: function(data, type, row) {
+                if (row.status === 'deleted') {
+                    return `<span class="text-danger"><del>${formatNumber(row.stored.dpp)}</del></span>`;
+                } else if (row.changes?.dpp) {
+                    return `<span class="text-danger">${formatNumber(row.current.dpp)}</span>
+                           <small class="d-block text-muted"><del>${formatNumber(row.stored.dpp)}</del></small>`;
+                }
+                return formatNumber(row.current?.dpp || row.stored?.dpp || 0);
+            }
+        },
+        { 
+            data: 'dpp_lain',   // DPP Lain
+            className: 'text-end align-middle',
+            render: function(data, type, row) {
+                if (row.status === 'deleted') {
+                    return `<span class="text-danger"><del>${formatNumber(row.stored.dpp_lain)}</del></span>`;
+                } else if (row.changes?.dpp_lain) {
+                    return `<span class="text-danger">${formatNumber(row.current.dpp_lain)}</span>
+                           <small class="d-block text-muted"><del>${formatNumber(row.stored.dpp_lain)}</del></small>`;
+                }
+                return formatNumber(row.current?.dpp_lain || row.stored?.dpp_lain || 0);
+            }
+        },
+        { 
+            data: 'ppn',        // PPN
+            className: 'text-end align-middle',
+            render: function(data, type, row) {
+                if (row.status === 'deleted') {
+                    return `<span class="text-danger"><del>${formatNumber(row.stored.ppn)}</del></span>`;
+                } else if (row.changes?.ppn) {
+                    return `<span class="text-danger">${formatNumber(row.current.ppn)}</span>
+                           <small class="d-block text-muted"><del>${formatNumber(row.stored.ppn)}</del></small>`;
+                }
+                return formatNumber(row.current?.ppn || row.stored?.ppn || 0);
+            }
+        }
+    ],
+    createdRow: function(row, data) {
+        // Add background color for new items
+        if (data.status === 'new') {
+            $(row).addClass('table-success');
+        }
+        // Add background color for deleted items
+        else if (data.status === 'deleted') {
+            $(row).addClass('table-danger');
+        }
+        // Add background color for changed items
+        else if (data.status === 'changed') {
+            $(row).addClass('table-warning');
+        }
+    }
+});
 
     $("#form-filter").submit(function(e) {
         e.preventDefault();
@@ -142,12 +292,22 @@ function loadTable() {
             data: function(d) {
                 return {
                     startDate: $('#startDate').val(),
+                    startDate: $('#startDate').val(),
                     endDate: $('#endDate').val(),
                     sumber_data: $('#sumber_data').val()
                 };
             }
         },
         columns: [
+            {
+                data: null,
+                orderable: false,
+                className: 'text-center',
+                render: function(data, type, row) {
+                    const isChecked = checkedRows.has(row[0]) ? 'checked' : '';
+                    return `<input type="checkbox" class="form-check-input row-checkbox" value="${row[0]}" ${isChecked}>`;
+                }
+            },
             { data: 0 }, // Kode Transaksi
             { data: 1 }, // Tanggal
             { data: 2 }, // Jam
@@ -155,8 +315,53 @@ function loadTable() {
             { data: 4 }, // Current Total
             { data: 5 }, // Status
             { data: 6 }  // Aksi
-        ]
+        ],
+        drawCallback: function(settings) {
+            attachCheckboxHandlers();
+            $('.row-checkbox').each(function() {
+                const value = $(this).val();
+                $(this).prop('checked', checkedRows.has(value));
+            });
+            updateSelectAllState();
+        }
     });
+}
+
+function attachCheckboxHandlers() {
+    $(document).off('change', '.row-checkbox');
+    $(document).off('change', '#select-all');
+
+    $(document).on('change', '.row-checkbox', function() {
+        const value = $(this).val();
+        if (this.checked) {
+            checkedRows.add(value);
+        } else {
+            checkedRows.delete(value);
+        }
+        updateSelectAllState();
+    });
+
+    $(document).on('change', '#select-all', function() {
+        const isChecked = $(this).prop('checked');
+        $('.row-checkbox:visible').each(function() {
+            const value = $(this).val();
+            if (isChecked) {
+                checkedRows.add(value);
+            } else {
+                checkedRows.delete(value);
+            }
+            $(this).prop('checked', isChecked);
+        });
+    });
+}
+
+function updateSelectAllState() {
+    const visibleCheckboxes = $('.row-checkbox:visible');
+    const checkedVisibleCheckboxes = $('.row-checkbox:visible:checked');
+    $('#select-all').prop('checked', 
+        visibleCheckboxes.length > 0 && 
+        visibleCheckboxes.length === checkedVisibleCheckboxes.length
+    );
 }
 
 // Handle detail button click
@@ -174,19 +379,7 @@ $(document).on('click', '.btn-detail', function() {
         },
         success: function(response) {
             if (response.success) {
-                response.data.forEach(function(item) {
-                    detailTable.row.add([
-                        item.kode_brg,
-                        item.nama_brg,
-                        item.satuan,
-                        item.qty,
-                        formatNumber(item.hrg),
-                        item.diskon + '%',
-                        formatNumber(item.dpp),
-                        formatNumber(item.dpp_lain),
-                        formatNumber(item.nominal_ppn)
-                    ]).draw(false);
-                });
+                detailTable.rows.add(response.data).draw();
                 detailModal.show();
             } else {
                 Swal.fire({
@@ -212,6 +405,64 @@ function formatNumber(number) {
         currency: 'IDR'
     }).format(number);
 }
+
+// Add batch cancellation handler
+$('#btnBatalGenerate').on('click', function() {
+    if (checkedRows.size === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Peringatan',
+            text: 'Pilih transaksi yang akan dibatalkan'
+        });
+        return;
+    }
+
+    Swal.fire({
+        title: 'Konfirmasi Pembatalan',
+        text: `Anda yakin ingin membatalkan ${checkedRows.size} transaksi yang dipilih?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Batalkan',
+        cancelButtonText: 'Tidak',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: '<?= base_url('cms/tax-generate/batal-generate') ?>',
+                type: 'POST',
+                data: {
+                    kode_trx: Array.from(checkedRows),
+                    sumber_data: $('#sumber_data').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: response.message
+                        }).then(() => {
+                            checkedRows.clear();
+                            loadTable();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: response.message
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Terjadi kesalahan sistem'
+                    });
+                }
+            });
+        }
+    });
+});
 </script>
 <?= $this->endSection() ?>
 

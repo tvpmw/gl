@@ -564,9 +564,11 @@ class FakturController extends Controller
                         if (in_array($dbs, ['ariston', 'wep'])) {
                             $dpp = $detail->dpp;
                             $dpp_lain = $detail->dpp_nl;
+                            $total_disc = $detail->disc_faktur / $detail->qty / 1.11;
                         } else {
                             $dpp = $detail->dpp_unit * $tot_qty;
                             $dpp_lain = $detail->dpp_nl * $tot_qty; 
+                            $total_disc = '0.00';
                         }
                         
                         $nominal_ppn = $dpp_lain * 0.12;
@@ -579,18 +581,20 @@ class FakturController extends Controller
                             'nama_brg' => $detail->nama_brg,
                             'satuan' => 'UM.0018',
                             'qty' => $tot_qty,
-                            'diskon' => $detail->disc,
-                            'dpp' => $dpp,
-                            'dpp_lain' => $dpp_lain,
+                            // Format decimal places consistently for numeric fields
+                            'diskon' => number_format($total_disc, 11, '.', ''), // Increase precision
+                            'dpp' => number_format($dpp, 11, '.', ''),
+                            'dpp_lain' => number_format($dpp_lain, 11, '.', ''),
                             'tarif_ppn' => 12.00,
-                            'nominal_ppn' => $nominal_ppn,
+                            'nominal_ppn' => number_format($nominal_ppn, 11, '.', ''),
                             'tarif_ppnbm' => 0,
-                            'nominal_ppnbm' => 0.00,
+                            'nominal_ppnbm' => number_format(0, 2, '.', ''),
                             'created_at' => $now,
                             'user_id' => $userId,
                             'hrg' => $detail->hrg,
                             'kode_trx' => $trx->kdtr,
-                            'nmbrg' => $detail->nmbrg
+                            'nmbrg' => $detail->nmbrg,
+                            'diskon_tr' => $detail->disc
                         ];
 
                         // Check if record exists
@@ -622,7 +626,7 @@ class FakturController extends Controller
                             'UM.0018', 
                             $detail->dpp_unit,
                             $detail->qty, 
-                            '0.00', 
+                            number_format($total_disc, 2, '.', ''), 
                             $dpp, 
                             $dpp_lain, 
                             12, 

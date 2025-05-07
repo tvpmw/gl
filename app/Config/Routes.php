@@ -85,13 +85,13 @@ $routes->group('cms', ['filter' => 'auth'], function ($routes) {
 		$routes->post('tidak-dibuat', 'FakturController::tidakDibuat');
 		$routes->get('generate_excel', 'FakturController::generate_excel');
 		$routes->post('preview-import', 'FakturController::previewImport');
-		$routes->post('save-import', 'FakturController::saveImport');
-		$routes->post('batal-generate', 'FakturController::batalGenerate');
+		$routes->post('save-import', 'FakturController::saveImport');		
 	});
 
 	$routes->group('tax-generate', function ($routes) {
 		$routes->get('/', 'TaxGenerateCheckController::index');
 		$routes->post('get-data', 'TaxGenerateCheckController::getData');
 		$routes->post('get-detail', 'TaxGenerateCheckController::getDetail');
+		$routes->post('batal-generate', 'TaxGenerateCheckController::batalGenerate');
 	});
 });
