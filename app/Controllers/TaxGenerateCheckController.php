@@ -90,6 +90,12 @@ class TaxGenerateCheckController extends Controller
                     $taxCoreBadge = '<span class="badge bg-secondary ms-1">Data Tidak Ditemukan</span>';
                 }
 
+                $buttonCoretax = ($taxCoreStatus && ($taxCoreStatus->status_faktur === 'APPROVED' || $taxCoreStatus->status_faktur === 'CREATED')) 
+                    ? '<button type="button" class="btn btn-sm btn-info text-white btn-coretax" data-kdtr="'.$row->kode_trx.'">
+                        <i class="fas fa-eye text-white"></i>
+                    </button>'
+                    : '';
+
                 $formattedData[] = [
                     $row->kode_trx,
                     format_date($row->tanggal, 'd/m/Y'),
@@ -97,9 +103,12 @@ class TaxGenerateCheckController extends Controller
                     format_price($row->total_tax),
                     format_price($row->current_total),
                     $statusBadge . $taxCoreBadge,
-                    '<button type="button" class="btn btn-sm btn-dark text-white btn-detail" data-kdtr="'.$row->kode_trx.'">
-                        <i class="fas fa-history text-white"></i>
-                    </button>' 
+                    '<div class="btn-group">
+                        <button type="button" class="btn btn-sm btn-dark text-white btn-detail" data-kdtr="'.$row->kode_trx.'">
+                            <i class="fas fa-history text-white"></i>
+                        </button> &nbsp;                        
+                        '.$buttonCoretax.'
+                    </div>'
                 ];
             }
 
@@ -421,6 +430,63 @@ class TaxGenerateCheckController extends Controller
             return $this->response->setJSON([
                 'success' => true,
                 'message' => 'Tax generate berhasil dibatalkan'
+            ]);
+
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    public function getCoretaxDetail()
+    {
+        try {
+            $request = service('request');
+            $kdtr = $request->getPost('kdtr');
+            $dbs = $request->getPost('sumber_data');
+
+            // Select database based on source
+            switch ($dbs) {
+                case 'ariston':
+                    $db = $this->db_crm_ars;
+                    break;
+                case 'wep':
+                    $db = $this->db_crm_wep;
+                    break;
+                case 'dtf':
+                    $db = $this->db_crm_dtf;
+                    break;
+                default:
+                    $db = $this->db_default;
+            }
+
+            $result = $db->table('crm.data_coretax')
+                ->select('
+                    npwp,
+                    nama_pembeli,
+                    kode_transaksi,
+                    no_faktur,
+                    tanggal_faktur,
+                    masa_pajak,
+                    tahun,
+                    status_faktur,
+                    harga_jual,
+                    dpp,
+                    ppn,
+                    ppnbm,
+                    referensi,
+                    dilaporkan_penjual,
+                    created_at'
+                )
+                ->where('referensi', $kdtr)
+                ->get()
+                ->getResult();
+
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => $result
             ]);
 
         } catch (\Exception $e) {

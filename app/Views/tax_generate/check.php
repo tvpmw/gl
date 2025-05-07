@@ -117,159 +117,260 @@
     </div>
 </div>
 
+<!-- Detail Coretax Modal -->
+<div class="modal fade" id="coretaxModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detail Coretax</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered" id="coretaxTable">
+                        <thead>
+                            <tr>
+                                <th>NPWP</th>
+                                <th>Nama Pembeli</th>
+                                <th>Kode Transaksi</th>
+                                <th>No Faktur</th>
+                                <th>Tanggal Faktur</th>
+                                <th>Masa Pajak</th>
+                                <th>Tahun</th>
+                                <th>Status Faktur</th>
+                                <th>Harga Jual</th>
+                                <th>DPP</th>
+                                <th>PPN</th>
+                                <th>PPnBM</th>
+                                <th>Referensi</th>
+                                <th>Dilaporkan Penjual</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <?= $this->section('scripts') ?>
 <script>
 let dataTable;
 let detailTable;
 let detailModal;
+let coretaxTable; // Declare coretaxTable in the wider scope
+let coretaxModal;
 let checkedRows = new Set();
 
 $(document).ready(function() {
+    // Initialize modals
     detailModal = new bootstrap.Modal(document.getElementById('detailModal'));
-    
-    // Replace the existing detailTable initialization with:
-detailTable = $('#detailTable').DataTable({
-    processing: true,
-    searching: false,
-    paging: false,
-    info: false,
-    columns: [
-        { 
-            data: 'nmbrg',      // Kode Barang
-            className: 'align-middle',
-            render: function(data, type, row) {
-                if (row.status === 'deleted') {
-                    return `<span class="text-danger"><del>${row.stored.nmbrg}</del></span>`;
+    coretaxModal = new bootstrap.Modal(document.getElementById('coretaxModal'));
+
+    // Initialize detailTable
+    detailTable = $('#detailTable').DataTable({
+        processing: true,
+        searching: false,
+        paging: false,
+        info: false,
+        columns: [
+            { 
+                data: 'nmbrg',      // Kode Barang
+                className: 'align-middle',
+                render: function(data, type, row) {
+                    if (row.status === 'deleted') {
+                        return `<span class="text-danger"><del>${row.stored.nmbrg}</del></span>`;
+                    }
+                    return row.current?.nmbrg || row.stored?.nmbrg || '-';
                 }
-                return row.current?.nmbrg || row.stored?.nmbrg || '-';
+            },
+            { 
+                data: 'nama_brg',   // Nama Barang
+                className: 'align-middle',
+                render: function(data, type, row) {
+                    if (row.status === 'deleted') {
+                        return `<span class="text-danger"><del>${row.stored.nama_brg}</del></span>`;
+                    } else if (row.changes?.nama_brg) {
+                        return `<span class="text-danger">${row.current.nama_brg}</span>
+                               <small class="d-block text-muted"><del>${row.stored.nama_brg}</del></small>`;
+                    }
+                    return row.current?.nama_brg || row.stored?.nama_brg || '-';
+                }
+            },        
+            { 
+                data: 'qty',        // Qty
+                className: 'text-end align-middle',
+                render: function(data, type, row) {
+                    if (row.status === 'deleted') {
+                        return `<span class="text-danger"><del>${row.stored.qty}</del></span>`;
+                    } else if (row.changes?.qty) {
+                        return `<span class="text-danger">${row.current.qty}</span>
+                               <small class="d-block text-muted"><del>${row.stored.qty}</del></small>`;
+                    }
+                    return row.current?.qty || row.stored?.qty || '0';
+                }
+            },
+            { 
+                data: 'hrg',        // Harga
+                className: 'text-end align-middle',
+                render: function(data, type, row) {
+                    if (row.status === 'deleted') {
+                        return `<span class="text-danger"><del>${formatNumber(row.stored.hrg)}</del></span>`;
+                    } else if (row.changes?.hrg) {
+                        return `<span class="text-danger">${formatNumber(row.current.hrg)}</span>
+                               <small class="d-block text-muted"><del>${formatNumber(row.stored.hrg)}</del></small>`;
+                    }
+                    return formatNumber(row.current?.hrg || row.stored?.hrg || 0);
+                }
+            },
+            { 
+                data: 'diskon',     // Diskon Mstr
+                className: 'text-end align-middle',
+                render: function(data, type, row) {
+                    if (row.status === 'deleted') {
+                        return `<span class="text-danger">
+                            <del>${formatNumber(row.stored.diskon)}</del></span>`;
+                    } else if (row.changes?.diskon) {
+                        return `<span class="text-danger">${formatNumber(row.current.diskon)}</span>
+                               <small class="d-block text-muted">
+                                   <del>${formatNumber(row.stored.diskon)}</del>
+                               </small>`;
+                    }
+                    return formatNumber(row.current?.diskon || row.stored?.diskon || 0);
+                }
+            },
+            { 
+                data: 'diskon_tr',  // Diskon TR
+                className: 'text-end align-middle',
+                render: function(data, type, row) {
+                    if (row.status === 'deleted') {
+                        return `<span class="text-danger">
+                            <del>${row.stored.diskon_tr}%</del></span>`;
+                    } else if (row.changes?.diskon_tr) {
+                        return `<span class="text-danger">${row.current.diskon_tr}%</span>
+                               <small class="d-block text-muted">
+                                   <del>${row.stored.diskon_tr}%</del>
+                               </small>`;
+                    }
+                    return `${row.current?.diskon_tr || row.stored?.diskon_tr || 0}%`;
+                }
+            },
+            { 
+                data: 'dpp',        // DPP
+                className: 'text-end align-middle',
+                render: function(data, type, row) {
+                    if (row.status === 'deleted') {
+                        return `<span class="text-danger"><del>${formatNumber(row.stored.dpp)}</del></span>`;
+                    } else if (row.changes?.dpp) {
+                        return `<span class="text-danger">${formatNumber(row.current.dpp)}</span>
+                               <small class="d-block text-muted"><del>${formatNumber(row.stored.dpp)}</del></small>`;
+                    }
+                    return formatNumber(row.current?.dpp || row.stored?.dpp || 0);
+                }
+            },
+            { 
+                data: 'dpp_lain',   // DPP Lain
+                className: 'text-end align-middle',
+                render: function(data, type, row) {
+                    if (row.status === 'deleted') {
+                        return `<span class="text-danger"><del>${formatNumber(row.stored.dpp_lain)}</del></span>`;
+                    } else if (row.changes?.dpp_lain) {
+                        return `<span class="text-danger">${formatNumber(row.current.dpp_lain)}</span>
+                               <small class="d-block text-muted"><del>${formatNumber(row.stored.dpp_lain)}</del></small>`;
+                    }
+                    return formatNumber(row.current?.dpp_lain || row.stored?.dpp_lain || 0);
+                }
+            },
+            { 
+                data: 'ppn',        // PPN
+                className: 'text-end align-middle',
+                render: function(data, type, row) {
+                    if (row.status === 'deleted') {
+                        return `<span class="text-danger"><del>${formatNumber(row.stored.ppn)}</del></span>`;
+                    } else if (row.changes?.ppn) {
+                        return `<span class="text-danger">${formatNumber(row.current.ppn)}</span>
+                               <small class="d-block text-muted"><del>${formatNumber(row.stored.ppn)}</del></small>`;
+                    }
+                    return formatNumber(row.current?.ppn || row.stored?.ppn || 0);
+                }
             }
-        },
-        { 
-            data: 'nama_brg',   // Nama Barang
-            className: 'align-middle',
-            render: function(data, type, row) {
-                if (row.status === 'deleted') {
-                    return `<span class="text-danger"><del>${row.stored.nama_brg}</del></span>`;
-                } else if (row.changes?.nama_brg) {
-                    return `<span class="text-danger">${row.current.nama_brg}</span>
-                           <small class="d-block text-muted"><del>${row.stored.nama_brg}</del></small>`;
-                }
-                return row.current?.nama_brg || row.stored?.nama_brg || '-';
+        ],
+        createdRow: function(row, data) {
+            // Add background color for new items
+            if (data.status === 'new') {
+                $(row).addClass('table-success');
             }
-        },        
-        { 
-            data: 'qty',        // Qty
-            className: 'text-end align-middle',
-            render: function(data, type, row) {
-                if (row.status === 'deleted') {
-                    return `<span class="text-danger"><del>${row.stored.qty}</del></span>`;
-                } else if (row.changes?.qty) {
-                    return `<span class="text-danger">${row.current.qty}</span>
-                           <small class="d-block text-muted"><del>${row.stored.qty}</del></small>`;
-                }
-                return row.current?.qty || row.stored?.qty || '0';
+            // Add background color for deleted items
+            else if (data.status === 'deleted') {
+                $(row).addClass('table-danger');
             }
-        },
-        { 
-            data: 'hrg',        // Harga
-            className: 'text-end align-middle',
-            render: function(data, type, row) {
-                if (row.status === 'deleted') {
-                    return `<span class="text-danger"><del>${formatNumber(row.stored.hrg)}</del></span>`;
-                } else if (row.changes?.hrg) {
-                    return `<span class="text-danger">${formatNumber(row.current.hrg)}</span>
-                           <small class="d-block text-muted"><del>${formatNumber(row.stored.hrg)}</del></small>`;
-                }
-                return formatNumber(row.current?.hrg || row.stored?.hrg || 0);
-            }
-        },
-        { 
-            data: 'diskon',     // Diskon Mstr
-            className: 'text-end align-middle',
-            render: function(data, type, row) {
-                if (row.status === 'deleted') {
-                    return `<span class="text-danger">
-                        <del>${formatNumber(row.stored.diskon)}</del></span>`;
-                } else if (row.changes?.diskon) {
-                    return `<span class="text-danger">${formatNumber(row.current.diskon)}</span>
-                           <small class="d-block text-muted">
-                               <del>${formatNumber(row.stored.diskon)}</del>
-                           </small>`;
-                }
-                return formatNumber(row.current?.diskon || row.stored?.diskon || 0);
-            }
-        },
-        { 
-            data: 'diskon_tr',  // Diskon TR
-            className: 'text-end align-middle',
-            render: function(data, type, row) {
-                if (row.status === 'deleted') {
-                    return `<span class="text-danger">
-                        <del>${row.stored.diskon_tr}%</del></span>`;
-                } else if (row.changes?.diskon_tr) {
-                    return `<span class="text-danger">${row.current.diskon_tr}%</span>
-                           <small class="d-block text-muted">
-                               <del>${row.stored.diskon_tr}%</del>
-                           </small>`;
-                }
-                return `${row.current?.diskon_tr || row.stored?.diskon_tr || 0}%`;
-            }
-        },
-        { 
-            data: 'dpp',        // DPP
-            className: 'text-end align-middle',
-            render: function(data, type, row) {
-                if (row.status === 'deleted') {
-                    return `<span class="text-danger"><del>${formatNumber(row.stored.dpp)}</del></span>`;
-                } else if (row.changes?.dpp) {
-                    return `<span class="text-danger">${formatNumber(row.current.dpp)}</span>
-                           <small class="d-block text-muted"><del>${formatNumber(row.stored.dpp)}</del></small>`;
-                }
-                return formatNumber(row.current?.dpp || row.stored?.dpp || 0);
-            }
-        },
-        { 
-            data: 'dpp_lain',   // DPP Lain
-            className: 'text-end align-middle',
-            render: function(data, type, row) {
-                if (row.status === 'deleted') {
-                    return `<span class="text-danger"><del>${formatNumber(row.stored.dpp_lain)}</del></span>`;
-                } else if (row.changes?.dpp_lain) {
-                    return `<span class="text-danger">${formatNumber(row.current.dpp_lain)}</span>
-                           <small class="d-block text-muted"><del>${formatNumber(row.stored.dpp_lain)}</del></small>`;
-                }
-                return formatNumber(row.current?.dpp_lain || row.stored?.dpp_lain || 0);
-            }
-        },
-        { 
-            data: 'ppn',        // PPN
-            className: 'text-end align-middle',
-            render: function(data, type, row) {
-                if (row.status === 'deleted') {
-                    return `<span class="text-danger"><del>${formatNumber(row.stored.ppn)}</del></span>`;
-                } else if (row.changes?.ppn) {
-                    return `<span class="text-danger">${formatNumber(row.current.ppn)}</span>
-                           <small class="d-block text-muted"><del>${formatNumber(row.stored.ppn)}</del></small>`;
-                }
-                return formatNumber(row.current?.ppn || row.stored?.ppn || 0);
+            // Add background color for changed items
+            else if (data.status === 'changed') {
+                $(row).addClass('table-warning');
             }
         }
-    ],
-    createdRow: function(row, data) {
-        // Add background color for new items
-        if (data.status === 'new') {
-            $(row).addClass('table-success');
-        }
-        // Add background color for deleted items
-        else if (data.status === 'deleted') {
-            $(row).addClass('table-danger');
-        }
-        // Add background color for changed items
-        else if (data.status === 'changed') {
-            $(row).addClass('table-warning');
-        }
-    }
-});
+    });
+
+    // Initialize coretaxTable with DataTable (not DataTable())
+    coretaxTable = $('#coretaxTable').DataTable({
+        processing: true,
+        searching: false,
+        paging: false,
+        info: false,
+        columns: [
+            { data: 'npwp' },
+            { data: 'nama_pembeli' },
+            { data: 'kode_transaksi' },
+            { data: 'no_faktur' },
+            { 
+                data: 'tanggal_faktur',
+                render: function(data) {
+                    return data ? moment(data).format('DD/MM/YYYY') : '-';
+                }
+            },
+            { data: 'masa_pajak' },
+            { data: 'tahun' },
+            { 
+                data: 'status_faktur',
+                render: function(data) {
+                    let badgeClass = 'bg-secondary';
+                    if (data === 'APPROVED') badgeClass = 'bg-success';
+                    if (data === 'CREATED') badgeClass = 'bg-info';
+                    return `<span class="badge ${badgeClass}">${data || 'UNDEFINED'}</span>`;
+                }
+            },
+            { 
+                data: 'harga_jual',
+                render: function(data) {
+                    return formatNumber(data || 0);
+                }
+            },
+            { 
+                data: 'dpp',
+                render: function(data) {
+                    return formatNumber(data || 0);
+                }
+            },
+            { 
+                data: 'ppn',
+                render: function(data) {
+                    return formatNumber(data || 0);
+                }
+            },
+            { 
+                data: 'ppnbm',
+                render: function(data) {
+                    return formatNumber(data || 0);
+                }
+            },
+            { data: 'referensi' },
+            { data: 'dilaporkan_penjual' }
+        ]
+    });
 
     $("#form-filter").submit(function(e) {
         e.preventDefault();
@@ -394,6 +495,43 @@ $(document).on('click', '.btn-detail', function() {
                 icon: 'error',
                 title: 'Error',
                 text: 'Terjadi kesalahan saat mengambil data detail'
+            });
+        }
+    });
+});
+
+// Handle coretax button click
+$(document).on('click', '.btn-coretax', function() {
+    const kdtr = $(this).data('kdtr');
+    
+    if (coretaxTable) {
+        coretaxTable.clear().draw();
+    }
+    
+    $.ajax({
+        url: '<?= base_url('cms/tax-generate/get-coretax-detail') ?>',
+        type: 'POST',
+        data: {
+            kdtr: kdtr,
+            sumber_data: $('#sumber_data').val()
+        },
+        success: function(response) {
+            if (response.success) {
+                coretaxTable.rows.add(response.data).draw();
+                coretaxModal.show();
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: response.message || 'Failed to load coretax data'
+                });
+            }
+        },
+        error: function(xhr, status, error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Terjadi kesalahan saat mengambil data coretax'
             });
         }
     });

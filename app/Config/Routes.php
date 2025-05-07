@@ -93,5 +93,6 @@ $routes->group('cms', ['filter' => 'auth'], function ($routes) {
 		$routes->post('get-data', 'TaxGenerateCheckController::getData');
 		$routes->post('get-detail', 'TaxGenerateCheckController::getDetail');
 		$routes->post('batal-generate', 'TaxGenerateCheckController::batalGenerate');
+		$routes->post('get-coretax-detail', 'TaxGenerateCheckController::getCoretaxDetail');
 	});
 });
