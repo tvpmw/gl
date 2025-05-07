@@ -159,6 +159,34 @@
 
 <?= $this->section('scripts') ?>
 <script>
+    const startDate = document.getElementById("startDate");
+const endDate = document.getElementById("endDate");
+
+startDate.addEventListener("click", function () {
+    if (this.showPicker) {
+        this.showPicker();
+    } else {
+        this.focus();
+    }
+});
+
+endDate.addEventListener("click", function () {
+    if (this.showPicker) {
+        this.showPicker();
+    } else {
+        this.focus();
+    }
+});
+
+// Set default date values and max date
+document.addEventListener("DOMContentLoaded", function () {
+    const today = new Date().toISOString().split("T")[0];
+    startDate.max = today;
+    startDate.value = today;
+    endDate.max = today;
+    endDate.value = today;
+});
+
 let dataTable;
 let detailTable;
 let detailModal;
