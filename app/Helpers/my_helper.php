@@ -1224,6 +1224,26 @@ if ( ! function_exists('selisih_bulan')) {
 
 }
 
+if (!function_exists('logGL')) {
+    function logGL(string $config_db,string $module, string $aksi, int $userId = null): bool
+    {
+        $db = \Config\Database::connect($config_db);
+
+        if ($userId === null) {
+            $userId = session()->get('user_id');
+        }
+
+        $data = [
+            'module'     => $module,
+            'aksi'       => $aksi,
+            'user_id'    => $userId,
+            'created_at' => date('Y-m-d H:i:s'),
+        ];
+
+        return $db->table('crm.log_gl')->insert($data);
+    }
+}
+
 if ( ! function_exists('listModul')) {
   function listModul(){
     return [];

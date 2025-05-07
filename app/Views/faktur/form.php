@@ -30,6 +30,11 @@ if ($isUnderDevelopment) {
 ?>
 <?= $this->extend('layouts/admin') ?>
 <?= $this->section('styles') ?>
+<style>
+.custom-modal-width {
+    max-width: 95% !important;
+}
+</style>
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
@@ -140,7 +145,7 @@ if ($isUnderDevelopment) {
 
 <!-- Detail Modal -->
 <div class="modal fade" id="detailModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl custom-modal-width">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Detail Transaksi</h5>
@@ -148,13 +153,15 @@ if ($isUnderDevelopment) {
             </div>
             <div class="modal-body">
                 <div class="table-responsive">
-                    <table class="table table-striped table-bordered" id="detailTable">
+                    <table class="table table-striped table-bordered text-nowrap" id="detailTable">
                         <thead>
                             <tr>
                                 <th>Kode Barang</th>
                                 <th>Nama Barang</th>
                                 <th>Satuan</th>
                                 <th>Qty</th>
+                                <th>Retur</th>
+                                <th>Qty Stlh Retur</th>
                                 <th>Harga</th>
                                 <th>Diskon</th>
                                 <th>DPP</th>
@@ -379,7 +386,8 @@ $('#btnTidakDibuat').on('click', function() {
                             title: 'Berhasil',
                             text: 'Data berhasil disimpan/update!'
                         });
-                        $('#dataTrx').DataTable().ajax.reload();
+                        // $('#dataTrx').DataTable().ajax.reload();
+                        loadTable();
                     } else {
                         Swal.fire({
                             icon: 'error',
@@ -445,6 +453,7 @@ $('#btnGenerateExcel').on('click', function() {
     });
     
     window.location.href = `<?= base_url('cms/faktur/generate_excel') ?>?${params.toString()}`;
+    loadTable();
 });
 
 // Initialize detail modal
@@ -483,6 +492,8 @@ $(document).on('click', '.btn-detail', function() {
                         item.kode_brg ? item.kode_brg : '000000',
                         item.nama_brg,
                         item.satuan,
+                        item.tot_qty,
+                        item.retur,
                         item.qty,
                         formatPrice(item.hrg),
                         item.diskon + '%',
@@ -538,7 +549,8 @@ $('#btnBatalGenerate').on('click', function() {
                             text: response.message
                         }).then(() => {
                             // Reload table data
-                            $('#dataTrx').DataTable().ajax.reload();
+                            // $('#dataTrx').DataTable().ajax.reload();
+                            loadTable();
                         });
                     } else {
                         Swal.fire({

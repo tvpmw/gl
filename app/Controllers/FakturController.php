@@ -164,15 +164,19 @@ class FakturController extends Controller
                 switch ($row['sumber_data']) {
                     case 'ariston':
                         $mdl = $this->db_crm_ars;
+                        $db_config = 'crm_ars';
                         break;
                     case 'wep':
                         $mdl = $this->db_crm_wep;
+                        $db_config = 'crm_wep';
                         break;
                     case 'dtf':
                         $mdl = $this->db_crm_dtf;
+                        $db_config = 'crm_dtf';
                         break;
                     default:
                         $mdl = $this->db_default;
+                        $db_config = 'default';
                 }
 
                 // Check if record exists
@@ -238,6 +242,7 @@ class FakturController extends Controller
                 $mdl->query('DROP TABLE IF EXISTS tmp_update');
             }
 
+            logGL($db_config,'faktur_tidakDibuat','Insert');
             return $this->response->setJSON([
                 'success' => $success,
                 'message' => implode(', ', $message)
@@ -378,6 +383,8 @@ class FakturController extends Controller
             $sales_type = $request->getGet('sales_type');
             $dbs = $request->getGet('sumber_data');
             $selectedTrx = $request->getGet('selected_trx');
+            $now = date('Y-m-d H:i:s');
+            $userId = session()->get('user_id') ?? 1; // Adjust based on your auth system
 
             // Load template
             $templatePath = FCPATH . 'assets' . DIRECTORY_SEPARATOR . 'template.xlsx';
@@ -394,27 +401,40 @@ class FakturController extends Controller
                 throw new \Exception('Worksheet "Faktur" not found in template');
             }
 
+            $detailSheet = $spreadsheet->getSheetByName('DetailFaktur');
+            if (!$detailSheet) {
+                throw new \Exception('Worksheet "DetailFaktur" not found in template');
+            }
+
             // Dapatkan data langsung dari model, bukan dari getData()
             switch ($dbs) {
                 case 'ariston':
                     $mdl = $this->mstrModel2;
                     $prefix = 'A';
                     $tku = '0210642716526000000000';
+                    $db = $this->db_crm_ars;
+                    $db_config = 'crm_ars';
                     break;
                 case 'wep':
                     $mdl = $this->mstrModel3;
                     $prefix = 'W';
                     $tku = '0137755021526000000000';
+                    $db = $this->db_crm_wep;
+                    $db_config = 'crm_wep';
                     break;
                 case 'dtf':
                     $mdl = $this->mstrModel4;
                     $prefix = 'B';
                     $tku = '0316396407526000000000';
+                    $db = $this->db_crm_dtf;
+                    $db_config = 'crm_dtf';
                     break;
                 default:
                     $mdl = $this->mstrModel;
                     $prefix = 'K';
                     $tku = '0316396407526000000000';
+                    $db = $this->db_default;
+                    $db_config = 'default';
             }
 
             // Get data langsung dari model
@@ -429,20 +449,6 @@ class FakturController extends Controller
                 $rawData = array_filter($rawData, function($row) use ($selectedTrxArray) {
                     return in_array($row->kdtr, $selectedTrxArray);
                 });
-            }
-
-            switch ($dbs) {
-                case 'ariston':
-                    $db = $this->db_crm_ars;
-                    break;
-                case 'wep':
-                    $db = $this->db_crm_wep;
-                    break;
-                case 'dtf':
-                    $db = $this->db_crm_dtf;
-                    break;
-                default:
-                    $db = $this->db_default;
             }
 
             // Get list of existing transactions
@@ -468,136 +474,12 @@ class FakturController extends Controller
             }
 
             try {
-                // Get the appropriate database connection based on selected source
-                switch ($dbs) {
-                    case 'ariston':
-                        $db = $this->db_crm_ars;
-                        break;
-                    case 'wep':
-                        $db = $this->db_crm_wep;
-                        break;
-                    case 'dtf':
-                        $db = $this->db_crm_dtf;
-                        break;
-                    default:
-                        $db = $this->db_default;
-                }
-
-                // Begin transaction
-                $db->transStart();
-                
-                $now = date('Y-m-d H:i:s');
-                $userId = session()->get('user_id') ?? 1; // Adjust based on your auth system
-                
-                // Process each transaction for tax_generate
-                foreach ($rawData as $row) {
-                    // Calculate total tax from details
-                    $sql = "SELECT 
-                        SUM((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))/1.11 * tr.qty * 0.11) as total_tax
-                    FROM tr
-                    WHERE tr.kdtr = ?";
-                    
-                    $taxResult = $db->query($sql, [$row->kdtr])->getRow();
-                    
-                    // Prepare data for insertion
-                    $taxGenerateData = [
-                        'kode_trx' => $row->kdtr,
-                        'tanggal' => $row->tgl,
-                        'jam' => date('H:i:s'), // Current time as we don't have original time
-                        'total_tax' => (float)($taxResult->total_tax ?? 0),
-                        'created_at' => $now,
-                        'user_id' => $userId
-                    ];
-                    
-                    // Check if record already exists
-                    $existing = $db->table('crm.tax_generate')
-                                  ->where('kode_trx', $row->kdtr)
-                                  ->get()
-                                  ->getRow();
-                    
-                    if ($existing) {
-                        // Update existing record
-                        $taxGenerateData['updated_at'] = $now;
-                        $db->table('crm.tax_generate')
-                           ->where('kode_trx', $row->kdtr)
-                           ->update($taxGenerateData);
-                    } else {
-                        // Insert new record
-                        $db->table('crm.tax_generate')
-                           ->insert($taxGenerateData);
-                    }
-                }
-                
-                // Complete transaction
-                $db->transComplete();
-                
-                if ($db->transStatus() === false) {
-                    throw new \Exception('Error saving tax_generate data');
-                }
-                
-            } catch (\Exception $e) {
-                log_message('error', 'Error saving tax_generate: ' . $e->getMessage());
-                throw $e; // Re-throw to be caught by outer try-catch
-            }
-                
-            // Format data untuk excel
-            $dataFaktur = [];
-            $counter = 1;
-            foreach ($rawData as $row) {
-                // Format NPWP dengan memastikan tidak ada konversi numerik
-                $npwp = $row->status_wp == "VALID" ? str_pad($row->newnpwp, 16, '0', STR_PAD_RIGHT) : "000000000000000";
-                $npwpInvalid = $row->status_wp == "INVALID" ? str_pad($row->newnpwp, 16, '0', STR_PAD_RIGHT) : "-";
-                
-                $dataFaktur[] = [
-                    $counter++,
-                    format_date($row->tgl, 'Y-m-d'),
-                    'Normal',
-                    "04",
-                    '',
-                    '',
-                    '',                            
-                    $row->kdtr,                                                            
-                    '',
-                    $tku,
-                    '="' . $npwp . '"', // Format sebagai string dengan formula Excel
-                    ($row->status_wp == "VALID" ? "TIN" : "National ID"),
-                    'IDN',
-                    '="' . $npwpInvalid . '"', // Format sebagai string dengan formula Excel
-                    $row->name,
-                    $row->address,
-                    '',
-                    '="' . ($row->newnpwp ? str_pad($row->newnpwp . "000000", 21, '0', STR_PAD_RIGHT) : "-") . '"'
-                ];
-            }
-            $dataFaktur[] = ['END', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''];
-
-            // Fill Faktur data
-            $row = 4; // Starting row
-            foreach ($dataFaktur as $data) {
-                $fakturSheet->fromArray($data, null, 'A' . $row++);
-            }
-
-            // Set format kolom sebagai Text
-            $fakturSheet->getColumnDimension('K')->setWidth(20);
-            $fakturSheet->getColumnDimension('N')->setWidth(20);
-            $fakturSheet->getColumnDimension('R')->setWidth(25);
-            
-            $fakturSheet->getStyle('J4:J' . ($row-1))->getNumberFormat()->setFormatCode('@');
-            $fakturSheet->getStyle('K4:K' . ($row-1))->getNumberFormat()->setFormatCode('@');
-            $fakturSheet->getStyle('N4:N' . ($row-1))->getNumberFormat()->setFormatCode('@');
-            $fakturSheet->getStyle('R4:R' . ($row-1))->getNumberFormat()->setFormatCode('@');
-
-            $detailSheet = $spreadsheet->getSheetByName('DetailFaktur');
-            if (!$detailSheet) {
-                throw new \Exception('Worksheet "DetailFaktur" not found in template');
-            }
-            
-            try {
                 $rowDetail = 2; 
                 $fakturCounter = 1;
                 
                 // Define queries once
                 $baseQuery = "SELECT 
+                    tr.kdtr,
                     tr.nmbrg,
                     tr.qty,
                     tr.hrg,
@@ -614,6 +496,7 @@ class FakturController extends Controller
                 ORDER BY tr.kdtr ASC, tr.nmbrg ASC";
             
                 $aristonWepQuery = "SELECT 
+                    tr.kdtr,
                     tr.nmbrg,
                     tr.qty,
                     tr.hrg,
@@ -631,39 +514,59 @@ class FakturController extends Controller
                 LEFT JOIN mstr ON tr.kdtr = mstr.kdtr
                 WHERE tr.kdtr = ?
                 ORDER BY tr.kdtr ASC, tr.nmbrg ASC";
-            
+
+
+                $queryRetur = "SELECT 
+                    tr.kdtr,
+                    mstr.tgl,
+                    tr.nmbrg,
+                    tr.qty
+                FROM tr
+                LEFT JOIN mstr ON tr.kdtr = mstr.kdtr
+                WHERE mstr.kdtr2 = ?
+                ORDER BY tr.kdtr ASC, tr.nmbrg ASC";
+
                 // Get database connection and appropriate query once
                 switch ($dbs) {
                     case 'ariston':
-                        $db = $this->db_crm_ars;
                         $sql = $aristonWepQuery;
                         break;
                     case 'wep':
-                        $db = $this->db_crm_wep; 
                         $sql = $aristonWepQuery;
                         break;
                     case 'dtf':
-                        $db = $this->db_crm_dtf;
                         $sql = $baseQuery;
                         break;
                     default:
-                        $db = $this->db_default;
                         $sql = $baseQuery;
                 }
-            
+
+
                 $db->transStart();
-                
+                $listTrx = [];
                 foreach ($rawData as $trx) {
+                    $getRetur = $db->query($queryRetur, [$trx->kdtr])->getResult();  
+                    $listRetur = [];
+                    foreach($getRetur as $row){
+                        $listRetur[$row->nmbrg] = $row;
+                    }
                     $details = $db->query($sql, [$trx->kdtr])->getResult();
-            
                     foreach ($details as $detail) {
+                        $cekRetur = $listRetur[$detail->nmbrg] ?? [];
+                        $valRetur = $cekRetur['qty'] ?? 0;
+                        $qty = $detail->qty;
+                        $tot_qty = $qty-$valRetur;
+                        if($tot_qty<=0){
+                            continue;
+                        }
+                        $listTrx[] = $detail->kdtr;
                         // Perhitungan berbeda untuk Ariston/WEP
                         if (in_array($dbs, ['ariston', 'wep'])) {
                             $dpp = $detail->dpp;
                             $dpp_lain = $detail->dpp_nl;
                         } else {
-                            $dpp = $detail->dpp_unit * $detail->qty;
-                            $dpp_lain = $detail->dpp_nl * $detail->qty; 
+                            $dpp = $detail->dpp_unit * $tot_qty;
+                            $dpp_lain = $detail->dpp_nl * $tot_qty; 
                         }
                         
                         $nominal_ppn = $dpp_lain * 0.12;
@@ -675,7 +578,7 @@ class FakturController extends Controller
                             'kode_brg' => $detail->kdtax ?? '000000',
                             'nama_brg' => $detail->nama_brg,
                             'satuan' => 'UM.0018',
-                            'qty' => $detail->qty,
+                            'qty' => $tot_qty,
                             'diskon' => $detail->disc,
                             'dpp' => $dpp,
                             'dpp_lain' => $dpp_lain,
@@ -745,9 +648,122 @@ class FakturController extends Controller
                 log_message('error', 'Error saving tax_generate_brg: ' . $e->getMessage());
                 throw $e; // Re-throw to be caught by outer try-catch
             }
+
             
             // Add END marker row
             $detailSheet->fromArray(['END', '', '', '', '', '', '', '', '', '', '', '', '', ''], null, 'A' . $rowDetail);
+
+            $listTrx = array_unique($listTrx);
+
+
+            //===============================Sheet Faktur==============================
+
+            try {
+                // Begin transaction
+                $db->transStart();
+                                
+                // Process each transaction for tax_generate
+                foreach ($rawData as $row) {
+                    // Calculate total tax from details
+                    $sql = "SELECT 
+                        SUM((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))/1.11 * tr.qty * 0.11) as total_tax
+                    FROM tr
+                    WHERE tr.kdtr = ?";
+                    
+                    $taxResult = $db->query($sql, [$row->kdtr])->getRow();
+                    
+                    // Prepare data for insertion
+                    $taxGenerateData = [
+                        'kode_trx' => $row->kdtr,
+                        'tanggal' => $row->tgl,
+                        'jam' => date('H:i:s'), // Current time as we don't have original time
+                        'total_tax' => (float)($taxResult->total_tax ?? 0),
+                        'created_at' => $now,
+                        'user_id' => $userId
+                    ];
+                    
+                    // Check if record already exists
+                    $existing = $db->table('crm.tax_generate')
+                                  ->where('kode_trx', $row->kdtr)
+                                  ->get()
+                                  ->getRow();
+                    
+                    if ($existing) {
+                        // Update existing record
+                        $taxGenerateData['updated_at'] = $now;
+                        $db->table('crm.tax_generate')
+                           ->where('kode_trx', $row->kdtr)
+                           ->update($taxGenerateData);
+                    } else {
+                        // Insert new record
+                        $db->table('crm.tax_generate')
+                           ->insert($taxGenerateData);
+                    }
+                }
+                
+                // Complete transaction
+                $db->transComplete();
+                
+                if ($db->transStatus() === false) {
+                    throw new \Exception('Error saving tax_generate data');
+                }
+                
+            } catch (\Exception $e) {
+                log_message('error', 'Error saving tax_generate: ' . $e->getMessage());
+                throw $e; // Re-throw to be caught by outer try-catch
+            }
+                
+            // Format data untuk excel
+            $dataFaktur = [];
+            $counter = 1;
+            foreach ($rawData as $row) {
+                if (!in_array($row->kdtr, $listTrx)){
+                    continue;
+                }
+                // Format NPWP dengan memastikan tidak ada konversi numerik
+                $npwp = $row->status_wp == "VALID" ? str_pad($row->newnpwp, 16, '0', STR_PAD_RIGHT) : "000000000000000";
+                $npwpInvalid = $row->status_wp == "INVALID" ? str_pad($row->newnpwp, 16, '0', STR_PAD_RIGHT) : "-";
+
+                $aa = ($row->status_wp == "VALID" ? "TIN" : "National ID");
+                
+                $dataFaktur[] = [
+                    $counter++,
+                    format_date($row->tgl, 'Y-m-d'),
+                    'Normal',
+                    "04",
+                    '',
+                    '',
+                    '',                            
+                    $row->kdtr,                                                            
+                    '',
+                    $tku,
+                    '="' . $npwp . '"', // Format sebagai string dengan formula Excel
+                    $aa,
+                    'IDN',
+                    '="' . $npwpInvalid . '"', // Format sebagai string dengan formula Excel
+                    $row->name,
+                    $row->address,
+                    '',
+                    ($row->status_wp == "VALID" ? '="'.str_pad($row->newnpwp . "000000", 21, '0', STR_PAD_RIGHT).'"' : "-")
+                ];
+            }
+            $dataFaktur[] = ['END', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''];
+
+            // Fill Faktur data
+            $row = 4; // Starting row
+            foreach ($dataFaktur as $data) {
+                $fakturSheet->fromArray($data, null, 'A' . $row++);
+            }
+
+            // Set format kolom sebagai Text
+            $fakturSheet->getColumnDimension('K')->setWidth(20);
+            $fakturSheet->getColumnDimension('N')->setWidth(20);
+            $fakturSheet->getColumnDimension('R')->setWidth(25);
+            
+            $fakturSheet->getStyle('J4:J' . ($row-1))->getNumberFormat()->setFormatCode('@');
+            $fakturSheet->getStyle('K4:K' . ($row-1))->getNumberFormat()->setFormatCode('@');
+            $fakturSheet->getStyle('N4:N' . ($row-1))->getNumberFormat()->setFormatCode('@');
+            $fakturSheet->getStyle('R4:R' . ($row-1))->getNumberFormat()->setFormatCode('@');
 
             // Set active sheet to Faktur
             $spreadsheet->setActiveSheetIndexByName('Faktur');
@@ -765,6 +781,7 @@ class FakturController extends Controller
             header('Cache-Control: max-age=0');
             
             $writer->save('php://output');
+            logGL($db_config,'faktur_generate','Insert');
             exit();
         } catch (\Exception $e) {
             return $this->response->setJSON([
@@ -927,15 +944,19 @@ class FakturController extends Controller
             switch ($dbs) {
                 case 'ariston':
                     $db = $this->db_crm_ars;
+                    $db_config = 'crm_ars';
                     break;
                 case 'wep':
                     $db = $this->db_crm_wep;
+                    $db_config = 'crm_wep';
                     break;
                 case 'dtf':
                     $db = $this->db_crm_dtf;
+                    $db_config = 'crm_dtf';
                     break;
                 default:
                     $db = $this->db_default;
+                    $db_config = 'default';
             }
 
             $insertData = [];
@@ -1014,6 +1035,8 @@ class FakturController extends Controller
                 }
             }
 
+            logGL($db_config,'faktur_import','Insert');
+
             return $this->response->setJSON([
                 'success' => $success,
                 'message' => implode(', ', $message)
@@ -1076,6 +1099,16 @@ class FakturController extends Controller
             WHERE tr.kdtr = ?
             ORDER BY tr.kdtr ASC, tr.nmbrg ASC";
 
+            $queryRetur = "SELECT 
+                tr.kdtr,
+                mstr.tgl,
+                tr.nmbrg,
+                tr.qty
+            FROM tr
+            LEFT JOIN mstr ON tr.kdtr = mstr.kdtr
+            WHERE mstr.kdtr2 = ?
+            ORDER BY tr.kdtr ASC, tr.nmbrg ASC";
+
             // Select the appropriate database connection and query
             switch ($dbs) {
                 case 'ariston':
@@ -1095,7 +1128,22 @@ class FakturController extends Controller
                     $sql = $baseQuery;
             }
 
-            $details = $db->query($sql, [$kdtr])->getResult();                
+            $getRetur = $db->query($queryRetur, [$kdtr])->getResult();  
+            $listRetur = [];
+            foreach($getRetur as $row){
+                $listRetur[$row->nmbrg] = $row;
+            }
+
+            $details = $db->query($sql, [$kdtr])->getResult();  
+            foreach($details as $key => $dt){
+                $cekRetur = $listRetur[$dt->nmbrg] ?? [];
+                $valRetur = $cekRetur->qty ?? 0;
+                $valStlhRetur = $dt->qty - $valRetur;
+                $details[$key]->retur = $valRetur;
+                $details[$key]->tot_qty = $dt->qty;
+                $details[$key]->qty = $valStlhRetur;
+                $details[$key]->dpp = $valStlhRetur * $dt->dpp_unit;
+            }
 
             return $this->response->setJSON([
                 'success' => true,
@@ -1127,15 +1175,19 @@ class FakturController extends Controller
             switch ($dbs) {
                 case 'ariston':
                     $db = $this->db_crm_ars;
+                    $db_config = 'crm_ars';
                     break;
                 case 'wep':
                     $db = $this->db_crm_wep;
+                    $db_config = 'crm_wep';
                     break;
                 case 'dtf':
                     $db = $this->db_crm_dtf;
+                    $db_config = 'crm_dtf';
                     break;
                 default:
                     $db = $this->db_default;
+                    $db_config = 'default';
             }
 
             // Mulai transaksi
@@ -1175,6 +1227,8 @@ class FakturController extends Controller
             if ($db->transStatus() === false) {
                 throw new \Exception('Gagal membatalkan generate data');
             }
+
+            logGL($db_config,'faktur_batal_generate','delete');
 
             return $this->response->setJSON([
                 'success' => true,
