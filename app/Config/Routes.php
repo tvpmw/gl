@@ -101,4 +101,9 @@ $routes->group('cms', ['filter' => 'auth'], function ($routes) {
 		$routes->post('get-data', 'TaxGenerateCheckController::getDataRetur');
 		$routes->post('sudah-lapor', 'TaxGenerateCheckController::sudahLapor');
 	});
+
+	$routes->group('customer', function ($routes) {
+		$routes->get('/', 'CustomerController::index');
+		$routes->post('get-data', 'CustomerController::getData');
+	});	
 });
