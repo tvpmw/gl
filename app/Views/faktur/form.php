@@ -450,7 +450,9 @@ $('#btnGenerateExcel').on('click', function() {
     });
     
     window.location.href = `<?= base_url('cms/faktur/generate_excel') ?>?${params.toString()}`;
-    loadTable();
+    setTimeout(() => {
+        loadTable();
+    }, 3000);
 });
 
 // Initialize detail modal
