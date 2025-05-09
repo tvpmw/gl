@@ -344,7 +344,13 @@ class FakturController extends Controller
         }
 
         if(!empty($updateData)){
-            $mdl->table('crm.cust_npwp')->updateBatch($updateData, 'npwpcust');
+            // $mdl->table('crm.cust_npwp')->updateBatch($updateData, 'npwpcust');
+            foreach ($updateData as $row) {
+                $row['updated_at'] = date('Y-m-d H:i:s'); // atau Time::now()->toDateTimeString()
+                $mdl->table('crm.cust_npwp')
+                    ->where('npwpcust', $row['npwpcust'])
+                    ->update($row);
+            }
         }
 
         return true;

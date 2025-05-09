@@ -184,13 +184,15 @@ class MstrModel extends Model
         }
 
         if ($sales_type == 'ONLINE') {
-            $builder->whereIn('cust.wil', $this->online);
+            // $builder->whereIn('cust.wil', $this->online);
+            $builder->where('cust.npwp', '');
         } else {
-            $builder->whereNotIn('cust.wil', $this->online);
+            // $builder->whereNotIn('cust.wil', $this->online);
+            $builder->where('cust.npwp !=', '');
         }
 
         // Filter: NPWP yang belum pernah masuk ke tabel crm.cust_npwp
-        $subquery = $this->db->table('crm.cust_npwp')->select('npwpcust');
+        $subquery = $this->db->table('crm.cust_npwp')->where('status_wp','VALID')->select('npwpcust');
         $builder->whereNotIn('cust.npwp', $subquery);
 
         return $builder->get()->getResult();
@@ -221,9 +223,11 @@ class MstrModel extends Model
 
         // Apply sales type filter
         if ($sales_type == 'ONLINE') {
-            $builder->whereIn('cust.wil', $this->online);
+            // $builder->whereIn('cust.wil', $this->online);
+            $builder->where('cust.npwp', '');
         } else {
-            $builder->whereNotIn('cust.wil', $this->online);
+            // $builder->whereNotIn('cust.wil', $this->online);
+            $builder->where('cust.npwp !=', '');
         }
 
         // Apply prefix filter if provided
