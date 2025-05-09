@@ -1,10 +1,23 @@
 <?= $this->extend('layouts/admin') ?>
 <?= $this->section('styles') ?>
+<style>
+    .nav-link.active{
+        background: var(--primary-color) !important;
+    }
+</style>
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
-<div class="container-fluid px-4">
-    <h1 class="mt-4">Cek Data Tax Generate</h1>
+<div class="container-fluid px-4 py-4">
+    <ul class="nav nav-pills mb-2">
+      <li class="nav-item">
+        <a class="nav-link active" aria-current="page" href="javascript:void(0);">Tax Generate</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="<?=base_url('cms/tax-retur')?>">Retur</a>        
+      </li>
+    </ul>    
+    <h3 class="mt-4">Cek Data Tax Generate</h3>
     
     <!-- Form Card -->
     <div class="card mb-4">

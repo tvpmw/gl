@@ -95,4 +95,10 @@ $routes->group('cms', ['filter' => 'auth'], function ($routes) {
 		$routes->post('batal-generate', 'TaxGenerateCheckController::batalGenerate');
 		$routes->post('get-coretax-detail', 'TaxGenerateCheckController::getCoretaxDetail');
 	});
+
+	$routes->group('tax-retur', function ($routes) {
+		$routes->get('/', 'TaxGenerateCheckController::retur');
+		$routes->post('get-data', 'TaxGenerateCheckController::getDataRetur');
+		$routes->post('sudah-lapor', 'TaxGenerateCheckController::sudahLapor');
+	});
 });

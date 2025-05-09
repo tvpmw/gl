@@ -384,7 +384,7 @@ class FakturController extends Controller
             $dbs = $request->getGet('sumber_data');
             $selectedTrx = $request->getGet('selected_trx');
             $now = date('Y-m-d H:i:s');
-            $userId = session()->get('user_id') ?? 1; // Adjust based on your auth system
+            $userId = session()->get('user_id') ?? 9999; // Adjust based on your auth system
 
             // Load template
             $templatePath = FCPATH . 'assets' . DIRECTORY_SEPARATOR . 'template.xlsx';
@@ -553,7 +553,7 @@ class FakturController extends Controller
                     $details = $db->query($sql, [$trx->kdtr])->getResult();
                     foreach ($details as $detail) {
                         $cekRetur = $listRetur[$detail->nmbrg] ?? [];
-                        $valRetur = $cekRetur['qty'] ?? 0;
+                        $valRetur = $cekRetur->qty ?? 0;
                         $qty = $detail->qty;
                         $tot_qty = $qty-$valRetur;
                         if($tot_qty<=0){
@@ -594,7 +594,9 @@ class FakturController extends Controller
                             'hrg' => $detail->hrg,
                             'kode_trx' => $trx->kdtr,
                             'nmbrg' => $detail->nmbrg,
-                            'diskon_tr' => $detail->disc
+                            'diskon_tr' => $detail->disc,
+                            'kode_trx_retur' => $cekRetur->kdtr ?? null,
+                            'qty_retur' => $valRetur
                         ];
 
                         // Check if record exists

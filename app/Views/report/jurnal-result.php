@@ -26,7 +26,7 @@
             </tr>
         </thead>
         <tbody>
-            <?php foreach ($lists as $jurnal): ?>
+            <?php if(!empty($lists)): foreach ($lists as $jurnal): ?>
                 <?php 
                     $rowspan = count($jurnal['rincian']);
                     $totalDebet = 0;
@@ -61,7 +61,11 @@
                     <td class="text-end fw-bold"><?= number_format($totalDebet, 2, ',', '.') ?></td>
                     <td class="text-end fw-bold"><?= number_format($totalKredit, 2, ',', '.') ?></td>
                 </tr>
-            <?php endforeach; ?>
+            <?php endforeach; else: ?>
+            <tr>
+                <td colspan="6">Tidak ada data</td>
+            </tr>
+            <?php endif; ?>
         </tbody>
     </table>
 </div>

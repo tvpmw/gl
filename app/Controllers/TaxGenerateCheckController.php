@@ -496,4 +496,171 @@ class TaxGenerateCheckController extends Controller
             ]);
         }
     }
+
+    public function retur()
+    {
+        $data['dbs'] = getSelDb();
+        return view('tax_generate/retur', $data);
+    }
+
+    public function getDataRetur()
+    {
+        try {
+            $request = service('request');
+            $dbs = $request->getPost('sumber_data');
+
+            // Select database based on source
+            switch ($dbs) {
+                case 'ariston':
+                    $db = $this->db_crm_ars;
+                    break;
+                case 'wep':
+                    $db = $this->db_crm_wep;
+                    break;
+                case 'dtf':
+                    $db = $this->db_crm_dtf;
+                    break;
+                default:
+                    $db = $this->db_default;
+            }
+
+            $queryTg = $db->table('crm.tax_generate')->selectMin('tanggal')->get();
+            $resultTg = $queryTg->getRow();
+            $tglMin = $resultTg->tanggal ?? date('Y-m-d');
+
+            $queryRetur = "SELECT mstr.kdtr,tr.nmbrg,tr.qty,mstr.tgl,mstr.kdtr2
+                        FROM mstr
+                        LEFT JOIN tr ON tr.kdtr=mstr.kdtr
+                        WHERE mstr.tipe = 'KJ'
+                        AND mstr.tgl > ?";
+
+            $getRetur = $db->query($queryRetur, [$tglMin])->getResult();
+            $listRetur = [];
+            $listKdtr = [];
+            foreach($getRetur as $row){
+                $listKdtr[] = $row->kdtr2;
+                $listRetur[$row->kdtr2.'|'.$row->nmbrg] = $row;
+            }
+            $listKdtr = array_unique($listKdtr);
+
+            if(!empty($listKdtr)){
+                $result = $db->table('crm.tax_generate_brg gb')
+                    ->select('gb.*,g.tanggal,tr.kode_trx as aaa')
+                    ->join('crm.tax_generate g', 'g.kode_trx = gb.kode_trx', 'left')
+                    ->join('crm.tax_retur tr', 'tr.kode_trx = gb.kode_trx AND tr.nmbrg = gb.nmbrg', 'left')
+                    ->whereIn('gb.kode_trx', $listKdtr)
+                    ->where('tr.kode_trx IS NULL')
+                    ->get()
+                    ->getResult();
+
+                $formattedData = [];
+                foreach ($result as $row) {
+                    $key = $row->kode_trx.'|'.$row->nmbrg;
+                    $cekRetur = $listRetur[$key] ?? [];
+                    if(empty($cekRetur)){
+                        continue;
+                    }
+                    if($cekRetur->kdtr.$cekRetur->nmbrg == $row->kode_trx_retur.$row->nmbrg){
+                        continue;
+                    }
+
+                    $formattedData[] = [
+                        $key.'|'.$cekRetur->kdtr,
+                        format_date($row->tanggal, 'd/m/Y'),
+                        $row->kode_trx,
+                        $row->nama_brg,
+                        $row->qty,
+                        $cekRetur->qty,
+                        $row->qty-$cekRetur->qty,
+                        $cekRetur->kdtr,
+                        format_date($cekRetur->tgl, 'd/m/Y'),
+                    ];
+                }
+            }else{
+                $formattedData = [];
+            }
+
+            // Fix DataTables response format
+            return $this->response->setJSON([
+                'draw' => $request->getPost('draw'),
+                'recordsTotal' => count($formattedData),
+                'recordsFiltered' => count($formattedData), 
+                'data' => $formattedData
+            ]);
+
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'draw' => $request->getPost('draw'),
+                'recordsTotal' => 0,
+                'recordsFiltered' => 0,
+                'data' => [],
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    public function sudahLapor()
+    {
+        try {
+            $request = service('request');
+            $kode_trx = $request->getPost('kode_trx');
+            $dbs = $request->getPost('sumber_data');
+            $catatan = $request->getPost('catatan');
+            $userId = session()->get('user_id') ?? 9999;
+
+            // Select database based on source
+            switch ($dbs) {
+                case 'ariston':
+                    $db = $this->db_crm_ars;
+                    $db_config = 'crm_ars';
+                    break;
+                case 'wep':
+                    $db = $this->db_crm_wep;
+                    $db_config = 'crm_wep';
+                    break;
+                case 'dtf':
+                    $db = $this->db_crm_dtf;
+                    $db_config = 'crm_dtf';
+                    break;
+                default:
+                    $db = $this->db_default;
+                    $db_config = 'default';
+            }
+
+            $db->transStart();
+
+            $dataIns = [];
+            foreach ($kode_trx as $value) {
+                list($kdtr,$nmbrg,$kode_trx_retur) = explode('|', $value);
+                $dataIns[] = [
+                    'kode_trx' => $kdtr,
+                    'kode_trx_retur' => $kode_trx_retur,
+                    'nmbrg' => $nmbrg,
+                    'catatan' => $catatan,
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'user_id' => $userId,
+                ];
+            }
+
+            $db->table('crm.tax_retur')->insertBatch($dataIns);
+
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                throw new \Exception('Proses gagal');
+            }
+
+            logGL($db_config,'faktur_retur','Insert');
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Proses berhasil'
+            ]);
+
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
 }
