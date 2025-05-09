@@ -398,15 +398,19 @@ class TaxGenerateCheckController extends Controller
             switch ($dbs) {
                 case 'ariston':
                     $db = $this->db_crm_ars;
+                    $db_config = 'crm_ars';
                     break;
                 case 'wep':
                     $db = $this->db_crm_wep;
+                    $db_config = 'crm_wep';
                     break;
                 case 'dtf':
                     $db = $this->db_crm_dtf;
+                    $db_config = 'crm_dtf';
                     break;
                 default:
                     $db = $this->db_default;
+                    $db_config = 'default';
             }
 
             $db->transStart();
@@ -426,6 +430,8 @@ class TaxGenerateCheckController extends Controller
             if ($db->transStatus() === false) {
                 throw new \Exception('Gagal membatalkan tax generate');
             }
+
+            logGL($db_config,'faktur_batalgenerate','Insert');
 
             return $this->response->setJSON([
                 'success' => true,
