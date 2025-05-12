@@ -1177,8 +1177,9 @@ if ( ! function_exists('cleanString')) {
       // Ubah ke string, hapus semua karakter non-angka
       $str = preg_replace('/[^0-9]/', '', (string) $str);
 
-      // Tambah 0 di depan jika kurang dari 16 digit
-      return str_pad($str, 16, '0', STR_PAD_LEFT);
+      $result = str_pad($str, 16, '0', STR_PAD_LEFT);
+      $result = substr($result, 0, 16);
+      return $result;
   }
 }
 

@@ -389,28 +389,6 @@ class FakturController extends Controller
             $sales_type = $request->getGet('sales_type');
             $dbs = $request->getGet('sumber_data');
             $selectedTrx = $request->getGet('selected_trx');
-            $now = date('Y-m-d H:i:s');
-            $userId = session()->get('user_id') ?? 9999; // Adjust based on your auth system
-
-            // Load template
-            $templatePath = FCPATH . 'assets' . DIRECTORY_SEPARATOR . 'template.xlsx';
-            if (!file_exists($templatePath)) {
-                throw new \Exception('File template.xlsx not found at: ' . $templatePath);
-            }
-
-            // Load existing template
-            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($templatePath);
-
-            // Get Faktur sheet
-            $fakturSheet = $spreadsheet->getSheetByName('Faktur');
-            if (!$fakturSheet) {
-                throw new \Exception('Worksheet "Faktur" not found in template');
-            }
-
-            $detailSheet = $spreadsheet->getSheetByName('DetailFaktur');
-            if (!$detailSheet) {
-                throw new \Exception('Worksheet "DetailFaktur" not found in template');
-            }
 
             // Dapatkan data langsung dari model, bukan dari getData()
             switch ($dbs) {
@@ -479,328 +457,571 @@ class FakturController extends Controller
                 ]);
             }
 
-            try {
-                $rowDetail = 2; 
-                $fakturCounter = 1;
-                
-                // Define queries once
-                $baseQuery = "SELECT 
-                    tr.kdtr,
-                    tr.nmbrg,
-                    tr.qty,
-                    tr.hrg,
-                    tr.disc,
-                    (tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))/1.11 as dpp_unit,
-                    ((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))/1.11)*11/12 as dpp_nl,
-                    tr.tot,
-                    brg.nama as nama_brg,
-                    mc.kdtax
-                FROM tr
-                JOIN brg ON tr.nmbrg = brg.nmbrg 
-                LEFT JOIN crm.mapping_coretax mc ON tr.nmbrg = mc.kdbrg
-                WHERE tr.kdtr = ?
-                ORDER BY tr.kdtr ASC, tr.nmbrg ASC";
-            
-                $aristonWepQuery = "SELECT 
-                    tr.kdtr,
-                    tr.nmbrg,
-                    tr.qty,
-                    tr.hrg,
-                    tr.disc,                    
-                    ((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))*tr.qty - (mstr.disc/(SELECT SUM(tr2.qty) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr)*tr.qty))/1.11/tr.qty as dpp_unit,                    
-                    (((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))*tr.qty - (mstr.disc/(SELECT SUM(tr2.qty) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr)*tr.qty))/1.11)*11/12 as dpp_nl,
-                    ((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))*tr.qty - (mstr.disc/(SELECT SUM(tr2.qty) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr)*tr.qty))/1.11 as dpp,
-                    tr.tot,
-                    brg.nama as nama_brg,
-                    mc.kdtax,
-                    mstr.disc as disc_faktur
-                FROM tr
-                JOIN brg ON tr.nmbrg = brg.nmbrg 
-                LEFT JOIN crm.mapping_coretax mc ON tr.nmbrg = mc.kdbrg
-                LEFT JOIN mstr ON tr.kdtr = mstr.kdtr
-                WHERE tr.kdtr = ?
-                ORDER BY tr.kdtr ASC, tr.nmbrg ASC";
-
-
-                $queryRetur = "SELECT 
-                    tr.kdtr,
-                    mstr.tgl,
-                    tr.nmbrg,
-                    tr.qty
-                FROM tr
-                LEFT JOIN mstr ON tr.kdtr = mstr.kdtr
-                WHERE mstr.kdtr2 = ?
-                ORDER BY tr.kdtr ASC, tr.nmbrg ASC";
-
-                // Get database connection and appropriate query once
-                switch ($dbs) {
-                    case 'ariston':
-                        $sql = $aristonWepQuery;
-                        break;
-                    case 'wep':
-                        $sql = $aristonWepQuery;
-                        break;
-                    case 'dtf':
-                        $sql = $baseQuery;
-                        break;
-                    default:
-                        $sql = $baseQuery;
-                }
-
-
-                $db->transStart();
-                $listTrx = [];
-                foreach ($rawData as $trx) {
-                    $getRetur = $db->query($queryRetur, [$trx->kdtr])->getResult();  
-                    $listRetur = [];
-                    foreach($getRetur as $row){
-                        $listRetur[$row->nmbrg] = $row;
-                    }
-                    $details = $db->query($sql, [$trx->kdtr])->getResult();
-                    foreach ($details as $detail) {
-                        $cekRetur = $listRetur[$detail->nmbrg] ?? [];
-                        $valRetur = $cekRetur->qty ?? 0;
-                        $qty = $detail->qty;
-                        $tot_qty = $qty-$valRetur;
-                        if($tot_qty<=0){
-                            continue;
-                        }
-                        $listTrx[] = $detail->kdtr;
-                        // Perhitungan berbeda untuk Ariston/WEP
-                        if (in_array($dbs, ['ariston', 'wep'])) {
-                            $dpp = $detail->dpp;
-                            $dpp_lain = $detail->dpp_nl;
-                            $total_disc = $detail->disc_faktur / $detail->qty / 1.11;
-                        } else {
-                            $dpp = $detail->dpp_unit * $tot_qty;
-                            $dpp_lain = $detail->dpp_nl * $tot_qty; 
-                            $total_disc = '0.00';
-                        }
-                        
-                        $nominal_ppn = $dpp_lain * 0.12;
-
-                        // Prepare data for tax_generate_brg
-                        $taxGenerateDetail = [
-                            'faktur_counter' => $fakturCounter,
-                            'jenis_barang' => 'A',
-                            'kode_brg' => $detail->kdtax ?? '000000',
-                            'nama_brg' => $detail->nama_brg,
-                            'satuan' => 'UM.0018',
-                            'qty' => $tot_qty,
-                            // Format decimal places consistently for numeric fields
-                            'diskon' => number_format($total_disc, 11, '.', ''), // Increase precision
-                            'dpp' => number_format($dpp, 11, '.', ''),
-                            'dpp_lain' => number_format($dpp_lain, 11, '.', ''),
-                            'tarif_ppn' => 12.00,
-                            'nominal_ppn' => number_format($nominal_ppn, 11, '.', ''),
-                            'tarif_ppnbm' => 0,
-                            'nominal_ppnbm' => number_format(0, 2, '.', ''),
-                            'created_at' => $now,
-                            'user_id' => $userId,
-                            'hrg' => $detail->hrg,
-                            'kode_trx' => $trx->kdtr,
-                            'nmbrg' => $detail->nmbrg,
-                            'diskon_tr' => $detail->disc,
-                            'kode_trx_retur' => $cekRetur->kdtr ?? null,
-                            'qty_retur' => $valRetur
-                        ];
-
-                        // Check if record exists
-                        $existing = $db->table('crm.tax_generate_brg')
-                                      ->where('kode_trx', $trx->kdtr)
-                                      ->where('nmbrg', $detail->nmbrg)
-                                      ->get()
-                                      ->getRow();
-
-                        if ($existing) {
-                            // Update existing record
-                            $taxGenerateDetail['updated_at'] = $now;
-                            $db->table('crm.tax_generate_brg')
-                               ->where('kode_trx', $trx->kdtr)
-                               ->where('nmbrg', $detail->nmbrg)
-                               ->update($taxGenerateDetail);
-                        } else {
-                            // Insert new record
-                            $db->table('crm.tax_generate_brg')
-                               ->insert($taxGenerateDetail);
-                        }
-
-                        // Add to Excel sheet
-                        $detailFaktur = [
-                            $fakturCounter, 
-                            'A', 
-                            $detail->kdtax ?? '000000', 
-                            $detail->nama_brg, 
-                            'UM.0018', 
-                            $detail->dpp_unit,
-                            $detail->qty, 
-                            number_format($total_disc, 2, '.', ''), 
-                            $dpp, 
-                            $dpp_lain, 
-                            12, 
-                            $nominal_ppn, 
-                            '0',
-                            '0.00' 
-                        ];
-                
-                        $detailSheet->fromArray($detailFaktur, null, 'A' . $rowDetail++);
-                    }
-                    
-                    $fakturCounter++; // Increment counter setelah semua detail transaksi selesai
-                }
-
-                // Complete transaction
-                $db->transComplete();
-                
-                if ($db->transStatus() === false) {
-                    throw new \Exception('Error saving tax_generate_brg data');
-                }
-
-            } catch (\Exception $e) {
-                log_message('error', 'Error saving tax_generate_brg: ' . $e->getMessage());
-                throw $e; // Re-throw to be caught by outer try-catch
+            if($sales_type == 'DISTRI'){
+                return $this->generateDistri($dbs,$rawData,$tku);
+            }else if($sales_type == 'ONLINE'){
+                return $this->generateOnline($dbs,$rawData,$tku,$startDate);
+            }else{
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Tipe sales tidak ditemukan'
+                ]);
             }
-
-            
-            // Add END marker row
-            $detailSheet->fromArray(['END', '', '', '', '', '', '', '', '', '', '', '', '', ''], null, 'A' . $rowDetail);
-
-            $listTrx = array_unique($listTrx);
-
-
-            //===============================Sheet Faktur==============================
-
-            try {
-                // Begin transaction
-                $db->transStart();
-                                
-                // Process each transaction for tax_generate
-                foreach ($rawData as $row) {
-                    // Calculate total tax from details
-                    $sql = "SELECT 
-                        SUM((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))/1.11 * tr.qty * 0.11) as total_tax
-                    FROM tr
-                    WHERE tr.kdtr = ?";
-                    
-                    $taxResult = $db->query($sql, [$row->kdtr])->getRow();
-                    
-                    // Prepare data for insertion
-                    $taxGenerateData = [
-                        'kode_trx' => $row->kdtr,
-                        'tanggal' => $row->tgl,
-                        'jam' => date('H:i:s'), // Current time as we don't have original time
-                        'total_tax' => (float)($taxResult->total_tax ?? 0),
-                        'created_at' => $now,
-                        'user_id' => $userId
-                    ];
-                    
-                    // Check if record already exists
-                    $existing = $db->table('crm.tax_generate')
-                                  ->where('kode_trx', $row->kdtr)
-                                  ->get()
-                                  ->getRow();
-                    
-                    if ($existing) {
-                        // Update existing record
-                        $taxGenerateData['updated_at'] = $now;
-                        $db->table('crm.tax_generate')
-                           ->where('kode_trx', $row->kdtr)
-                           ->update($taxGenerateData);
-                    } else {
-                        // Insert new record
-                        $db->table('crm.tax_generate')
-                           ->insert($taxGenerateData);
-                    }
-                }
-                
-                // Complete transaction
-                $db->transComplete();
-                
-                if ($db->transStatus() === false) {
-                    throw new \Exception('Error saving tax_generate data');
-                }
-                
-            } catch (\Exception $e) {
-                log_message('error', 'Error saving tax_generate: ' . $e->getMessage());
-                throw $e; // Re-throw to be caught by outer try-catch
-            }
-                
-            // Format data untuk excel
-            $dataFaktur = [];
-            $counter = 1;
-            foreach ($rawData as $row) {
-                if (!in_array($row->kdtr, $listTrx)){
-                    continue;
-                }
-                // Format NPWP dengan memastikan tidak ada konversi numerik
-                $npwp = $row->status_wp == "VALID" ? str_pad($row->newnpwp, 16, '0', STR_PAD_RIGHT) : "000000000000000";
-                $npwpInvalid = $row->status_wp == "INVALID" ? str_pad($row->newnpwp, 16, '0', STR_PAD_RIGHT) : "-";
-
-                $aa = ($row->status_wp == "VALID" ? "TIN" : "National ID");
-                
-                $dataFaktur[] = [
-                    $counter++,
-                    format_date($row->tgl, 'Y-m-d'),
-                    'Normal',
-                    "04",
-                    '',
-                    '',
-                    '',                            
-                    $row->kdtr,                                                            
-                    '',
-                    $tku,
-                    '="' . $npwp . '"', // Format sebagai string dengan formula Excel
-                    $aa,
-                    'IDN',
-                    '="' . $npwpInvalid . '"', // Format sebagai string dengan formula Excel
-                    $row->name,
-                    $row->address,
-                    '',
-                    ($row->status_wp == "VALID" ? '="'.str_pad($row->newnpwp . "000000", 21, '0', STR_PAD_RIGHT).'"' : "-")
-                ];
-            }
-            $dataFaktur[] = ['END', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''];
-
-            // Fill Faktur data
-            $row = 4; // Starting row
-            foreach ($dataFaktur as $data) {
-                $fakturSheet->fromArray($data, null, 'A' . $row++);
-            }
-
-            // Set format kolom sebagai Text
-            $fakturSheet->getColumnDimension('K')->setWidth(20);
-            $fakturSheet->getColumnDimension('N')->setWidth(20);
-            $fakturSheet->getColumnDimension('R')->setWidth(25);
-            
-            $fakturSheet->getStyle('J4:J' . ($row-1))->getNumberFormat()->setFormatCode('@');
-            $fakturSheet->getStyle('K4:K' . ($row-1))->getNumberFormat()->setFormatCode('@');
-            $fakturSheet->getStyle('N4:N' . ($row-1))->getNumberFormat()->setFormatCode('@');
-            $fakturSheet->getStyle('R4:R' . ($row-1))->getNumberFormat()->setFormatCode('@');
-
-            // Set active sheet to Faktur
-            $spreadsheet->setActiveSheetIndexByName('Faktur');
-
-            // Create writer
-            $writer = new Xlsx($spreadsheet);
-            $writer->setPreCalculateFormulas(false);
-            $writer->setOffice2003Compatibility(false);
-
-            // Output the file
-            if (ob_get_length()) ob_end_clean();
-            
-            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            header('Content-Disposition: attachment;filename="tax_'.date('Ymd').'.xlsx"');
-            header('Cache-Control: max-age=0');
-            
-            $writer->save('php://output');
-            logGL($db_config,'faktur_generate','Insert');
-            exit();
         } catch (\Exception $e) {
             return $this->response->setJSON([
                 'success' => false,
                 'message' => $e->getMessage()
             ]);
         }
+    }
+
+    private function generateDistri($dbs,$rawData,$tku)
+    {
+        $userId = session()->get('user_id') ?? 9999; // Adjust based on your auth system
+        $now = date('Y-m-d H:i:s');
+        // Load template
+        $templatePath = FCPATH . 'assets' . DIRECTORY_SEPARATOR . 'template.xlsx';
+        if (!file_exists($templatePath)) {
+            throw new \Exception('File template.xlsx not found at: ' . $templatePath);
+        }
+
+        // Load existing template
+        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($templatePath);
+
+        // Get Faktur sheet
+        $fakturSheet = $spreadsheet->getSheetByName('Faktur');
+        if (!$fakturSheet) {
+            throw new \Exception('Worksheet "Faktur" not found in template');
+        }
+
+        $detailSheet = $spreadsheet->getSheetByName('DetailFaktur');
+        if (!$detailSheet) {
+            throw new \Exception('Worksheet "DetailFaktur" not found in template');
+        }
+
+        try {
+            $rowDetail = 2; 
+            $fakturCounter = 1;
+            
+            // Define queries once
+            $baseQuery = "SELECT 
+                tr.kdtr,
+                tr.nmbrg,
+                tr.qty,
+                tr.hrg,
+                tr.disc,
+                (tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))/1.11 as dpp_unit,
+                ((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))/1.11)*11/12 as dpp_nl,
+                tr.tot,
+                brg.nama as nama_brg,
+                mc.kdtax
+            FROM tr
+            JOIN brg ON tr.nmbrg = brg.nmbrg 
+            LEFT JOIN crm.mapping_coretax mc ON tr.nmbrg = mc.kdbrg
+            WHERE tr.kdtr = ?
+            ORDER BY tr.kdtr ASC, tr.nmbrg ASC";
+        
+            $aristonWepQuery = "SELECT 
+                tr.kdtr,
+                tr.nmbrg,
+                tr.qty,
+                tr.hrg,
+                tr.disc,                    
+                ((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))*tr.qty - (mstr.disc/(SELECT SUM(tr2.qty) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr)*tr.qty))/1.11/tr.qty as dpp_unit,                    
+                (((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))*tr.qty - (mstr.disc/(SELECT SUM(tr2.qty) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr)*tr.qty))/1.11)*11/12 as dpp_nl,
+                ((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))*tr.qty - (mstr.disc/(SELECT SUM(tr2.qty) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr)*tr.qty))/1.11 as dpp,
+                tr.tot,
+                brg.nama as nama_brg,
+                mc.kdtax,
+                mstr.disc as disc_faktur
+            FROM tr
+            JOIN brg ON tr.nmbrg = brg.nmbrg 
+            LEFT JOIN crm.mapping_coretax mc ON tr.nmbrg = mc.kdbrg
+            LEFT JOIN mstr ON tr.kdtr = mstr.kdtr
+            WHERE tr.kdtr = ?
+            ORDER BY tr.kdtr ASC, tr.nmbrg ASC";
+
+
+            $queryRetur = "SELECT 
+                tr.kdtr,
+                mstr.tgl,
+                tr.nmbrg,
+                tr.qty
+            FROM tr
+            LEFT JOIN mstr ON tr.kdtr = mstr.kdtr
+            WHERE mstr.kdtr2 = ?
+            ORDER BY tr.kdtr ASC, tr.nmbrg ASC";
+
+            // Get database connection and appropriate query once
+            switch ($dbs) {
+                case 'ariston':
+                    $sql = $aristonWepQuery;
+                    $db = $this->db_crm_ars;
+                    $db_config = 'crm_ars';
+                    break;
+                case 'wep':
+                    $sql = $aristonWepQuery;
+                    $db = $this->db_crm_wep;
+                    $db_config = 'crm_wep';
+                    break;
+                case 'dtf':
+                    $sql = $baseQuery;
+                    $db = $this->db_crm_dtf;
+                    $db_config = 'crm_dtf';
+                    break;
+                default:
+                    $sql = $baseQuery;
+                    $db = $this->db_default;
+                    $db_config = 'default';
+            }
+
+
+            $db->transStart();
+            $listTrx = [];
+            foreach ($rawData as $trx) {
+                $getRetur = $db->query($queryRetur, [$trx->kdtr])->getResult();  
+                $listRetur = [];
+                foreach($getRetur as $row){
+                    $listRetur[$row->nmbrg] = $row;
+                }
+                $details = $db->query($sql, [$trx->kdtr])->getResult();
+                foreach ($details as $detail) {
+                    $cekRetur = $listRetur[$detail->nmbrg] ?? [];
+                    $valRetur = $cekRetur->qty ?? 0;
+                    $qty = $detail->qty;
+                    $tot_qty = $qty-$valRetur;
+                    if($tot_qty<=0){
+                        continue;
+                    }
+                    $listTrx[] = $detail->kdtr;
+                    // Perhitungan berbeda untuk Ariston/WEP
+                    if (in_array($dbs, ['ariston', 'wep'])) {
+                        $dpp = $detail->dpp;
+                        $dpp_lain = $detail->dpp_nl;
+                        $total_disc = $detail->disc_faktur / $detail->qty / 1.11;
+                    } else {
+                        $dpp = $detail->dpp_unit * $tot_qty;
+                        $dpp_lain = $detail->dpp_nl * $tot_qty; 
+                        $total_disc = '0.00';
+                    }
+                    
+                    $nominal_ppn = $dpp_lain * 0.12;
+
+                    // Prepare data for tax_generate_brg
+                    $taxGenerateDetail = [
+                        'faktur_counter' => $fakturCounter,
+                        'jenis_barang' => 'A',
+                        'kode_brg' => $detail->kdtax ?? '000000',
+                        'nama_brg' => $detail->nama_brg,
+                        'satuan' => 'UM.0018',
+                        'qty' => $tot_qty,
+                        // Format decimal places consistently for numeric fields
+                        'diskon' => number_format($total_disc, 11, '.', ''), // Increase precision
+                        'dpp' => number_format($dpp, 11, '.', ''),
+                        'dpp_lain' => number_format($dpp_lain, 11, '.', ''),
+                        'tarif_ppn' => 12.00,
+                        'nominal_ppn' => number_format($nominal_ppn, 11, '.', ''),
+                        'tarif_ppnbm' => 0,
+                        'nominal_ppnbm' => number_format(0, 2, '.', ''),
+                        'created_at' => $now,
+                        'user_id' => $userId,
+                        'hrg' => $detail->hrg,
+                        'kode_trx' => $trx->kdtr,
+                        'nmbrg' => $detail->nmbrg,
+                        'diskon_tr' => $detail->disc,
+                        'kode_trx_retur' => $cekRetur->kdtr ?? null,
+                        'qty_retur' => $valRetur
+                    ];
+
+                    // Check if record exists
+                    $existing = $db->table('crm.tax_generate_brg')
+                                  ->where('kode_trx', $trx->kdtr)
+                                  ->where('nmbrg', $detail->nmbrg)
+                                  ->get()
+                                  ->getRow();
+
+                    if ($existing) {
+                        // Update existing record
+                        $taxGenerateDetail['updated_at'] = $now;
+                        $db->table('crm.tax_generate_brg')
+                           ->where('kode_trx', $trx->kdtr)
+                           ->where('nmbrg', $detail->nmbrg)
+                           ->update($taxGenerateDetail);
+                    } else {
+                        // Insert new record
+                        $db->table('crm.tax_generate_brg')
+                           ->insert($taxGenerateDetail);
+                    }
+
+                    // Add to Excel sheet
+                    $detailFaktur = [
+                        $fakturCounter, 
+                        'A', 
+                        $detail->kdtax ?? '000000', 
+                        $detail->nama_brg, 
+                        'UM.0018', 
+                        $detail->dpp_unit,
+                        $detail->qty, 
+                        number_format($total_disc, 2, '.', ''), 
+                        $dpp, 
+                        $dpp_lain, 
+                        12, 
+                        $nominal_ppn, 
+                        '0',
+                        '0.00' 
+                    ];
+            
+                    $detailSheet->fromArray($detailFaktur, null, 'A' . $rowDetail++);
+                }
+                
+                $fakturCounter++; // Increment counter setelah semua detail transaksi selesai
+            }
+
+            // Complete transaction
+            $db->transComplete();
+            
+            if ($db->transStatus() === false) {
+                throw new \Exception('Error saving tax_generate_brg data');
+            }
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error saving tax_generate_brg: ' . $e->getMessage());
+            throw $e; // Re-throw to be caught by outer try-catch
+        }
+
+        
+        // Add END marker row
+        $detailSheet->fromArray(['END', '', '', '', '', '', '', '', '', '', '', '', '', ''], null, 'A' . $rowDetail);
+
+        $listTrx = array_unique($listTrx);
+
+
+        //===============================Sheet Faktur==============================
+
+        try {
+            // Begin transaction
+            $db->transStart();
+                            
+            // Process each transaction for tax_generate
+            foreach ($rawData as $row) {
+                // Calculate total tax from details
+                $sql = "SELECT 
+                    SUM((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))/1.11 * tr.qty * 0.11) as total_tax
+                FROM tr
+                WHERE tr.kdtr = ?";
+                
+                $taxResult = $db->query($sql, [$row->kdtr])->getRow();
+                
+                // Prepare data for insertion
+                $taxGenerateData = [
+                    'kode_trx' => $row->kdtr,
+                    'tanggal' => $row->tgl,
+                    'jam' => date('H:i:s'), // Current time as we don't have original time
+                    'total_tax' => (float)($taxResult->total_tax ?? 0),
+                    'created_at' => $now,
+                    'user_id' => $userId
+                ];
+                
+                // Check if record already exists
+                $existing = $db->table('crm.tax_generate')
+                              ->where('kode_trx', $row->kdtr)
+                              ->get()
+                              ->getRow();
+                
+                if ($existing) {
+                    // Update existing record
+                    $taxGenerateData['updated_at'] = $now;
+                    $db->table('crm.tax_generate')
+                       ->where('kode_trx', $row->kdtr)
+                       ->update($taxGenerateData);
+                } else {
+                    // Insert new record
+                    $db->table('crm.tax_generate')
+                       ->insert($taxGenerateData);
+                }
+            }
+            
+            // Complete transaction
+            $db->transComplete();
+            
+            if ($db->transStatus() === false) {
+                throw new \Exception('Error saving tax_generate data');
+            }
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error saving tax_generate: ' . $e->getMessage());
+            throw $e; // Re-throw to be caught by outer try-catch
+        }
+            
+        // Format data untuk excel
+        $dataFaktur = [];
+        $counter = 1;
+        foreach ($rawData as $row) {
+            if (!in_array($row->kdtr, $listTrx)){
+                continue;
+            }
+            // Format NPWP dengan memastikan tidak ada konversi numerik
+            $npwp = $row->status_wp == "VALID" ? str_pad($row->newnpwp, 16, '0', STR_PAD_RIGHT) : "000000000000000";
+            $npwpInvalid = $row->status_wp == "INVALID" ? str_pad($row->newnpwp, 16, '0', STR_PAD_RIGHT) : "-";
+
+            $aa = ($row->status_wp == "VALID" ? "TIN" : "National ID");
+            
+            $dataFaktur[] = [
+                $counter++,
+                format_date($row->tgl, 'Y-m-d'),
+                'Normal',
+                "04",
+                '',
+                '',
+                '',                            
+                $row->kdtr,                                                            
+                '',
+                $tku,
+                '="' . $npwp . '"', // Format sebagai string dengan formula Excel
+                $aa,
+                'IDN',
+                '="' . $npwpInvalid . '"', // Format sebagai string dengan formula Excel
+                $row->name,
+                $row->address,
+                '',
+                ($row->status_wp == "VALID" ? '="'.str_pad($row->newnpwp . "000000", 21, '0', STR_PAD_RIGHT).'"' : "-")
+            ];
+        }
+        $dataFaktur[] = ['END', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''];
+
+        // Fill Faktur data
+        $row = 4; // Starting row
+        foreach ($dataFaktur as $data) {
+            $fakturSheet->fromArray($data, null, 'A' . $row++);
+        }
+
+        // Set format kolom sebagai Text
+        $fakturSheet->getColumnDimension('K')->setWidth(20);
+        $fakturSheet->getColumnDimension('N')->setWidth(20);
+        $fakturSheet->getColumnDimension('R')->setWidth(25);
+        
+        $fakturSheet->getStyle('J4:J' . ($row-1))->getNumberFormat()->setFormatCode('@');
+        $fakturSheet->getStyle('K4:K' . ($row-1))->getNumberFormat()->setFormatCode('@');
+        $fakturSheet->getStyle('N4:N' . ($row-1))->getNumberFormat()->setFormatCode('@');
+        $fakturSheet->getStyle('R4:R' . ($row-1))->getNumberFormat()->setFormatCode('@');
+
+        // Set active sheet to Faktur
+        $spreadsheet->setActiveSheetIndexByName('Faktur');
+
+        // Create writer
+        $writer = new Xlsx($spreadsheet);
+        $writer->setPreCalculateFormulas(false);
+        $writer->setOffice2003Compatibility(false);
+
+        // Output the file
+        if (ob_get_length()) ob_end_clean();
+        
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="tax_'.date('Ymd').'.xlsx"');
+        header('Cache-Control: max-age=0');
+        
+        $writer->save('php://output');
+        logGL($db_config,'faktur_generate','Insert');
+        exit();
+    }
+
+    private function generateOnline($dbs, $rawData, $tku, $startDate)
+    {
+        $userId = session()->get('user_id') ?? 9999;
+        $now = date('Y-m-d H:i:s');
+
+        // Load template
+        $templatePath = FCPATH . 'assets' . DIRECTORY_SEPARATOR . 'online.xlsx';
+        if (!file_exists($templatePath)) {
+            throw new \Exception('File online.xlsx not found at: ' . $templatePath);
+        }
+
+        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($templatePath);
+        $fakturSheet = $spreadsheet->getSheetByName('DATA');
+        if (!$fakturSheet) {
+            throw new \Exception('Worksheet "DATA" not found in template');
+        }
+
+        try {
+            $bln = format_date($startDate, 'm');
+            $bln = str_pad($bln, 2, '0', STR_PAD_LEFT);
+            $thn = format_date($startDate, 'Y');
+            $fakturSheet->setCellValue('B2', "'".$bln);
+            $fakturSheet->setCellValue('B3', $thn);
+
+            switch ($dbs) {
+                case 'ariston':
+                    $db = $this->db_crm_ars;
+                    $db_config = 'crm_ars';
+                    break;
+                case 'wep':
+                    $db = $this->db_crm_wep;
+                    $db_config = 'crm_wep';
+                    break;
+                case 'dtf':
+                    $db = $this->db_crm_dtf;
+                    $db_config = 'crm_dtf';
+                    break;
+                default:
+                    $db = $this->db_default;
+                    $db_config = 'default';
+            }
+
+            $rowDetail = 5;
+
+            // Simpan style dari baris 5 dan 6 untuk pola warna
+            $whiteStyle = [];
+            $grayStyle = [];
+
+            foreach (range('B', 'M') as $col) {
+                $whiteStyle[$col] = $fakturSheet->getStyle($col . '5');
+                $grayStyle[$col] = $fakturSheet->getStyle($col . '6');
+            }
+
+            $db->transStart();
+            foreach ($rawData as $index => $trx) {
+                $nmcust = $trx->nmcust ?? '';
+                $valRetur = $trx->retur ?? 0;
+                $gtot = $trx->gtot ?? 0;
+                $tot = $gtot - $valRetur;
+                if ($tot <= 0) continue;
+
+                $dpp = $tot/1.11;
+                $dpp_lain = $dpp*11/12; 
+                $nominal_ppn = $dpp_lain * 0.12;
+
+                // Prepare data for tax_generate_brg
+                $taxGenerateDetail = [
+                    'trx_code' => 'Normal',
+                    'buyer_name' => $nmcust,
+                    'buyer_id_opt' => 'NIK',
+                    'buyer_id_number' => "0000000000000000",
+                    'good_service_opt' => 'A',
+                    'serial_no' => $trx->kdtr,
+                    'transaction_date' => $trx->tgl,
+                    'tax_base_selling_price' => $dpp,
+                    'other_tax_base_selling_price' => $dpp_lain,
+                    'vat' => $nominal_ppn,
+                    'sltg' => 0,
+                    'info' => null,
+                ];
+
+                // Check if record exists
+                $queryCek = $db->table('crm.tax_generate_online')
+                              ->where('serial_no', $trx->kdtr)
+                              ->get();
+                $existing = $queryCek ? $queryCek->getRow() : null;
+
+                if ($existing) {
+                    // Update existing record
+                    $taxGenerateDetail['updated_at'] = $now;
+                    $db->table('crm.tax_generate_online')
+                       ->where('serial_no', $trx->kdtr)
+                       ->update($taxGenerateDetail);
+                } else {
+                    // Insert new record
+                    $taxGenerateDetail['created_at'] = $now;
+                    $taxGenerateDetail['user_id'] = $userId;
+                    $db->table('crm.tax_generate_online')
+                       ->insert($taxGenerateDetail);
+                }
+
+                $detailFaktur = [
+                    'Normal', 
+                    $nmcust, 
+                    'NIK', 
+                    "0000000000000000", 
+                    'A', 
+                    $trx->kdtr,
+                    format_date($trx->tgl, 'd/m/Y'), 
+                    number_format($dpp, 11, '.', ''), 
+                    number_format($dpp_lain, 11, '.', ''), 
+                    number_format($nominal_ppn, 11, '.', ''), 
+                    '0',
+                    '' 
+                ];
+
+                $fakturSheet->fromArray($detailFaktur, null, 'B' . $rowDetail);
+
+                // Terapkan warna bergantian
+                $currentStyle = ($index % 2 == 0) ? $whiteStyle : $grayStyle;
+                foreach ($currentStyle as $col => $style) {
+                    $fakturSheet->duplicateStyle($style, "$col" . $rowDetail);
+                }
+
+                $rowDetail++;
+            }
+
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                throw new \Exception('Error saving tax_generate_online data');
+            }
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error saving tax_generate_online: ' . $e->getMessage());
+            throw $e;
+        }
+
+        // // Helper function untuk membuat validasi dropdown
+        // function createDataValidation($formula)
+        // {
+        //     $validation = new \PhpOffice\PhpSpreadsheet\Cell\DataValidation();
+        //     $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
+        //     $validation->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_STOP);
+        //     $validation->setAllowBlank(false);
+        //     $validation->setShowInputMessage(true);
+        //     $validation->setPromptTitle('Pilih nilai');
+        //     $validation->setPrompt('Silakan pilih dari daftar.');
+        //     $validation->setErrorTitle('Input Error');
+        //     $validation->setError('Nilai tidak ada di daftar.');
+        //     $validation->setFormula1($formula);
+        //     return $validation;
+        // }
+
+        // // Validasi dropdown
+        // $trxCodeValidation = createDataValidation('"Normal,07,08,NoVAT"');
+        // $buyerIdValidation = createDataValidation('"NPWP,NIK"');
+        // $goodsServiceValidation = createDataValidation('"A,B"');
+
+        // for ($i = 5; $i < $rowDetail; $i++) {
+        //     $fakturSheet->getCell('D'.$i)->setDataValidation(clone $trxCodeValidation);
+        //     $fakturSheet->getCell('E'.$i)->setDataValidation(clone $buyerIdValidation);
+        //     $fakturSheet->getCell('F'.$i)->setDataValidation(clone $goodsServiceValidation);
+        // }
+
+        // Format kolom angka dan tanggal
+        $fakturSheet->getStyle('H5:H'.($rowDetail - 1))
+            ->getNumberFormat()
+            ->setFormatCode('DD/MM/YYYY');
+
+        $fakturSheet->getStyle('I5:K'.($rowDetail - 1))
+            ->getNumberFormat()
+            ->setFormatCode('#,##0.00');
+
+        // Auto size columns
+        $highestColumn = $fakturSheet->getHighestColumn();
+        $highestColumnIndex = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($highestColumn);
+
+        for ($col = 2; $col <= $highestColumnIndex; $col++) {
+            $columnLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col);
+            $fakturSheet->getColumnDimension($columnLetter)->setAutoSize(true);
+        }
+
+        $spreadsheet->setActiveSheetIndexByName('DATA');
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $writer->setPreCalculateFormulas(false);
+        $writer->setOffice2003Compatibility(false);
+
+        if (ob_get_length()) ob_end_clean();
+        
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="tax_online_' . date('Ymd') . '.xlsx"');
+        header('Cache-Control: max-age=0');
+        
+        $writer->save('php://output');
+        logGL($db_config, 'faktur_generate_online', 'Insert');
+        exit();
     }
 
     public function checkExisting()

@@ -201,7 +201,7 @@ class MstrModel extends Model
     public function getAllData($startDate = null, $endDate = null, $sales_type = null, $prefix = null, $selectedTrx = null)
     {
         $builder = $this->db->table($this->table)
-            ->select('mstr.kdtr, mstr.tgl, mstr.gtot, cust.nmcust, cust.npwp, n.npwp as newnpwp, n.address as address, n.jenis, n.name, n.status_wp')
+            ->select('mstr.kdtr, mstr.tgl, mstr.gtot, mstr.retur, cust.nmcust, cust.npwp, n.npwp as newnpwp, n.address as address, n.jenis, n.name, n.status_wp')
             ->join("cust", "cust.kdcust = mstr.kdcust", 'LEFT')
             ->join("crm.cust_npwp as n", "n.npwpcust = cust.npwp", 'LEFT')
             ->join("crm.tidak_dibuat td", "td.kode_trx = mstr.kdtr", 'LEFT')
