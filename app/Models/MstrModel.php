@@ -206,10 +206,12 @@ class MstrModel extends Model
             ->join("crm.cust_npwp as n", "n.npwpcust = cust.npwp", 'LEFT')
             ->join("crm.tidak_dibuat td", "td.kode_trx = mstr.kdtr", 'LEFT')
             ->join("crm.tax_generate tg", "tg.kode_trx = mstr.kdtr", 'LEFT')
+            ->join("crm.tax_generate_online tgo", "tgo.serial_no = mstr.kdtr", 'LEFT')
             ->where('mstr.tipe', 'J')
             ->where('mstr.trans', '1')
             ->where('td.kode_trx IS NULL')
             ->where('tg.kode_trx IS NULL')
+            ->where('tgo.serial_no IS NULL')
             ->orderBy('mstr.kdtr', 'ASC'); // Add this line
 
         // Apply date filters
@@ -254,16 +256,18 @@ class MstrModel extends Model
             ->select('mstr.*,cust.nmcust,cust.npwp,n.npwp as newnpwp,n.jenis,n.name,n.address,n.status_wp')
             ->join("cust", "cust.kdcust = mstr.kdcust", 'LEFT')
             ->join("crm.cust_npwp as n", "n.npwpcust = cust.npwp", 'LEFT')
-            // Add LEFT JOIN with tidak_dibuat and tax_generate to check existence
+            // Add LEFT JOIN with tidak_dibuat, tax_generate, and tax_generate_online to check existence
             ->join("crm.tidak_dibuat td", "td.kode_trx = mstr.kdtr", 'LEFT')
             ->join("crm.tax_generate tg", "tg.kode_trx = mstr.kdtr", 'LEFT')
+            ->join("crm.tax_generate_online tgo", "tgo.serial_no = mstr.kdtr", 'LEFT')
             ->where('mstr.tipe', 'J')
             ->where('mstr.trans', '1')
-            // Add conditions to exclude records that exist in tidak_dibuat and tax_generate
+            // Add conditions to exclude records that exist in tidak_dibuat, tax_generate, and tax_generate_online
             ->where('td.kode_trx IS NULL')
-            ->where('tg.kode_trx IS NULL');
+            ->where('tg.kode_trx IS NULL')
+            ->where('tgo.serial_no IS NULL');
 
-        // Rest of conditions
+        // Rest of the method remains the same
         if (!empty($search)) {
             $builder->groupStart();
             foreach ($this->column_search as $column) {
@@ -315,14 +319,16 @@ class MstrModel extends Model
             ->select('mstr.kdtr')
             ->join("cust", "cust.kdcust = mstr.kdcust", 'LEFT')
             ->join("crm.cust_npwp as n", "n.npwpcust = cust.npwp", 'LEFT')
-            // Add LEFT JOIN with tidak_dibuat and tax_generate
+            // Add LEFT JOIN with tidak_dibuat, tax_generate, and tax_generate_online
             ->join("crm.tidak_dibuat td", "td.kode_trx = mstr.kdtr", 'LEFT')
             ->join("crm.tax_generate tg", "tg.kode_trx = mstr.kdtr", 'LEFT')
+            ->join("crm.tax_generate_online tgo", "tgo.serial_no = mstr.kdtr", 'LEFT')
             ->where('mstr.tipe', 'J')
             ->where('mstr.trans', '1')
-            // Add conditions to exclude records that exist in tidak_dibuat and tax_generate
+            // Add conditions to exclude records that exist in tidak_dibuat, tax_generate, and tax_generate_online
             ->where('td.kode_trx IS NULL')
-            ->where('tg.kode_trx IS NULL');
+            ->where('tg.kode_trx IS NULL')
+            ->where('tgo.serial_no IS NULL');
 
         if (!empty($search)) {
             $builder->groupStart();
