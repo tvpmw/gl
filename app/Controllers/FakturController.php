@@ -101,7 +101,7 @@ class FakturController extends Controller
             $formattedData[] = [
                 '',  // For checkbox column
                 $row->kdtr,
-                format_date($row->tgl,'m/d/Y'),
+                format_date($row->tgl,'d/m/Y'),
                 format_price($row->gtot),
                 $row->nmcust,
                 $row->newnpwp,
@@ -138,12 +138,11 @@ class FakturController extends Controller
             $updateData = [];
             $now = date('Y-m-d H:i:s');
 
-            foreach ($request['data'] as $row) {
-                // Parse date from m/d/Y format to Y-m-d
+            foreach ($request['data'] as $row) {            
                 $dateParts = explode('/', $row['tanggal']);
                 if (count($dateParts) === 3) {
-                    $month = $dateParts[0];
-                    $day = $dateParts[1];
+                    $month = $dateParts[1];
+                    $day = $dateParts[0];
                     $year = $dateParts[2];
                     $tanggal = sprintf('%s-%02d-%02d', $year, $month, $day);
                 } else {
