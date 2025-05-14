@@ -146,7 +146,6 @@ class TaxGenerateCheckController extends Controller
                     tr.disc as diskon_tr,
                     brg.nama as nama_brg,
                     mstr.disc/tr.qty/1.11 as diskon,
-                    -- (COALESCE(mstr.disc,0)/(SELECT NULLIF(SUM(tr2.qty),0) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr)) as diskon,
                     ((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))*tr.qty - ((COALESCE(mstr.disc,0)/(SELECT NULLIF(SUM(tr2.qty),0) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr))*tr.qty))/1.11 as dpp,
                     (((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))*tr.qty - ((COALESCE(mstr.disc,0)/(SELECT NULLIF(SUM(tr2.qty),0) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr))*tr.qty))/1.11)*11/12 as dpp_lain,
                     ((((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))*tr.qty - ((COALESCE(mstr.disc,0)/(SELECT NULLIF(SUM(tr2.qty),0) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr))*tr.qty))/1.11)*11/12)*0.12 as ppn
@@ -177,8 +176,45 @@ class TaxGenerateCheckController extends Controller
                 break;
         }
 
+        // Add query for retur
+        $queryRetur = "SELECT 
+            tr.kdtr,
+            mstr.tgl,
+            tr.nmbrg,
+            tr.qty
+        FROM tr
+        LEFT JOIN mstr ON tr.kdtr = mstr.kdtr
+        WHERE mstr.kdtr2 = ?
+        ORDER BY tr.kdtr ASC, tr.nmbrg ASC";
+
+        // Get retur data
+        $getRetur = $db->query($queryRetur, [$kdtr])->getResult();  
+        
+        $listRetur = [];
+        foreach($getRetur as $row){
+            $listRetur[$row->nmbrg] = $row;
+        }
+
         // Get current tr data
         $currentData = $db->query($currentQuery, [$kdtr])->getResultArray();
+
+        // Adjust quantities based on retur
+        foreach($currentData as $key => $row){
+            $cekRetur = $listRetur[$row['nmbrg']] ?? null;
+            $valRetur = $cekRetur ? $cekRetur->qty : 0;
+            $qty = $row['qty'] - $valRetur;
+            if($qty <= 0) {
+                unset($currentData[$key]);
+                continue;
+            }
+            $currentData[$key]['qty'] = $qty;
+            $currentData[$key]['dpp'] = $qty * ($row['dpp'] / $row['qty']);
+            $currentData[$key]['dpp_lain'] = $qty * ($row['dpp_lain'] / $row['qty']);
+            $currentData[$key]['ppn'] = $qty * ($row['ppn'] / $row['qty']);
+        }
+
+        // Reindex array after possible removals
+        $currentData = array_values($currentData);
 
         // Get stored tax_generate_brg data
         $storedData = $db->table('crm.tax_generate_brg')
@@ -206,10 +242,20 @@ class TaxGenerateCheckController extends Controller
             // Check numeric fields with proper precision
             $numericFields = ['qty', 'hrg', 'diskon', 'diskon_tr', 'dpp', 'dpp_lain', 'ppn'];
             foreach ($numericFields as $field) {
-                $currentVal = number_format((float)$current[$field], 11, '.', '');
-                $storedVal = number_format((float)$stored[$field], 11, '.', '');
-                if ($currentVal !== $storedVal) {
-                    return true;
+                // Round both values to 11 decimal places before formatting
+                $currentVal = round((float)$current[$field], 11);
+                $storedVal = round((float)$stored[$field], 11);
+                
+                // Format with fixed precision after rounding
+                $currentFormatted = number_format($currentVal, 11, '.', '');
+                $storedFormatted = number_format($storedVal, 11, '.', '');
+                
+                // Compare the formatted strings
+                if ($currentFormatted !== $storedFormatted) {
+                    // Double check with tolerance for floating point precision
+                    if (abs($currentVal - $storedVal) > 0.00000000001) {
+                        $changes[$field] = true;
+                    }
                 }
             }
         }
@@ -238,7 +284,6 @@ class TaxGenerateCheckController extends Controller
                         tr.disc as diskon_tr,
                         brg.nama as nama_brg,
                         mstr.disc/tr.qty/1.11 as diskon,                        
-                        -- (COALESCE(mstr.disc,0)/(SELECT NULLIF(SUM(tr2.qty),0) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr)) as diskon,
                         ((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))*tr.qty - ((COALESCE(mstr.disc,0)/(SELECT NULLIF(SUM(tr2.qty),0) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr))*tr.qty))/1.11 as dpp,
                         (((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))*tr.qty - ((COALESCE(mstr.disc,0)/(SELECT NULLIF(SUM(tr2.qty),0) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr))*tr.qty))/1.11)*11/12 as dpp_lain,
                         ((((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))*tr.qty - ((COALESCE(mstr.disc,0)/(SELECT NULLIF(SUM(tr2.qty),0) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr))*tr.qty))/1.11)*11/12)*0.12 as ppn
@@ -269,7 +314,25 @@ class TaxGenerateCheckController extends Controller
                     break;
             }
 
-            // Get stored tax_generate_brg data first - use diskon as is from stored data
+            // Add query for retur
+            $queryRetur = "SELECT 
+                tr.kdtr,
+                mstr.tgl,
+                tr.nmbrg,
+                tr.qty
+            FROM tr
+            LEFT JOIN mstr ON tr.kdtr = mstr.kdtr
+            WHERE mstr.kdtr2 = ?
+            ORDER BY tr.kdtr ASC, tr.nmbrg ASC";
+
+            // Get retur data
+            $getRetur = $db->query($queryRetur, [$kdtr])->getResult();  
+            $listRetur = [];
+            foreach($getRetur as $row){
+                $listRetur[$row->nmbrg] = $row;
+            }
+
+            // Get stored tax_generate_brg data first
             $storedData = $db->table('crm.tax_generate_brg')
                 ->select('nmbrg, qty, hrg, diskon, diskon_tr, nama_brg, dpp, dpp_lain, nominal_ppn as ppn')
                 ->where('kode_trx', $kdtr)
@@ -277,33 +340,31 @@ class TaxGenerateCheckController extends Controller
                 ->get()
                 ->getResultArray();
 
-            // Log for debugging
-            log_message('debug', 'Stored Data Query: ' . $db->getLastQuery());
-            log_message('debug', 'Stored Data Result: ' . json_encode($storedData));
-
-            // If no stored data found, return empty
-            if (empty($storedData)) {
-                return $this->response->setJSON([
-                    'success' => false,
-                    'message' => 'No data found for transaction ' . $kdtr
-                ]);
-            }
-
-            // Get current tr data with calculations
+            // Get current tr data
             $currentData = $db->query($currentQuery, [$kdtr])->getResultArray();
 
-            // Log for debugging
-            log_message('debug', 'Current Data Query: ' . $currentQuery);
-            log_message('debug', 'Current Data Params: ' . $kdtr);
-            log_message('debug', 'Current Data Result: ' . json_encode($currentData));
-
-            // If no current data found, return empty
-            if (empty($currentData)) {
-                return $this->response->setJSON([
-                    'success' => false,
-                    'message' => 'No current transaction data found for ' . $kdtr
-                ]);
+            // Adjust quantities based on retur
+            foreach($currentData as $key => $row){
+                $cekRetur = $listRetur[$row['nmbrg']] ?? null;
+                $valRetur = $cekRetur ? $cekRetur->qty : 0;
+                $qty = $row['qty'] - $valRetur;
+                if($qty <= 0) {
+                    unset($currentData[$key]);
+                    continue;
+                }
+                $currentData[$key]['qty'] = $qty;
+                $currentData[$key]['dpp'] = $qty * ($row['dpp'] / $row['qty']);
+                $currentData[$key]['dpp_lain'] = $qty * ($row['dpp_lain'] / $row['qty']);
+                $currentData[$key]['ppn'] = $qty * ($row['ppn'] / $row['qty']);
+                
+                // Add retur information
+                $currentData[$key]['qty_retur'] = $valRetur;
+                $currentData[$key]['kode_retur'] = $cekRetur ? $cekRetur->kdtr : null;
+                $currentData[$key]['tgl_retur'] = $cekRetur ? $cekRetur->tgl : null;
             }
+
+            // Reindex array after possible removals
+            $currentData = array_values($currentData);
 
             // Compare and format data
             $comparisonData = [];
@@ -319,12 +380,14 @@ class TaxGenerateCheckController extends Controller
                             $changes['nama_brg'] = true;
                         }
 
-                        // Check numeric fields
                         $numericFields = ['qty', 'hrg', 'diskon', 'diskon_tr', 'dpp', 'dpp_lain', 'ppn'];
                         foreach ($numericFields as $field) {
-                            $currentVal = number_format((float)$current[$field], 11, '.', '');
-                            $storedVal = number_format((float)$stored[$field], 11, '.', '');
-                            if ($currentVal !== $storedVal) {
+                            // Convert to float and round to handle precision consistently
+                            $currentVal = round((float)$current[$field], 8);  // Reduced precision
+                            $storedVal = round((float)$stored[$field], 8);   // Reduced precision
+                            
+                            // Compare with tolerance for floating point arithmetic
+                            if (abs($currentVal - $storedVal) > 0.00000001) { // Smaller tolerance
                                 $changes[$field] = true;
                             }
                         }
