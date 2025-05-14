@@ -634,7 +634,7 @@ class TaxGenerateCheckController extends Controller
                     }
 
                     $formattedData[] = [
-                        $key.'|'.$cekRetur->kdtr,
+                        $key.'|'.$cekRetur->kdtr.'|'.$cekRetur->qty,
                         format_date($row->tanggal, 'd/m/Y'),
                         $row->kode_trx,
                         $row->nama_brg,
@@ -700,11 +700,12 @@ class TaxGenerateCheckController extends Controller
 
             $dataIns = [];
             foreach ($kode_trx as $value) {
-                list($kdtr,$nmbrg,$kode_trx_retur) = explode('|', $value);
+                list($kdtr,$nmbrg,$kode_trx_retur,$qty) = explode('|', $value);
                 $dataIns[] = [
                     'kode_trx' => $kdtr,
                     'kode_trx_retur' => $kode_trx_retur,
                     'nmbrg' => $nmbrg,
+                    'qty_retur' => (float)$qty,
                     'catatan' => $catatan,
                     'created_at' => date('Y-m-d H:i:s'),
                     'user_id' => $userId,
