@@ -703,20 +703,39 @@ class FakturController extends Controller
                             
             // Process each transaction for tax_generate
             foreach ($rawData as $row) {
-                // Calculate total tax from details
+                // Get retur data first
+                $returData = $db->query($queryRetur, [$row->kdtr])->getResult();
+                $listRetur = [];
+                foreach($returData as $retur){
+                    $listRetur[$retur->nmbrg] = $retur;
+                }
+                
+                // Calculate total tax from details, accounting for retur
                 $sql = "SELECT 
-                    SUM((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))/1.11 * tr.qty * 0.11) as total_tax
+                    tr.nmbrg,
+                    tr.qty,
+                    (tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))/1.11 * tr.qty * 0.11 as tax_per_item
                 FROM tr
                 WHERE tr.kdtr = ?";
                 
-                $taxResult = $db->query($sql, [$row->kdtr])->getRow();
+                $taxDetails = $db->query($sql, [$row->kdtr])->getResult();
                 
+                $totalTax = 0;
+                foreach($taxDetails as $detail) {
+                    $cekRetur = $listRetur[$detail->nmbrg] ?? null;
+                    $valRetur = $cekRetur ? $cekRetur->qty : 0;
+                    $qty = $detail->qty - $valRetur;
+                    if($qty > 0) {
+                        $totalTax += ($qty / $detail->qty) * $detail->tax_per_item;
+                    }
+                }
+
                 // Prepare data for insertion
                 $taxGenerateData = [
                     'kode_trx' => $row->kdtr,
                     'tanggal' => $row->tgl,
-                    'jam' => date('H:i:s'), // Current time as we don't have original time
-                    'total_tax' => (float)($taxResult->total_tax ?? 0),
+                    'jam' => date('H:i:s'),
+                    'total_tax' => $totalTax,
                     'created_at' => $now,
                     'user_id' => $userId
                 ];
