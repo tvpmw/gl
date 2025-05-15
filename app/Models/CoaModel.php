@@ -139,6 +139,7 @@ class CoaModel extends Model
             FROM RekeningData rd
             -- JOIN periode p ON rd.tahun = p.\"TH\" AND rd.bulan = p.\"BL\" AND p.\"POSTING\"=1
             JOIN periode p ON rd.tahun = p.\"TH\" AND rd.bulan = p.\"BL\"
+            WHERE p.\"POSTING\" = 1
             GROUP BY rd.tahun, rd.bulan, p.\"POSTING\"
             ORDER BY rd.tahun DESC, rd.bulan DESC;
         ";
