@@ -80,8 +80,9 @@
                             <th>Kode Transaksi</th>
                             <th>Tanggal</th>
                             <th>Jam</th>
-                            <th>Total Tax</th>
-                            <th>Current Total</th>
+                            <th>Current Tax</th>
+                            <th>PPN Coretax</th>
+                            <th>Selisih</th>
                             <th>Status</th>
                             <th>Aksi</th>
                         </tr>
@@ -434,7 +435,6 @@ function loadTable() {
             data: function(d) {
                 return {
                     startDate: $('#startDate').val(),
-                    startDate: $('#startDate').val(),
                     endDate: $('#endDate').val(),
                     sumber_data: $('#sumber_data').val()
                 };
@@ -454,9 +454,28 @@ function loadTable() {
             { data: 1 }, // Tanggal
             { data: 2 }, // Jam
             { data: 3 }, // Total Tax
-            { data: 4 }, // Current Total
-            { data: 5 }, // Status
-            { data: 6 }  // Aksi
+            { 
+                data: 7, // PPN Coretax from data_coretax
+                render: function(data, type, row) {
+                    return data ? formatNumber(data) : '-';
+                }
+            },
+            { 
+                data: null, // Selisih
+                render: function(data, type, row) {
+                    const totalTax = parseFloat(row[3].replace(/[^\d.-]/g, ''));
+                    // If ppn_coretax is not available, show dash
+                    if (!row[7] || row[7] === '-') {
+                        return '-';
+                    }
+                    const ppnCoretax = parseFloat(row[7]);
+                    const selisih = ppnCoretax - totalTax;
+                    let color = Math.abs(selisih) < 0.01 ? 'text-success' : 'text-danger';
+                    return `<span class="${color}">${formatNumber(selisih)}</span>`;
+                }
+            },
+            { data: 5 }, // Status badges
+            { data: 6 }  // Action buttons
         ],
         drawCallback: function(settings) {
             attachCheckboxHandlers();

@@ -50,12 +50,13 @@ class TaxGenerateCheckController extends Controller
             }
 
             $result = $db->table('crm.tax_generate tg')
-                ->select('tg.*, m.gtot as current_total')
-                ->join('mstr m', 'm.kdtr = tg.kode_trx', 'left')
-                ->where('tg.tanggal >=', $startDate)
-                ->where('tg.tanggal <=', $endDate)
-                ->get()
-                ->getResult();
+            ->select('tg.*, m.gtot as current_total, dc.ppn as ppn_coretax')
+            ->join('mstr m', 'm.kdtr = tg.kode_trx', 'left')
+            ->join('crm.data_coretax dc', "REPLACE(dc.referensi, '..', '') = tg.kode_trx", 'left')
+            ->where('tg.tanggal >=', $startDate)
+            ->where('tg.tanggal <=', $endDate)
+            ->get()
+            ->getResult();
 
             $formattedData = [];
             foreach ($result as $row) {
@@ -101,14 +102,15 @@ class TaxGenerateCheckController extends Controller
                     format_date($row->tanggal, 'd/m/Y'),
                     $row->jam,
                     format_price($row->total_tax),
-                    format_price($row->current_total),
+                    format_price($row->current_total ?? '0'),
                     $statusBadge . $taxCoreBadge,
                     '<div class="btn-group">
                         <button type="button" class="btn btn-sm btn-dark text-white btn-detail" data-kdtr="'.$row->kode_trx.'">
                             <i class="fas fa-history text-white"></i>
                         </button> &nbsp;                        
                         '.$buttonCoretax.'
-                    </div>'
+                    </div>',
+                    $row->ppn_coretax
                 ];
             }
 
