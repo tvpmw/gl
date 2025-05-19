@@ -586,6 +586,19 @@
                             <li><a class="dropdown-item" href="<?= base_url('cms/report/perubahan-modal') ?>"><i class="fas fa-wallet me-2"></i>Perubahan Modal</a></li>
                         </ul>
                     </li>
+
+                    <?php if (detailUser()->user_role == 'superadmin'): ?>
+                    <!-- Dropdown User -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle <?= str_starts_with(current_url(), base_url('cms/user')) ? 'active' : '' ?>" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-users me-2"></i>User
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="<?= base_url('cms/user') ?>"><i class="fas fa-users me-2"></i>Daftar User</a></li>
+                            <li><a class="dropdown-item" href="<?= base_url('cms/user/login') ?>"><i class="fas fa-users me-2"></i>User Login</a></li>
+                        </ul>
+                    </li>
+                    <?php endif; ?>
                 </ul>
 
                 <div class="utility-nav">

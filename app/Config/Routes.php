@@ -102,6 +102,19 @@ $routes->group('cms', ['filter' => 'auth'], function ($routes) {
 		$routes->post('sudah-lapor', 'TaxGenerateCheckController::sudahLapor');
 	});
 
+    $routes->group("user", function($routes){
+		$routes->get('/','AdminController::index');
+		$routes->get('privileges','AdminController::privileges');
+		$routes->post('lists','AdminController::lists');
+		$routes->post('save','AdminController::save');
+		$routes->post('delete','AdminController::delete');
+		$routes->post('savePrivileges','AdminController::savePrivileges');
+		$routes->get('login','AdminController::userLogin');
+		$routes->get('userAktif','AdminController::userAktif');
+		$routes->get('getOnlineUsers','AdminController::getOnlineUsers');
+		$routes->post('forceLogout','AdminController::forceLogout');
+	});
+
 	$routes->group('customer', function ($routes) {
 		$routes->get('/', 'CustomerController::index');
 		$routes->post('get-data', 'CustomerController::getData');

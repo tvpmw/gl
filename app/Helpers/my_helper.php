@@ -14,6 +14,46 @@ if ( ! function_exists('pr')) {
   }
 }
 
+if (!function_exists('ci_session_decode')) {
+  function ci_session_decode(string $sessionData): array
+  {
+      $return_data = [];
+      $offset = 0;
+
+      while ($offset < strlen($sessionData)) {
+          if (!strstr(substr($sessionData, $offset), "|")) {
+              break;
+          }
+
+          $pos = strpos($sessionData, "|", $offset);
+          $num = $pos - $offset;
+          $varname = substr($sessionData, $offset, $num);
+          $offset += $num + 1;
+
+          $data = @unserialize(substr($sessionData, $offset));
+          if ($data !== false || $data === false && str_contains(substr($sessionData, $offset), 'b:0;')) {
+              $return_data[$varname] = $data;
+          }
+
+          $serialized = serialize($data);
+          $offset += strlen($serialized);
+      }
+
+      return $return_data;
+  }
+}
+
+if (!function_exists('ci_session_encode')) {
+    function ci_session_encode(array $data): string
+    {
+        $encoded = '';
+        foreach ($data as $key => $value) {
+            $encoded .= $key . '|' . serialize($value);
+        }
+        return $encoded;
+    }
+}
+
 if ( ! function_exists('getAccessToken')) {
   function getAccessToken($serviceAccountPath) {
      $client = new Client();
@@ -1304,6 +1344,17 @@ if (!function_exists('detailUser')) {
       } else {
           return [];
       }
+  }
+}
+
+if ( ! function_exists('detailUserById')) {
+  function detailUserById($user_id){
+    if($user_id){
+      $User =  new UsersModel();
+      return $User->find($user_id);
+    }else{
+      return [];
+    }
   }
 }
 
