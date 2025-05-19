@@ -97,20 +97,45 @@ class TaxGenerateCheckController extends Controller
                     </button>'
                     : '';
 
+                // Calculate selisih in backend
+                $totalTax = floatval($row->total_tax);
+                
+                // Check if ppn_coretax exists and has value
+                if (isset($row->ppn_coretax) && !is_null($row->ppn_coretax)) {
+                    $ppnCoretax = floatval($row->ppn_coretax);
+                    
+                    // Round both numbers to 2 decimal places
+                    $roundedTotalTax = round($totalTax, 2);
+                    $roundedPpnCoretax = round($ppnCoretax, 2);
+                    
+                    // Calculate difference
+                    $selisih = $roundedPpnCoretax - $roundedTotalTax;
+                    
+                    // Determine color based on difference
+                    $selisihFormatted = '<span class="' . 
+                        (abs($selisih) < 0.01 ? 'text-danger' : 'text-success') . 
+                        '">' . format_price($selisih) . '</span>';
+                        
+                    $ppnCoretaxFormatted = format_price($row->ppn_coretax);
+                } else {
+                    $selisihFormatted = '<span class="text-secondary">-</span>';
+                    $ppnCoretaxFormatted = '-';
+                }
+
                 $formattedData[] = [
                     $row->kode_trx,
                     format_date($row->tanggal, 'd/m/Y'),
                     $row->jam,
                     format_price($row->total_tax),
-                    format_price($row->current_total ?? '0'),
+                    $ppnCoretaxFormatted,  // Changed to use formatted ppn_coretax
+                    $selisihFormatted,
                     $statusBadge . $taxCoreBadge,
                     '<div class="btn-group">
                         <button type="button" class="btn btn-sm btn-dark text-white btn-detail" data-kdtr="'.$row->kode_trx.'">
                             <i class="fas fa-history text-white"></i>
                         </button> &nbsp;                        
                         '.$buttonCoretax.'
-                    </div>',
-                    $row->ppn_coretax
+                    </div>'
                 ];
             }
 

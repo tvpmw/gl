@@ -454,28 +454,15 @@ function loadTable() {
             { data: 1 }, // Tanggal
             { data: 2 }, // Jam
             { data: 3 }, // Total Tax
+            { data: 4 }, // PPN Coretax
             { 
-                data: 7, // PPN Coretax from data_coretax
-                render: function(data, type, row) {
-                    return data ? formatNumber(data) : '-';
+                data: 5, // Selisih (now comes formatted from backend)
+                render: function(data) {
+                    return data; // Already formatted with color in backend
                 }
             },
-            { 
-                data: null, // Selisih
-                render: function(data, type, row) {
-                    const totalTax = parseFloat(row[3].replace(/[^\d.-]/g, ''));
-                    // If ppn_coretax is not available, show dash
-                    if (!row[7] || row[7] === '-') {
-                        return '-';
-                    }
-                    const ppnCoretax = parseFloat(row[7]);
-                    const selisih = ppnCoretax - totalTax;
-                    let color = Math.abs(selisih) < 0.01 ? 'text-success' : 'text-danger';
-                    return `<span class="${color}">${formatNumber(selisih)}</span>`;
-                }
-            },
-            { data: 5 }, // Status badges
-            { data: 6 }  // Action buttons
+            { data: 6 }, // Status badges
+            { data: 7 }  // Action buttons
         ],
         drawCallback: function(settings) {
             attachCheckboxHandlers();
