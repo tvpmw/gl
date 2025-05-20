@@ -85,7 +85,7 @@ class FakturController extends Controller
                 break;
             case 'wep_bali':
                 $mdl = $this->mstrModel6;
-                $prefix = 'W';
+                $prefix = 'MB';
                 break;
             default:
                 $mdl = $this->mstrModel;
@@ -437,7 +437,7 @@ class FakturController extends Controller
                     break;
                 case 'wep_bali':
                     $mdl = $this->mstrModel6;
-                    $prefix = 'W';
+                    $prefix = 'MB';
                     $tku = '0137755021526000000000';
                     $db = $this->db_crm_wep_bali;
                     $db_config = 'crm_wep_bali';

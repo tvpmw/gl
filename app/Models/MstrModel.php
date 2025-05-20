@@ -234,7 +234,7 @@ class MstrModel extends Model
 
         // Apply prefix filter if provided
         if (!empty($prefix)) {
-            if ($prefix == 'AB') {
+            if ($prefix == 'AB' || $prefix == 'MB') {
                 $builder->where("SUBSTRING(mstr.kdtr, 1, 2) = '{$prefix}'", null, false);
             } else {
                 $builder->where("SUBSTRING(mstr.kdtr, 1, 1) = '{$prefix}'", null, false);
