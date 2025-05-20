@@ -14,14 +14,20 @@ class ReportController extends BaseController
     protected $coaModel2;
     protected $coaModel3;
     protected $coaModel4;
+    protected $coaModel5;
+    protected $coaModel6;
     protected $subcoaModel;
     protected $subcoaModel2;
     protected $subcoaModel3;
     protected $subcoaModel4;
+    protected $subcoaModel5;
+    protected $subcoaModel6;
     protected $JvModel;
     protected $JvModel2;
     protected $JvModel3;
     protected $JvModel4;
+    protected $JvModel5;
+    protected $JvModel6;
 
     public function __construct()
     {
@@ -31,21 +37,26 @@ class ReportController extends BaseController
         $this->coaModel2 = new CoaModel('crm_ars');
         $this->coaModel3 = new CoaModel('crm_wep');
         $this->coaModel4 = new CoaModel('crm_dtf');
+        $this->coaModel5 = new CoaModel('crm_ars_bali');
+        $this->coaModel6 = new CoaModel('crm_wep_bali');
 
         $this->subcoaModel = new SubcoaModel('default');
         $this->subcoaModel2 = new SubcoaModel('crm_ars');
         $this->subcoaModel3 = new SubcoaModel('crm_wep');
         $this->subcoaModel4 = new SubcoaModel('crm_dtf');
+        $this->subcoaModel5 = new SubcoaModel('crm_ars_bali');
+        $this->subcoaModel6 = new SubcoaModel('crm_wep_bali');
 
         $this->jvMod = new JvModel('default');
         $this->jvMod2 = new JvModel('crm_ars');
         $this->jvMod3 = new JvModel('crm_wep');
         $this->jvMod4 = new JvModel('crm_dtf');
+        $this->jvMod5 = new JvModel('crm_ars_bali');
+        $this->jvMod6 = new JvModel('crm_wep_bali');
     }
 
     public function index()
     {
-        //
     }
 
     public function labaRugi($th=null,$bl=null,$db=null)
@@ -54,7 +65,6 @@ class ReportController extends BaseController
             return redirect()->to('cms/dashboard');
         }
 
-        // Ambil data berdasarkan pilihan database
         switch ($db) {
             case 'ariston':
                 $getLR = $this->coaModel2->getLaporanRekening($th,$bl);
@@ -64,12 +74,22 @@ class ReportController extends BaseController
             case 'wep':
                 $getLR = $this->coaModel3->getLaporanRekening($th,$bl);
                 $getAkun = $this->subcoaModel3->getSubLabaRugi();
-                $nmpt = 'Wahana Eka Pekasa';
+                $nmpt = 'Wahana Eka Perkasa';
                 break;
             case 'dtf':
                 $getLR = $this->coaModel4->getLaporanRekening($th,$bl);
                 $getAkun = $this->subcoaModel4->getSubLabaRugi();
                 $nmpt = 'DTF';
+                break;
+            case 'ariston_bali':
+                $getLR = $this->coaModel5->getLaporanRekening($th,$bl);
+                $getAkun = $this->subcoaModel5->getSubLabaRugi();
+                $nmpt = 'Ariston Bali';
+                break;
+            case 'wep_bali':
+                $getLR = $this->coaModel6->getLaporanRekening($th,$bl);
+                $getAkun = $this->subcoaModel6->getSubLabaRugi();
+                $nmpt = 'Wahana Eka Perkasa Bali';
                 break;
             default:
                 $getLR = $this->coaModel->getLaporanRekening($th,$bl);
@@ -143,7 +163,6 @@ class ReportController extends BaseController
         $data['dbs'] = getSelDb();
         $data['dbSel'] = $db;
         $data['id'] = $id;
-        // pr($data,1);
 
         return view('report/labarugi', $data);
     }
@@ -165,7 +184,6 @@ class ReportController extends BaseController
             return redirect()->to('cms/dashboard');
         }
 
-        // Ambil data berdasarkan pilihan database
         switch ($db) {
             case 'ariston':
                 $getLR = $this->coaModel2->getLaporanRekening($th,$bl);
@@ -175,12 +193,22 @@ class ReportController extends BaseController
             case 'wep':
                 $getLR = $this->coaModel3->getLaporanRekening($th,$bl);
                 $getAkun = $this->subcoaModel3->getSubLabaRugi();
-                $nmpt = 'Wahana Eka Pekasa';
+                $nmpt = 'Wahana Eka Perkasa';
                 break;
             case 'dtf':
                 $getLR = $this->coaModel4->getLaporanRekening($th,$bl);
                 $getAkun = $this->subcoaModel4->getSubLabaRugi();
                 $nmpt = 'DTF';
+                break;
+            case 'ariston_bali':
+                $getLR = $this->coaModel5->getLaporanRekening($th,$bl);
+                $getAkun = $this->subcoaModel5->getSubLabaRugi();
+                $nmpt = 'Ariston Bali';
+                break;
+            case 'wep_bali':
+                $getLR = $this->coaModel6->getLaporanRekening($th,$bl);
+                $getAkun = $this->subcoaModel6->getSubLabaRugi();
+                $nmpt = 'Wahana Eka Perkasa Bali';
                 break;
             default:
                 $getLR = $this->coaModel->getLaporanRekening($th,$bl);
@@ -248,7 +276,6 @@ class ReportController extends BaseController
         $data['blnSel'] = $bl;
         $data['dbs'] = getSelDb();
         $data['dbSel'] = $db;
-        // pr($data,1);
 
         return view('report/labarugi-cetak', $data);
     }
@@ -259,7 +286,6 @@ class ReportController extends BaseController
             return redirect()->to('cms/dashboard/neraca');
         }
 
-        // Ambil data berdasarkan pilihan database
         switch ($db) {
             case 'ariston':
                 $getNR = $this->coaModel2->getLaporanNeraca($th,$bl);
@@ -273,7 +299,7 @@ class ReportController extends BaseController
                 $getLbt = $this->coaModel3->getLabaRugiTahunBerjalan($th,$bl);
                 $getAkun = $this->subcoaModel3->getSubNeraca();
                 $mdl = $this->coaModel3;
-                $nmpt = 'Wahana Eka Pekasa';
+                $nmpt = 'Wahana Eka Perkasa';
                 break;
             case 'dtf':
                 $getNR = $this->coaModel4->getLaporanNeraca($th,$bl);
@@ -281,6 +307,20 @@ class ReportController extends BaseController
                 $getAkun = $this->subcoaModel4->getSubNeraca();
                 $mdl = $this->coaModel4;
                 $nmpt = 'DTF';
+                break;
+            case 'ariston_bali':
+                $getNR = $this->coaModel5->getLaporanNeraca($th,$bl);
+                $getLbt = $this->coaModel5->getLabaRugiTahunBerjalan($th,$bl);
+                $getAkun = $this->subcoaModel5->getSubNeraca();
+                $mdl = $this->coaModel5;
+                $nmpt = 'Ariston Bali';
+                break;
+            case 'wep_bali':
+                $getNR = $this->coaModel6->getLaporanNeraca($th,$bl);
+                $getLbt = $this->coaModel6->getLabaRugiTahunBerjalan($th,$bl);
+                $getAkun = $this->subcoaModel6->getSubNeraca();
+                $mdl = $this->coaModel6;
+                $nmpt = 'Wahana Eka Perkasa Bali';
                 break;
             default:
                 $getNR = $this->coaModel->getLaporanNeraca($th,$bl);
@@ -360,7 +400,6 @@ class ReportController extends BaseController
         $data['dbs'] = getSelDb();
         $data['dbSel'] = $db;
         $data['id'] = $id;
-        // pr($data,1);
 
         return view('report/neraca', $data);
     }
@@ -371,7 +410,6 @@ class ReportController extends BaseController
             return redirect()->to('cms/dashboard/neraca');
         }
 
-        // Ambil data berdasarkan pilihan database
         switch ($db) {
             case 'ariston':
                 $getNR = $this->coaModel2->getLaporanNeraca($th,$bl);
@@ -385,7 +423,7 @@ class ReportController extends BaseController
                 $getLbt = $this->coaModel3->getLabaRugiTahunBerjalan($th,$bl);
                 $getAkun = $this->subcoaModel3->getSubNeraca();
                 $mdl = $this->coaModel3;
-                $nmpt = 'Wahana Eka Pekasa';
+                $nmpt = 'Wahana Eka Perkasa';
                 break;
             case 'dtf':
                 $getNR = $this->coaModel4->getLaporanNeraca($th,$bl);
@@ -393,6 +431,20 @@ class ReportController extends BaseController
                 $getAkun = $this->subcoaModel4->getSubNeraca();
                 $mdl = $this->coaModel4;
                 $nmpt = 'DTF';
+                break;
+            case 'ariston_bali':
+                $getNR = $this->coaModel5->getLaporanNeraca($th,$bl);
+                $getLbt = $this->coaModel5->getLabaRugiTahunBerjalan($th,$bl);
+                $getAkun = $this->subcoaModel5->getSubNeraca();
+                $mdl = $this->coaModel5;
+                $nmpt = 'Ariston Bali';
+                break;
+            case 'wep_bali':
+                $getNR = $this->coaModel6->getLaporanNeraca($th,$bl);
+                $getLbt = $this->coaModel6->getLabaRugiTahunBerjalan($th,$bl);
+                $getAkun = $this->subcoaModel6->getSubNeraca();
+                $mdl = $this->coaModel6;
+                $nmpt = 'Wahana Eka Perkasa Bali';
                 break;
             default:
                 $getNR = $this->coaModel->getLaporanNeraca($th,$bl);
@@ -466,7 +518,6 @@ class ReportController extends BaseController
         $data['blnSel'] = $bl;
         $data['dbs'] = getSelDb();
         $data['dbSel'] = $db;
-        // pr($data,1);
 
         return view('report/neraca-cetak', $data);
     }
@@ -488,7 +539,6 @@ class ReportController extends BaseController
             return redirect()->back();
         }
 
-        // Ambil data berdasarkan pilihan database
         switch ($db) {
             case 'ariston':
                 $getBB = $this->coaModel2->getJurnalData($kdcoa,$th,$bl);
@@ -498,12 +548,22 @@ class ReportController extends BaseController
             case 'wep':
                 $getBB = $this->coaModel3->getJurnalData($kdcoa,$th,$bl);
                 $mdl = $this->coaModel3;
-                $nmpt = 'Wahana Eka Pekasa';
+                $nmpt = 'Wahana Eka Perkasa';
                 break;
             case 'dtf':
                 $getBB = $this->coaModel4->getJurnalData($kdcoa,$th,$bl);
                 $mdl = $this->coaModel4;
                 $nmpt = 'DTF';
+                break;
+            case 'ariston_bali':
+                $getBB = $this->coaModel5->getJurnalData($kdcoa,$th,$bl);
+                $mdl = $this->coaModel5;
+                $nmpt = 'Ariston Bali';
+                break;
+            case 'wep_bali':
+                $getBB = $this->coaModel6->getJurnalData($kdcoa,$th,$bl);
+                $mdl = $this->coaModel6;
+                $nmpt = 'Wahana Eka Perkasa Bali';
                 break;
             default:
                 $getBB = $this->coaModel->getJurnalData($kdcoa,$th,$bl);
@@ -517,7 +577,6 @@ class ReportController extends BaseController
         $data['lists'] = $getBB;
         $data['akun'] = $mdl->where('KDCOA',$kdcoa)->first();
 
-        // pr($data,1);
         return view('report/bukubesar', $data);
     }
 
@@ -532,7 +591,6 @@ class ReportController extends BaseController
         $search = $this->request->getGet('search');
         $db = $this->request->getGet('dbs');
 
-        // Ambil data berdasarkan pilihan database
         switch ($db) {
             case 'ariston':
                 $mdl = $this->coaModel2;
@@ -540,11 +598,19 @@ class ReportController extends BaseController
                 break;
             case 'wep':
                 $mdl = $this->coaModel3;
-                $nmpt = 'Wahana Eka Pekasa';
+                $nmpt = 'Wahana Eka Perkasa';
                 break;
             case 'dtf':
                 $mdl = $this->coaModel4;
                 $nmpt = 'DTF';
+                break;
+            case 'ariston_bali':
+                $mdl = $this->coaModel5;
+                $nmpt = 'Ariston Bali';
+                break;
+            case 'wep_bali':
+                $mdl = $this->coaModel6;
+                $nmpt = 'Wahana Eka Perkasa Bali';
                 break;
             default:
                 $mdl = $this->coaModel;
@@ -576,7 +642,6 @@ class ReportController extends BaseController
             return "Form wajib diisi";
         }
 
-        // Ambil data berdasarkan pilihan database
         switch ($dbs) {
             case 'ariston':
                 $getBB = $this->coaModel2->getJurnalDataByDate($rekening_id,$tanggal_awal,$tanggal_akhir);
@@ -586,12 +651,22 @@ class ReportController extends BaseController
             case 'wep':
                 $getBB = $this->coaModel3->getJurnalDataByDate($rekening_id,$tanggal_awal,$tanggal_akhir);
                 $mdl = $this->coaModel3;
-                $nmpt = 'Wahana Eka Pekasa';
+                $nmpt = 'Wahana Eka Perkasa';
                 break;
             case 'dtf':
                 $getBB = $this->coaModel4->getJurnalDataByDate($rekening_id,$tanggal_awal,$tanggal_akhir);
                 $mdl = $this->coaModel4;
                 $nmpt = 'DTF';
+                break;
+            case 'ariston_bali':
+                $getBB = $this->coaModel5->getJurnalDataByDate($rekening_id,$tanggal_awal,$tanggal_akhir);
+                $mdl = $this->coaModel5;
+                $nmpt = 'Ariston Bali';
+                break;
+            case 'wep_bali':
+                $getBB = $this->coaModel6->getJurnalDataByDate($rekening_id,$tanggal_awal,$tanggal_akhir);
+                $mdl = $this->coaModel6;
+                $nmpt = 'Wahana Eka Perkasa Bali';
                 break;
             default:
                 $getBB = $this->coaModel->getJurnalDataByDate($rekening_id,$tanggal_awal,$tanggal_akhir);
@@ -605,7 +680,6 @@ class ReportController extends BaseController
         $data['lists'] = $getBB;
         $data['akun'] = $mdl->where('KDCOA',$rekening_id)->first();
 
-        // pr($data,1);
         return view('report/bukubesar-result', $data);
     }
 
@@ -628,7 +702,6 @@ class ReportController extends BaseController
             return "Form wajib diisi";
         }
 
-        // Ambil data berdasarkan pilihan database
         switch ($dbs) {
             case 'ariston':
                 $getBB = $this->coaModel2->getJurnalDataByKet($keterangan,$tahun);
@@ -638,12 +711,22 @@ class ReportController extends BaseController
             case 'wep':
                 $getBB = $this->coaModel3->getJurnalDataByKet($keterangan,$tahun);
                 $mdl = $this->coaModel3;
-                $nmpt = 'Wahana Eka Pekasa';
+                $nmpt = 'Wahana Eka Perkasa';
                 break;
             case 'dtf':
                 $getBB = $this->coaModel4->getJurnalDataByKet($keterangan,$tahun);
                 $mdl = $this->coaModel4;
                 $nmpt = 'DTF';
+                break;
+            case 'ariston_bali':
+                $getBB = $this->coaModel5->getJurnalDataByKet($keterangan,$tahun);
+                $mdl = $this->coaModel5;
+                $nmpt = 'Ariston Bali';
+                break;
+            case 'wep_bali':
+                $getBB = $this->coaModel6->getJurnalDataByKet($keterangan,$tahun);
+                $mdl = $this->coaModel6;
+                $nmpt = 'Wahana Eka Perkasa Bali';
                 break;
             default:
                 $getBB = $this->coaModel->getJurnalDataByKet($keterangan,$tahun);
@@ -657,7 +740,6 @@ class ReportController extends BaseController
         $data['lists'] = $getBB;
         $data['mdl'] = $mdl;
 
-        // pr($data,1);
         return view('report/bukubesarket-result', $data);
     }
 
@@ -681,7 +763,6 @@ class ReportController extends BaseController
             return "Form wajib diisi";
         }
 
-        // Ambil data berdasarkan pilihan database
         switch ($dbs) {
             case 'ariston':
                 $getBB = $this->jvMod2->getJurnalWithDetailsMonth($bl,$th);
@@ -691,12 +772,22 @@ class ReportController extends BaseController
             case 'wep':
                 $getBB = $this->jvMod3->getJurnalWithDetailsMonth($bl,$th);
                 $mdl = $this->jvMod3;
-                $nmpt = 'Wahana Eka Pekasa';
+                $nmpt = 'Wahana Eka Perkasa';
                 break;
             case 'dtf':
                 $getBB = $this->jvMod4->getJurnalWithDetailsMonth($bl,$th);
                 $mdl = $this->jvMod4;
                 $nmpt = 'DTF';
+                break;
+            case 'ariston_bali':
+                $getBB = $this->jvMod5->getJurnalWithDetailsMonth($bl,$th);
+                $mdl = $this->jvMod5;
+                $nmpt = 'Ariston Bali';
+                break;
+            case 'wep_bali':
+                $getBB = $this->jvMod6->getJurnalWithDetailsMonth($bl,$th);
+                $mdl = $this->jvMod6;
+                $nmpt = 'Wahana Eka Perkasa Bali';
                 break;
             default:
                 $getBB = $this->jvMod->getJurnalWithDetailsMonth($bl,$th);
@@ -709,7 +800,6 @@ class ReportController extends BaseController
         $data['nmpt'] = $nmpt;
         $data['lists'] = $getBB;
 
-        // pr($data,1);
         return view('report/jurnal-result', $data);
     }
 
@@ -737,7 +827,6 @@ class ReportController extends BaseController
             return "Form wajib diisi";
         }
 
-        // Ambil data berdasarkan pilihan database
         switch ($db) {
             case 'ariston':
                 $getNR = $this->coaModel2->getLaporanNeraca($thSblm,$blSblm,$tipe);
@@ -751,7 +840,7 @@ class ReportController extends BaseController
                 $getLbt = $this->coaModel3->getLabaRugiTahunBerjalan($th,$bl);
                 $getAkun = $this->subcoaModel3->getSubNeraca();
                 $mdl = $this->coaModel3;
-                $nmpt = 'Wahana Eka Pekasa';
+                $nmpt = 'Wahana Eka Perkasa';
                 break;
             case 'dtf':
                 $getNR = $this->coaModel4->getLaporanNeraca($thSblm,$blSblm,$tipe);
@@ -759,6 +848,20 @@ class ReportController extends BaseController
                 $getAkun = $this->subcoaModel4->getSubNeraca();
                 $mdl = $this->coaModel4;
                 $nmpt = 'DTF';
+                break;
+            case 'ariston_bali':
+                $getNR = $this->coaModel5->getLaporanNeraca($thSblm,$blSblm,$tipe);
+                $getLbt = $this->coaModel5->getLabaRugiTahunBerjalan($th,$bl);
+                $getAkun = $this->subcoaModel5->getSubNeraca();
+                $mdl = $this->coaModel5;
+                $nmpt = 'Ariston Bali';
+                break;
+            case 'wep_bali':
+                $getNR = $this->coaModel6->getLaporanNeraca($thSblm,$blSblm,$tipe);
+                $getLbt = $this->coaModel6->getLabaRugiTahunBerjalan($th,$bl);
+                $getAkun = $this->subcoaModel6->getSubNeraca();
+                $mdl = $this->coaModel6;
+                $nmpt = 'Wahana Eka Perkasa Bali';
                 break;
             default:
                 $getNR = $this->coaModel->getLaporanNeraca($th,$bl,$tipe);
@@ -825,7 +928,6 @@ class ReportController extends BaseController
         $data['nmpt'] = $nmpt;
         $data['lists'] = $listModal;
         $data['lrtb'] = $getLbt;
-        // pr($data,1);
         return view('report/perubahanmodal-result', $data);
     }
 }

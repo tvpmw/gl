@@ -11,6 +11,8 @@ class DashboardController extends BaseController
     protected $coaModel2;
     protected $coaModel3;
     protected $coaModel4;
+    protected $coaModel5;
+    protected $coaModel6;
     protected $redis;
 
     public function __construct()
@@ -21,8 +23,9 @@ class DashboardController extends BaseController
         $this->coaModel2 = new CoaModel('crm_ars');        
         $this->coaModel3 = new CoaModel('crm_wep');
         $this->coaModel4 = new CoaModel('crm_dtf');
+        $this->coaModel5 = new CoaModel('crm_ars_bali');
+        $this->coaModel6 = new CoaModel('crm_wep_bali');
 
-        // Konfigurasi Predis
         $this->redis = new Client([
             'scheme' => 'tcp',
             'host'   => '127.0.0.1',
@@ -32,8 +35,6 @@ class DashboardController extends BaseController
 
     public function index()
     {
-        // $getLR = $this->coaModel->getLaporanLabaRugi();
-        // pr($getLR,1);
         $data['thnSkg'] = date('Y');
         $data['startYear'] = 2009;
         $data['dbs'] = getSelDb();
@@ -75,7 +76,6 @@ class DashboardController extends BaseController
 
     private function getDataLaba($tahun,$dbs)
     {
-        // Ambil data berdasarkan pilihan database
         switch ($dbs) {
             case 'ariston':
                 $getLR = $this->coaModel2->getLaporanLabaRugi();
@@ -85,6 +85,12 @@ class DashboardController extends BaseController
                 break;
             case 'dtf':
                 $getLR = $this->coaModel4->getLaporanLabaRugi();
+                break;
+            case 'ariston_bali':
+                $getLR = $this->coaModel5->getLaporanLabaRugi();
+                break;
+            case 'wep_bali':
+                $getLR = $this->coaModel6->getLaporanLabaRugi();
                 break;
             default:
                 $getLR = $this->coaModel->getLaporanLabaRugi();
@@ -122,7 +128,6 @@ class DashboardController extends BaseController
 
     private function getDataCoa($tahun, $dbs)
     {
-        // Ambil data berdasarkan pilihan database
         switch ($dbs) {
             case 'ariston':
                 $getCoa = $this->coaModel2->getCoa($tahun);
@@ -132,6 +137,12 @@ class DashboardController extends BaseController
                 break;
             case 'dtf':
                 $getCoa = $this->coaModel4->getCoa($tahun);
+                break;
+            case 'ariston_bali':
+                $getCoa = $this->coaModel5->getCoa($tahun);
+                break;
+            case 'wep_bali':
+                $getCoa = $this->coaModel6->getCoa($tahun);
                 break;
             default:
                 $getCoa = $this->coaModel->getCoa($tahun);
@@ -147,9 +158,9 @@ class DashboardController extends BaseController
                 $lists[] = [
                     'kode_akun' => $value['KDCOA'] ?? '',
                     'nama_akun' => $value['NMCOA'] ?? '',
-                    'kategori' => $value['nm_sub'] ?? '', // Changed from KDSUB to nm_sub
-                    'level' => $value['level'] ?? 0,      // This matches the root AS level alias
-                    'status' => $value['status'] ?? 1,    // This matches the STAT AS status alias
+                    'kategori' => $value['nm_sub'] ?? '', 
+                    'level' => $value['level'] ?? 0,      
+                    'status' => $value['status'] ?? 1,    
                     'nilai' => floatval($value['nilai'] ?? 0),
                     'aksi' => $aksi
                 ];
@@ -161,8 +172,6 @@ class DashboardController extends BaseController
 
     public function neraca()
     {
-        // $getNr = $this->coaModel->getNeraca();
-        // pr($getNr,1);
         $data['thnSkg'] = date('Y');
         $data['startYear'] = 2009;
         $data['dbs'] = getSelDb();
@@ -179,7 +188,6 @@ class DashboardController extends BaseController
 
     private function getDataNeraca($tahun,$dbs)
     {
-        // Ambil data berdasarkan pilihan database
         switch ($dbs) {
             case 'ariston':
                 $getLR = $this->coaModel2->getNeraca();
@@ -189,6 +197,12 @@ class DashboardController extends BaseController
                 break;
             case 'dtf':
                 $getLR = $this->coaModel4->getNeraca();
+                break;
+            case 'ariston_bali':
+                $getLR = $this->coaModel5->getNeraca();
+                break;
+            case 'wep_bali':
+                $getLR = $this->coaModel6->getNeraca();
                 break;
             default:
                 $getLR = $this->coaModel->getNeraca();

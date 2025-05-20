@@ -10,6 +10,8 @@ class TaxGenerateCheckController extends Controller
     protected $db_crm_ars;
     protected $db_crm_wep;
     protected $db_crm_dtf;
+    protected $db_crm_ars_bali;
+    protected $db_crm_wep_bali;
 
     public function __construct()
     {
@@ -18,6 +20,8 @@ class TaxGenerateCheckController extends Controller
         $this->db_crm_ars = \Config\Database::connect('crm_ars');
         $this->db_crm_wep = \Config\Database::connect('crm_wep');
         $this->db_crm_dtf = \Config\Database::connect('crm_dtf');
+        $this->db_crm_ars_bali = \Config\Database::connect('crm_ars_bali');
+        $this->db_crm_wep_bali = \Config\Database::connect('crm_wep_bali');
     }
 
     public function index()
@@ -34,7 +38,6 @@ class TaxGenerateCheckController extends Controller
             $endDate = $request->getPost('endDate');
             $dbs = $request->getPost('sumber_data');
 
-            // Select database based on source
             switch ($dbs) {
                 case 'ariston':
                     $db = $this->db_crm_ars;
@@ -44,6 +47,12 @@ class TaxGenerateCheckController extends Controller
                     break;
                 case 'dtf':
                     $db = $this->db_crm_dtf;
+                    break;
+                case 'ariston_bali':
+                    $db = $this->db_crm_ars_bali;
+                    break;
+                case 'wep_bali':
+                    $db = $this->db_crm_wep_bali;
                     break;
                 default:
                     $db = $this->db_default;
@@ -60,26 +69,21 @@ class TaxGenerateCheckController extends Controller
 
             $formattedData = [];
             foreach ($result as $row) {
-                // Check for changes in mstr and tr
                 $hasChanges = $this->checkForChanges($row->kode_trx, $dbs);
                 
-                // Get tax core status - Fixed schema reference and added debugging
                 $taxCoreQuery = $db->table('crm.data_coretax')
                     ->select('status_faktur')
                     ->where('referensi', $row->kode_trx);                    
                 
                 $taxCoreStatus = $taxCoreQuery->get()->getRow();
                 
-                // Log for debugging
                 log_message('debug', 'Tax Core Query: ' . $db->getLastQuery());
                 log_message('debug', 'Tax Core Result: ' . json_encode($taxCoreStatus));
 
-                // Determine status badge
                 $statusBadge = $hasChanges ? 
                     '<span class="badge bg-warning">Ada Perubahan Data</span>' : 
                     '<span class="badge bg-success">Tidak Ada Perubahan</span>';
 
-                // Add tax core status badge
                 $taxCoreBadge = '';
                 if ($taxCoreStatus) {
                     if ($taxCoreStatus->status_faktur === 'APPROVED') {
@@ -97,21 +101,16 @@ class TaxGenerateCheckController extends Controller
                     </button>'
                     : '';
 
-                // Calculate selisih in backend
                 $totalTax = floatval($row->total_tax);
                 
-                // Check if ppn_coretax exists and has value
                 if (isset($row->ppn_coretax) && !is_null($row->ppn_coretax)) {
                     $ppnCoretax = floatval($row->ppn_coretax);
                     
-                    // Round both numbers to 2 decimal places
                     $roundedTotalTax = round($totalTax, 2);
                     $roundedPpnCoretax = round($ppnCoretax, 2);
                     
-                    // Calculate difference
                     $selisih = $roundedPpnCoretax - $roundedTotalTax;
                     
-                    // Determine color based on difference
                     $selisihFormatted = '<span class="' . 
                         (abs($selisih) < 0.01 ? 'text-danger' : 'text-success') . 
                         '">' . format_price($selisih) . '</span>';
@@ -127,7 +126,7 @@ class TaxGenerateCheckController extends Controller
                     format_date($row->tanggal, 'd/m/Y'),
                     $row->jam,
                     format_price($row->total_tax),
-                    $ppnCoretaxFormatted,  // Changed to use formatted ppn_coretax
+                    $ppnCoretaxFormatted,  
                     $selisihFormatted,
                     $statusBadge . $taxCoreBadge,
                     '<div class="btn-group">
@@ -139,7 +138,6 @@ class TaxGenerateCheckController extends Controller
                 ];
             }
 
-            // Fix DataTables response format
             return $this->response->setJSON([
                 'draw' => $request->getPost('draw'),
                 'recordsTotal' => count($formattedData),
@@ -160,7 +158,6 @@ class TaxGenerateCheckController extends Controller
 
     private function checkForChanges($kdtr, $dbs)
     {
-        // Select database
         switch ($dbs) {
             case 'ariston':
             case 'wep':
@@ -173,6 +170,45 @@ class TaxGenerateCheckController extends Controller
                     tr.disc as diskon_tr,
                     brg.nama as nama_brg,
                     mstr.disc/tr.qty/1.11 as diskon,
+                    ((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))*tr.qty - ((COALESCE(mstr.disc,0)/(SELECT NULLIF(SUM(tr2.qty),0) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr))*tr.qty))/1.11 as dpp,
+                    (((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))*tr.qty - ((COALESCE(mstr.disc,0)/(SELECT NULLIF(SUM(tr2.qty),0) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr))*tr.qty))/1.11)*11/12 as dpp_lain,
+                    ((((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))*tr.qty - ((COALESCE(mstr.disc,0)/(SELECT NULLIF(SUM(tr2.qty),0) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr))*tr.qty))/1.11)*11/12)*0.12 as ppn
+                FROM tr
+                JOIN brg ON tr.nmbrg = brg.nmbrg
+                LEFT JOIN mstr ON tr.kdtr = mstr.kdtr
+                WHERE tr.kdtr = ?
+                ORDER BY tr.nmbrg ASC";
+                break;
+
+            case 'ariston_bali':
+            case 'wep_bali':
+                $db = ($dbs === 'ariston_bali') ? $this->db_crm_ars_bali : $this->db_crm_wep_bali;
+
+                $currentQuery = "SELECT 
+                    tr.nmbrg,
+                    tr.qty,
+                    tr.hrg,
+                    tr.disc as diskon_tr,
+                    brg.nama as nama_brg,
+                    mstr.disc/tr.qty/1.11 as diskon,
+                    ((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))*tr.qty - ((COALESCE(mstr.disc,0)/(SELECT NULLIF(SUM(tr2.qty),0) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr))*tr.qty))/1.11 as dpp,
+                    (((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))*tr.qty - ((COALESCE(mstr.disc,0)/(SELECT NULLIF(SUM(tr2.qty),0) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr))*tr.qty))/1.11)*11/12 as dpp_lain,
+                    ((((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))*tr.qty - ((COALESCE(mstr.disc,0)/(SELECT NULLIF(SUM(tr2.qty),0) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr))*tr.qty))/1.11)*11/12)*0.12 as ppn
+                FROM tr
+                JOIN brg ON tr.nmbrg = brg.nmbrg
+                LEFT JOIN mstr ON tr.kdtr = mstr.kdtr
+                WHERE tr.kdtr = ?
+                ORDER BY tr.nmbrg ASC";
+                break;
+
+                
+                $currentQuery = "SELECT 
+                    tr.nmbrg,
+                    tr.qty,
+                    tr.hrg,
+                    tr.disc as diskon_tr,
+                    brg.nama as nama_brg,
+                    mstr.disc/tr.qty/1.11 as diskon,                        
                     ((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))*tr.qty - ((COALESCE(mstr.disc,0)/(SELECT NULLIF(SUM(tr2.qty),0) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr))*tr.qty))/1.11 as dpp,
                     (((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))*tr.qty - ((COALESCE(mstr.disc,0)/(SELECT NULLIF(SUM(tr2.qty),0) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr))*tr.qty))/1.11)*11/12 as dpp_lain,
                     ((((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))*tr.qty - ((COALESCE(mstr.disc,0)/(SELECT NULLIF(SUM(tr2.qty),0) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr))*tr.qty))/1.11)*11/12)*0.12 as ppn
@@ -203,7 +239,6 @@ class TaxGenerateCheckController extends Controller
                 break;
         }
 
-        // Add query for retur
         $queryRetur = "SELECT 
             tr.kdtr,
             mstr.tgl,
@@ -214,7 +249,6 @@ class TaxGenerateCheckController extends Controller
         WHERE mstr.kdtr2 = ?
         ORDER BY tr.kdtr ASC, tr.nmbrg ASC";
 
-        // Get retur data
         $getRetur = $db->query($queryRetur, [$kdtr])->getResult();  
         
         $listRetur = [];
@@ -222,10 +256,8 @@ class TaxGenerateCheckController extends Controller
             $listRetur[$row->nmbrg] = $row;
         }
 
-        // Get current tr data
         $currentData = $db->query($currentQuery, [$kdtr])->getResultArray();
 
-        // Adjust quantities based on retur
         foreach($currentData as $key => $row){
             $cekRetur = $listRetur[$row['nmbrg']] ?? null;
             $valRetur = $cekRetur ? $cekRetur->qty : 0;
@@ -240,10 +272,8 @@ class TaxGenerateCheckController extends Controller
             $currentData[$key]['ppn'] = $qty * ($row['ppn'] / $row['qty']);
         }
 
-        // Reindex array after possible removals
         $currentData = array_values($currentData);
 
-        // Get stored tax_generate_brg data
         $storedData = $db->table('crm.tax_generate_brg')
             ->select('nmbrg, qty, hrg, diskon, diskon_tr, nama_brg, dpp, dpp_lain, nominal_ppn as ppn')
             ->where('kode_trx', $kdtr)
@@ -251,35 +281,27 @@ class TaxGenerateCheckController extends Controller
             ->get()
             ->getResultArray();
 
-        // Check if number of items changed
         if (count($currentData) !== count($storedData)) {
             return true;
         }
 
-        // Compare each item's details with proper precision
         foreach ($currentData as $key => $current) {
             $stored = $storedData[$key];
             
-            // Check basic field first
             if ($current['nmbrg'] !== $stored['nmbrg'] || 
                 strtolower(trim($current['nama_brg'])) !== strtolower(trim($stored['nama_brg']))) {
                 return true;
             }
 
-            // Check numeric fields with proper precision
             $numericFields = ['qty', 'hrg', 'diskon', 'diskon_tr', 'dpp', 'dpp_lain', 'ppn'];
             foreach ($numericFields as $field) {
-                // Round both values to 11 decimal places before formatting
                 $currentVal = round((float)$current[$field], 11);
                 $storedVal = round((float)$stored[$field], 11);
                 
-                // Format with fixed precision after rounding
                 $currentFormatted = number_format($currentVal, 11, '.', '');
                 $storedFormatted = number_format($storedVal, 11, '.', '');
                 
-                // Compare the formatted strings
                 if ($currentFormatted !== $storedFormatted) {
-                    // Double check with tolerance for floating point precision
                     if (abs($currentVal - $storedVal) > 0.00000000001) {
                         $changes[$field] = true;
                     }
@@ -287,7 +309,6 @@ class TaxGenerateCheckController extends Controller
             }
         }
 
-        // If we get here, no changes were found
         return false;
     }
 
@@ -298,11 +319,31 @@ class TaxGenerateCheckController extends Controller
             $kdtr = $request->getPost('kdtr');
             $dbs = $request->getPost('sumber_data');
 
-            // Select database based on source
             switch ($dbs) {
                 case 'ariston':
                 case 'wep':
                     $db = ($dbs === 'ariston') ? $this->db_crm_ars : $this->db_crm_wep;
+                    
+                    $currentQuery = "SELECT 
+                        tr.nmbrg,
+                        tr.qty,
+                        tr.hrg,
+                        tr.disc as diskon_tr,
+                        brg.nama as nama_brg,
+                        mstr.disc/tr.qty/1.11 as diskon,                        
+                        ((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))*tr.qty - ((COALESCE(mstr.disc,0)/(SELECT NULLIF(SUM(tr2.qty),0) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr))*tr.qty))/1.11 as dpp,
+                        (((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))*tr.qty - ((COALESCE(mstr.disc,0)/(SELECT NULLIF(SUM(tr2.qty),0) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr))*tr.qty))/1.11)*11/12 as dpp_lain,
+                        ((((tr.hrg - (tr.hrg * CAST(tr.disc AS numeric)/100))*tr.qty - ((COALESCE(mstr.disc,0)/(SELECT NULLIF(SUM(tr2.qty),0) FROM tr tr2 WHERE tr2.kdtr = tr.kdtr))*tr.qty))/1.11)*11/12)*0.12 as ppn
+                    FROM tr
+                    JOIN brg ON tr.nmbrg = brg.nmbrg
+                    LEFT JOIN mstr ON tr.kdtr = mstr.kdtr
+                    WHERE tr.kdtr = ?
+                    ORDER BY tr.nmbrg ASC";
+                    break;
+
+                case 'ariston_bali':
+                case 'wep_bali':
+                    $db = ($dbs === 'ariston_bali') ? $this->db_crm_ars_bali : $this->db_crm_wep_bali;
                     
                     $currentQuery = "SELECT 
                         tr.nmbrg,
@@ -341,7 +382,6 @@ class TaxGenerateCheckController extends Controller
                     break;
             }
 
-            // Add query for retur
             $queryRetur = "SELECT 
                 tr.kdtr,
                 mstr.tgl,
@@ -352,14 +392,12 @@ class TaxGenerateCheckController extends Controller
             WHERE mstr.kdtr2 = ?
             ORDER BY tr.kdtr ASC, tr.nmbrg ASC";
 
-            // Get retur data
             $getRetur = $db->query($queryRetur, [$kdtr])->getResult();  
             $listRetur = [];
             foreach($getRetur as $row){
                 $listRetur[$row->nmbrg] = $row;
             }
 
-            // Get stored tax_generate_brg data first
             $storedData = $db->table('crm.tax_generate_brg')
                 ->select('nmbrg, qty, hrg, diskon, diskon_tr, nama_brg, dpp, dpp_lain, nominal_ppn as ppn')
                 ->where('kode_trx', $kdtr)
@@ -367,10 +405,8 @@ class TaxGenerateCheckController extends Controller
                 ->get()
                 ->getResultArray();
 
-            // Get current tr data
             $currentData = $db->query($currentQuery, [$kdtr])->getResultArray();
 
-            // Adjust quantities based on retur
             foreach($currentData as $key => $row){
                 $cekRetur = $listRetur[$row['nmbrg']] ?? null;
                 $valRetur = $cekRetur ? $cekRetur->qty : 0;
@@ -384,16 +420,13 @@ class TaxGenerateCheckController extends Controller
                 $currentData[$key]['dpp_lain'] = $qty * ($row['dpp_lain'] / $row['qty']);
                 $currentData[$key]['ppn'] = $qty * ($row['ppn'] / $row['qty']);
                 
-                // Add retur information
                 $currentData[$key]['qty_retur'] = $valRetur;
                 $currentData[$key]['kode_retur'] = $cekRetur ? $cekRetur->kdtr : null;
                 $currentData[$key]['tgl_retur'] = $cekRetur ? $cekRetur->tgl : null;
             }
 
-            // Reindex array after possible removals
             $currentData = array_values($currentData);
 
-            // Compare and format data
             $comparisonData = [];
             foreach ($currentData as $current) {
                 $found = false;
@@ -402,19 +435,16 @@ class TaxGenerateCheckController extends Controller
                         $found = true;
                         $changes = [];
                         
-                        // Check basic fields first including nama_brg
                         if (strtolower(trim($current['nama_brg'])) !== strtolower(trim($stored['nama_brg']))) {
                             $changes['nama_brg'] = true;
                         }
 
                         $numericFields = ['qty', 'hrg', 'diskon', 'diskon_tr', 'dpp', 'dpp_lain', 'ppn'];
                         foreach ($numericFields as $field) {
-                            // Convert to float and round to handle precision consistently
-                            $currentVal = round((float)$current[$field], 8);  // Reduced precision
-                            $storedVal = round((float)$stored[$field], 8);   // Reduced precision
+                            $currentVal = round((float)$current[$field], 8);  
+                            $storedVal = round((float)$stored[$field], 8);   
                             
-                            // Compare with tolerance for floating point arithmetic
-                            if (abs($currentVal - $storedVal) > 0.00000001) { // Smaller tolerance
+                            if (abs($currentVal - $storedVal) > 0.00000001) { 
                                 $changes[$field] = true;
                             }
                         }
@@ -431,7 +461,6 @@ class TaxGenerateCheckController extends Controller
                     }
                 }
                 if (!$found) {
-                    // Item is new
                     $comparisonData[] = [
                         'nmbrg' => $current['nmbrg'],
                         'nama_brg' => $current['nama_brg'],
@@ -443,7 +472,6 @@ class TaxGenerateCheckController extends Controller
                 }
             }
 
-            // Check for deleted items
             foreach ($storedData as $stored) {
                 $found = false;
                 foreach ($currentData as $current) {
@@ -484,7 +512,6 @@ class TaxGenerateCheckController extends Controller
             $kode_trx = $request->getPost('kode_trx');
             $dbs = $request->getPost('sumber_data');
 
-            // Select database based on source
             switch ($dbs) {
                 case 'ariston':
                     $db = $this->db_crm_ars;
@@ -498,6 +525,14 @@ class TaxGenerateCheckController extends Controller
                     $db = $this->db_crm_dtf;
                     $db_config = 'crm_dtf';
                     break;
+                case 'ariston_bali':
+                    $db = $this->db_crm_ars_bali;
+                    $db_config = 'crm_ars_bali';
+                    break;
+                case 'wep_bali':
+                    $db = $this->db_crm_wep_bali;
+                    $db_config = 'crm_wep_bali';
+                    break;
                 default:
                     $db = $this->db_default;
                     $db_config = 'default';
@@ -505,12 +540,10 @@ class TaxGenerateCheckController extends Controller
 
             $db->transStart();
 
-            // Delete from tax_generate_brg
             $db->table('crm.tax_generate_brg')
                 ->whereIn('kode_trx', $kode_trx)
                 ->delete();
 
-            // Delete from tax_generate
             $db->table('crm.tax_generate')
                 ->whereIn('kode_trx', $kode_trx)
                 ->delete();
@@ -543,7 +576,6 @@ class TaxGenerateCheckController extends Controller
             $kdtr = $request->getPost('kdtr');
             $dbs = $request->getPost('sumber_data');
 
-            // Select database based on source
             switch ($dbs) {
                 case 'ariston':
                     $db = $this->db_crm_ars;
@@ -553,6 +585,12 @@ class TaxGenerateCheckController extends Controller
                     break;
                 case 'dtf':
                     $db = $this->db_crm_dtf;
+                    break;
+                case 'ariston_bali':
+                    $db = $this->db_crm_ars_bali;
+                    break;
+                case 'wep_bali':
+                    $db = $this->db_crm_wep_bali;
                     break;
                 default:
                     $db = $this->db_default;
@@ -605,7 +643,6 @@ class TaxGenerateCheckController extends Controller
             $request = service('request');
             $dbs = $request->getPost('sumber_data');
 
-            // Select database based on source
             switch ($dbs) {
                 case 'ariston':
                     $db = $this->db_crm_ars;
@@ -615,6 +652,12 @@ class TaxGenerateCheckController extends Controller
                     break;
                 case 'dtf':
                     $db = $this->db_crm_dtf;
+                    break;
+                case 'ariston_bali':
+                    $db = $this->db_crm_ars_bali;
+                    break;
+                case 'wep_bali':
+                    $db = $this->db_crm_wep_bali;
                     break;
                 default:
                     $db = $this->db_default;
@@ -676,7 +719,6 @@ class TaxGenerateCheckController extends Controller
                 $formattedData = [];
             }
 
-            // Fix DataTables response format
             return $this->response->setJSON([
                 'draw' => $request->getPost('draw'),
                 'recordsTotal' => count($formattedData),
@@ -704,7 +746,6 @@ class TaxGenerateCheckController extends Controller
             $catatan = $request->getPost('catatan');
             $userId = session()->get('user_id') ?? 9999;
 
-            // Select database based on source
             switch ($dbs) {
                 case 'ariston':
                     $db = $this->db_crm_ars;
@@ -717,6 +758,14 @@ class TaxGenerateCheckController extends Controller
                 case 'dtf':
                     $db = $this->db_crm_dtf;
                     $db_config = 'crm_dtf';
+                    break;
+                case 'ariston_bali':
+                    $db = $this->db_crm_ars_bali;
+                    $db_config = 'crm_ars_bali';
+                    break;
+                case 'wep_bali':
+                    $db = $this->db_crm_wep_bali;
+                    $db_config = 'crm_wep_bali';
                     break;
                 default:
                     $db = $this->db_default;

@@ -74,8 +74,10 @@
                     <div class="col-md-2">
                         <label for="dbs" class="form-label">Sumber Data</label>
                         <select class="form-control" name="dbs" id="dbs" style="width: 100%" required>
-                            <?php foreach ($dbs as $key => $row): ?>
-                                <option value="<?= $row ?>"><?= $row ?></option>
+                             <?php 
+                            $dbList = getSelDb();
+                            foreach ($dbList as $key => $name): ?>
+                                <option value="<?= $key ?>"><?= $name ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>

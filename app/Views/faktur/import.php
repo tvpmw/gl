@@ -57,11 +57,11 @@ if ($isUnderDevelopment) {
                     <div class="col-md-6 text-center">
                         <label for="sumber_data" class="form-label">Pilih Database</label>
                         <select class="form-select" name="sumber_data" id="sumber_data" required>
-                            <option value="">Pilih Database</option>
-                            <option value="default">SDKOM</option>
-                            <option value="ariston">Ariston</option>
-                            <option value="wep">WEP</option>
-                            <option value="dtf">DTF</option>
+                           <?php 
+                            $dbList = getSelDb();
+                            foreach ($dbList as $key => $name): ?>
+                                <option value="<?= $key ?>"><?= $name ?></option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                 </div>

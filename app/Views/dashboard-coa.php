@@ -57,8 +57,10 @@
                         <div class="col-3">
                             <div class="form-group">
                                 <select class="form-control" name="dbs" id="dbs" style="width: 100%">
-                                    <?php foreach ($dbs as $key => $row): ?>
-                                        <option value="<?=$row?>"><?=$row?></option>
+                                    <?php 
+                                    $dbList = getSelDb();
+                                    foreach ($dbList as $key => $name): ?>
+                                        <option value="<?= $key ?>"><?= $name ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>

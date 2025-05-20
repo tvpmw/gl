@@ -10,6 +10,8 @@ class BarangController extends Controller
     protected $db_crm_ars;
     protected $db_crm_wep;
     protected $db_crm_dtf;
+    protected $db_crm_ars_bali;
+    protected $db_crm_wep_bali;
 
     public function __construct()
     {
@@ -17,6 +19,8 @@ class BarangController extends Controller
         $this->db_crm_ars = \Config\Database::connect('crm_ars');
         $this->db_crm_wep = \Config\Database::connect('crm_wep');
         $this->db_crm_dtf = \Config\Database::connect('crm_dtf');
+        $this->db_crm_ars_bali = \Config\Database::connect('crm_ars_bali');
+        $this->db_crm_wep_bali = \Config\Database::connect('crm_wep_bali');
     }
 
     public function search()
@@ -25,7 +29,6 @@ class BarangController extends Controller
             $q = strtoupper($this->request->getGet('q') ?? '');
             $dbs = $this->request->getGet('sumber_data') ?? 'default';
 
-            // Select the appropriate database connection
             switch ($dbs) {
                 case 'ariston':
                     $db = $this->db_crm_ars;
@@ -35,6 +38,12 @@ class BarangController extends Controller
                     break;
                 case 'dtf':
                     $db = $this->db_crm_dtf;
+                    break;
+                case 'ariston_bali':
+                    $db = $this->db_crm_ars_bali;
+                    break;
+                case 'wep_bali':
+                    $db = $this->db_crm_wep_bali;
                     break;
                 default:
                     $db = $this->db_default;
@@ -65,7 +74,6 @@ class BarangController extends Controller
             $q = strtoupper($q);
             $dbs = $this->request->getGet('sumber_data') ?? 'default';
             
-            // Select the appropriate database connection
             switch ($dbs) {
                 case 'ariston':
                     $db = $this->db_crm_ars;
@@ -75,6 +83,12 @@ class BarangController extends Controller
                     break;
                 case 'dtf':
                     $db = $this->db_crm_dtf;
+                    break;
+                case 'ariston_bali':
+                    $db = $this->db_crm_ars_bali;
+                    break;
+                case 'wep_bali':
+                    $db = $this->db_crm_wep_bali;
                     break;
                 default:
                     $db = $this->db_default;

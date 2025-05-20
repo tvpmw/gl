@@ -13,6 +13,8 @@ class MappingCoretaxController extends Controller
     protected $db_crm_ars;
     protected $db_crm_wep;
     protected $db_crm_dtf;
+    protected $db_crm_ars_bali;
+    protected $db_crm_wep_bali;
 
     public function __construct()
     {
@@ -20,6 +22,8 @@ class MappingCoretaxController extends Controller
         $this->db_crm_ars = \Config\Database::connect('crm_ars');
         $this->db_crm_wep = \Config\Database::connect('crm_wep');
         $this->db_crm_dtf = \Config\Database::connect('crm_dtf');
+        $this->db_crm_ars_bali = \Config\Database::connect('crm_ars_bali');
+        $this->db_crm_wep_bali = \Config\Database::connect('crm_wep_bali');
         helper(['my_helper']);
     }
 
@@ -34,7 +38,6 @@ class MappingCoretaxController extends Controller
             $request = service('request');
             $dbs = $request->getPost('sumber_data') ?? 'default';
 
-            // Select the appropriate database connection
             switch ($dbs) {
                 case 'ariston':
                     $db = $this->db_crm_ars;
@@ -44,6 +47,12 @@ class MappingCoretaxController extends Controller
                     break;
                 case 'dtf':
                     $db = $this->db_crm_dtf;
+                    break;
+                case 'ariston_bali':
+                    $db = $this->db_crm_ars_bali;
+                    break;
+                case 'wep_bali':
+                    $db = $this->db_crm_wep_bali;
                     break;
                 default:
                     $db = $this->db_default;
@@ -62,7 +71,7 @@ class MappingCoretaxController extends Controller
                     $row->kdbrg,
                     $row->nmbrg ?? '',
                     $row->kdtax ?? '000000',
-                    ''   // Action column
+                    ''   
                 ];
             }
 
@@ -80,22 +89,20 @@ class MappingCoretaxController extends Controller
     public function getKodeTax()
     {
         try {
-            // Read the Excel template
             $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader('Xlsx');
             $spreadsheet = $reader->load(FCPATH . 'assets/template/jenis.xlsx');
             
             $worksheet = $spreadsheet->getActiveSheet();
             $data = $worksheet->toArray();
             
-            // Remove header row
             array_shift($data);
             
             $options = [];
             foreach ($data as $row) {
                 if (!empty($row[0])) {
                     $options[] = [
-                        'value' => $row[0], // Kode Barang
-                        'text' => $row[1]   // Keterangan
+                        'value' => $row[0], 
+                        'text' => $row[1]   
                     ];
                 }
             }
@@ -119,7 +126,6 @@ class MappingCoretaxController extends Controller
             $data = $this->request->getJSON(true);
             $dbs = $data['sumber_data'] ?? 'default';
 
-            // Select the appropriate database connection
             switch ($dbs) {
                 case 'ariston':
                     $db = $this->db_crm_ars;
@@ -129,6 +135,12 @@ class MappingCoretaxController extends Controller
                     break;
                 case 'dtf':
                     $db = $this->db_crm_dtf;
+                    break;
+                case 'ariston_bali':
+                    $db = $this->db_crm_ars_bali;
+                    break;
+                case 'wep_bali':
+                    $db = $this->db_crm_wep_bali;
                     break;
                 default:
                     $db = $this->db_default;
@@ -145,14 +157,12 @@ class MappingCoretaxController extends Controller
                 throw new \Exception(implode('\n', $validation->getErrors()));
             }
 
-            // Check if record exists
             $existing = $db->table('crm.mapping_coretax')
                             ->where('kdbrg', $data['kdbrg'])
                             ->get()
                             ->getRow();
 
             if ($existing) {
-                // Update
                 $result = $db->table('crm.mapping_coretax')
                             ->where('kdbrg', $data['kdbrg'])
                             ->update([
@@ -161,7 +171,6 @@ class MappingCoretaxController extends Controller
                             ]);
                 $message = 'Data berhasil diupdate';
             } else {
-                // Insert
                 $result = $db->table('crm.mapping_coretax')
                             ->insert([
                                 'kdbrg' => $data['kdbrg'],

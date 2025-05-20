@@ -14,7 +14,6 @@ class NpwpController extends BaseController
     {
         helper(['my_helper']);
         
-        // Initialize Guzzle client
         $this->client = new Client([
             'base_uri' => getenv('NPWP_API_BASE_URL')
         ]);
@@ -29,13 +28,11 @@ class NpwpController extends BaseController
     {
         $npwp = $this->request->getPost('npwp');
         
-        // Validate NPWP
         if (!preg_match('/^\d{16}$/', $npwp)) {
             return $this->response->setJSON(['error' => 'NPWP harus 16 digit angka']);
         }
 
         try {
-            // Set method, path, and query parameters
             $method = 'GET';
             $path = '/v2/klikpajak/v1/npwp/inquiry';
             $queryParam = "?npwp={$npwp}";
@@ -48,7 +45,6 @@ class NpwpController extends BaseController
             
             return $this->response->setJSON(json_decode($response->getBody()));
         } catch (\Exception $e) {
-            // Extract error message if response contains error details
             if ($e->hasResponse()) {
                 $errorBody = json_decode($e->getResponse()->getBody());
                 if (isset($errorBody->message)) {
@@ -56,7 +52,6 @@ class NpwpController extends BaseController
                 }
             }
             
-            // Default error response
             return $this->response->setJSON(['error' => $e->getMessage()]);
         }
     }
@@ -65,7 +60,6 @@ class NpwpController extends BaseController
     {
         $rawInput = $this->request->getPost('npwp_list');
         
-        // Clean and split input
         $npwpList = array_filter(
             preg_split('/[\r\n,]+/', $rawInput),
             function($npwp) {
@@ -77,7 +71,6 @@ class NpwpController extends BaseController
         foreach ($npwpList as $npwp) {
             $npwp = trim($npwp);
             
-            // Validate NPWP
             if (!preg_match('/^\d{16}$/', $npwp)) {
                 $results[] = [
                     'npwp' => $npwp,
@@ -100,7 +93,6 @@ class NpwpController extends BaseController
                 $responseData['npwp'] = $npwp;
                 $results[] = $responseData;
             } catch (\Exception $e) {
-                // Extract error message if response contains error details
                 if ($e->hasResponse()) {
                     $errorBody = json_decode($e->getResponse()->getBody());
                     if (isset($errorBody->message)) {
@@ -112,7 +104,6 @@ class NpwpController extends BaseController
                     }
                 }
                 
-                // Default error response
                 $results[] = [
                     'npwp' => $npwp,
                     'error' => $e->getMessage()
@@ -127,13 +118,11 @@ class NpwpController extends BaseController
     {
         $npwp = $this->request->getPost('npwp');
         
-        // Validate NPWP
         if (!preg_match('/^\d{16}$/', $npwp)) {
             return $this->response->setJSON(['error' => 'NPWP harus 16 digit angka']);
         }
 
         try {
-            // Step 1: Inquiry to get taxpayer name
             $method = 'GET';
             $path = '/v2/klikpajak/v1/npwp/inquiry';
             $queryParam = "?npwp={$npwp}";
@@ -154,7 +143,6 @@ class NpwpController extends BaseController
 
             $taxpayer_name = $inquiryResponse['data']['name'];
 
-            // Step 2: Check NITKU
             $path = '/v2/klikpajak/v1/npwp/latest';
             $queryParam = "?nik_npwp_nitku={$npwp}&taxpayer_name=" . urlencode($taxpayer_name);
             $headers = array_merge($this->generateHeaders($method, $path . $queryParam), [
@@ -178,10 +166,8 @@ class NpwpController extends BaseController
 
     public function apiCheckSingle()
     {
-        // Get NPWP from query string
         $npwp = $this->request->getGet('npwp');
         
-        // Validate NPWP
         if (!preg_match('/^\d{16}$/', $npwp)) {
             return $this->response
                 ->setStatusCode(400)
@@ -225,13 +211,10 @@ class NpwpController extends BaseController
 
     public function apiCheckBulk()
     {
-        // Get NPWP list from query string
         $npwpList = $this->request->getGet('npwp');
         
-        // Split NPWPs if more than one
         $npwpArray = explode(',', $npwpList);
         
-        // Validate each NPWP
         $invalidNpwp = array_filter($npwpArray, function ($npwp) {
             return !preg_match('/^\d{16}$/', $npwp);
         });

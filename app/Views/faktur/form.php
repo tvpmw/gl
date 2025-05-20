@@ -77,8 +77,10 @@ if ($isUnderDevelopment) {
                         <label for="sumber_data" class="form-label">Sumber Data</label>
                         <select class="form-select" name="sumber_data" id="sumber_data" required>
                             <!-- <option value="" hidden selected>Pilih Sumber Data</option> -->
-                            <?php foreach ($dbs as $row): ?>
-                                <option value="<?= $row ?>"><?= $row ?></option>
+                            <?php 
+                            $dbList = getSelDb();
+                            foreach ($dbList as $key => $name): ?>
+                                <option value="<?= $key ?>"><?= $name ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>

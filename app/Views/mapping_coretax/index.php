@@ -51,10 +51,11 @@
                 <div class="col-md-4">
                     <label class="form-label">Sumber Data</label>
                     <select class="form-select" id="sumber_data">
-                        <option value="default">SDKOM</option>
-                        <option value="ariston">Ariston</option>
-                        <option value="wep">WEP</option>
-                        <option value="dtf">DTF</option>
+                       <?php 
+                            $dbList = getSelDb();
+                            foreach ($dbList as $key => $name): ?>
+                                <option value="<?= $key ?>"><?= $name ?></option>
+                            <?php endforeach; ?>
                     </select>
                 </div>
             </div>

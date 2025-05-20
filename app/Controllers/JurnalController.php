@@ -14,16 +14,22 @@ class JurnalController extends BaseController
     protected $coaModel2;
     protected $coaModel3;
     protected $coaModel4;
+    protected $coaModel5;
+    protected $coaModel6;
 
     protected $JvModel;
     protected $JvModel2;
     protected $JvModel3;
     protected $JvModel4;
+    protected $JvModel5;
+    protected $JvModel6;
 
     protected $db_default;
     protected $db_crm_ars;
     protected $db_crm_wep;
     protected $db_crm_dtf;
+    protected $db_crm_ars_bali;
+    protected $db_crm_wep_bali;
 
     public function __construct()
     {
@@ -33,22 +39,26 @@ class JurnalController extends BaseController
         $this->coaModel2 = new CoaModel('crm_ars');
         $this->coaModel3 = new CoaModel('crm_wep');
         $this->coaModel4 = new CoaModel('crm_dtf');
+        $this->coaModel5 = new CoaModel('crm_ars_bali');
+        $this->coaModel6 = new CoaModel('crm_wep_bali');
 
         $this->jvMod = new JvModel('default');
         $this->jvMod2 = new JvModel('crm_ars');
         $this->jvMod3 = new JvModel('crm_wep');
         $this->jvMod4 = new JvModel('crm_dtf');
+        $this->jvMod5 = new JvModel('crm_ars_bali');
+        $this->jvMod6 = new JvModel('crm_wep_bali');
 
         $this->db_default = \Config\Database::connect('default');
         $this->db_crm_ars = \Config\Database::connect('crm_ars');
         $this->db_crm_wep = \Config\Database::connect('crm_wep');
         $this->db_crm_dtf = \Config\Database::connect('crm_dtf');
+        $this->db_crm_ars_bali = \Config\Database::connect('crm_ars_bali');
+        $this->db_crm_wep_bali = \Config\Database::connect('crm_wep_bali');
     }
 
     public function index()
     {
-        // $abc = generateKodeJurnal($this->db_crm_ars);
-        // pr($abc,1);
 
         $data['blnSel'] = date('m');
         $data['bln'] = getMonths();
@@ -67,16 +77,13 @@ class JurnalController extends BaseController
         $length = $request->getPost('length');
         $search = $request->getPost('search')['value'];
 
-        // Sorting
         $orderColumnIndex = $request->getPost('order')[0]['column'] ?? 0;
         $orderDir = $request->getPost('order')[0]['dir'] ?? 'asc';
 
-        // Filter dari frontend
         $dbs = $request->getPost('dbs');
         $bulan = $request->getPost('bulan');
         $tahun = $request->getPost('tahun');
 
-        // Validasi database yang dipilih
         switch ($dbs) {
             case 'ariston':
                 $mdl = $this->jvMod2;
@@ -87,11 +94,16 @@ class JurnalController extends BaseController
             case 'dtf':
                 $mdl = $this->jvMod4;
                 break;
+            case 'ariston_bali':
+                $mdl = $this->jvMod5;
+                break;
+            case 'wep_bali':
+                $mdl = $this->jvMod6;
+                break;
             default:
                 $mdl = $this->jvMod;
         }
 
-        // Query Data dengan filter
         $totalRecords = $mdl->countAll();
         $totalRecordsFiltered = $mdl->countFiltered($search, $bulan, $tahun);
         $data = $mdl->getData($start, $length, $search, $orderColumnIndex, $orderDir, $bulan, $tahun);
@@ -145,7 +157,6 @@ class JurnalController extends BaseController
         $id = $this->request->getPost('id');
         list($kdjv,$dbs) = explode('|', $id);
 
-        // Validasi database yang dipilih
         switch ($dbs) {
             case 'ariston':
                 $detail = $this->jvMod2->getJurnalWithDetails($kdjv);
@@ -156,12 +167,17 @@ class JurnalController extends BaseController
             case 'dtf':
                 $detail = $this->jvMod4->getJurnalWithDetails($kdjv);
                 break;
+            case 'ariston_bali':
+                $detail = $this->jvMod5->getJurnalWithDetails($kdjv);
+                break;
+            case 'wep_bali':
+                $detail = $this->jvMod6->getJurnalWithDetails($kdjv);
+                break;
             default:
                 $detail = $this->jvMod->getJurnalWithDetails($kdjv);
         }
 
         $data['detail'] = $detail;
-        // pr($data,1);
         return view('jurnal/detail', $data);
     }
 
@@ -178,6 +194,12 @@ class JurnalController extends BaseController
                 break;
             case 'dtf':
                 $kode = generateKodeJurnal($this->db_crm_dtf);
+                break;
+            case 'ariston_bali':
+                $kode = generateKodeJurnal($this->db_crm_ars_bali);
+                break;
+            case 'wep_bali':
+                $kode = generateKodeJurnal($this->db_crm_wep_bali);
                 break;
             default:
                 $kode = generateKodeJurnal($this->db_default);
@@ -199,6 +221,12 @@ class JurnalController extends BaseController
                 break;
             case 'dtf':
                 $getAkun = $this->coaModel4->getAkun($this->db_crm_dtf);
+                break;
+            case 'ariston_bali':
+                $getAkun = $this->coaModel5->getAkun($this->db_crm_ars_bali);
+                break;
+            case 'wep_bali':
+                $getAkun = $this->coaModel6->getAkun($this->db_crm_wep_bali);
                 break;
             default:
                 $getAkun = $this->coaModel->getAkun($this->db_default);
@@ -244,14 +272,12 @@ class JurnalController extends BaseController
             return $this->response->setJSON(['status' => false, 'msg' => $msgNotif]);
         }
 
-        // Ambil input utama
         $jurnal      = $this->request->getVar('jurnal');
         $tanggal     = $this->request->getVar('tanggal') . " 00:00:00";
         $dbs         = $this->request->getVar('database');
         $kode_jurnal = $this->request->getVar('kode_jurnal');
         $keterangan  = $this->request->getVar('keterangan');
 
-        // Validasi balance debit/kredit
         $totalDebit  = 0;
         $totalKredit = 0;
 
@@ -267,11 +293,12 @@ class JurnalController extends BaseController
             ]);
         }
 
-        // Tentukan koneksi database
         $dbMap = [
             'ariston' => $this->db_crm_ars,
             'wep'     => $this->db_crm_wep,
             'dtf'     => $this->db_crm_dtf,
+            'ariston_bali' => $this->db_crm_ars_bali,
+            'wep_bali' => $this->db_crm_wep_bali,
         ];
 
         $conn = $dbMap[$dbs] ?? $this->db_default;
@@ -340,20 +367,21 @@ class JurnalController extends BaseController
 
     public function edit()
     {
-        $idWithDb = $this->request->getVar('id'); // Contoh: APR25-0001|dtf
+        $idWithDb = $this->request->getVar('id'); 
 
         if (!$idWithDb || !str_contains($idWithDb, '|')) {
             return $this->response->setJSON(['status' => false, 'msg' => 'Format ID tidak valid']);
         }
 
-        list($id, $db) = explode('|', $idWithDb); // Pisahkan KDJV dan nama database
+        list($id, $db) = explode('|', $idWithDb); 
 
-        // Pilih koneksi database berdasarkan nilai $db
         $conn = match ($db) {
             'dtf' => $this->db_crm_dtf,
             'wep' => $this->db_crm_wep,
             'ariston' => $this->db_crm_ars,
             'sdkom' => $this->db_default,
+            'ariston_bali' => $this->db_crm_ars_bali,
+            'wep_bali' => $this->db_crm_wep_bali,
             default => null,
         };
 
@@ -361,7 +389,6 @@ class JurnalController extends BaseController
             return $this->response->setJSON(['status' => false, 'msg' => 'Database tidak dikenali']);
         }
 
-        // Ambil data jurnal dan detail
         $jurnal = $conn->table('jv')->where('KDJV', $id)->get()->getRow();
         $detail = $conn->table('jvdet')
             ->select('KDCOA as akun, JVDEBET as debet, JVKREDIT as kredit, KET as ket')
@@ -398,6 +425,8 @@ class JurnalController extends BaseController
             'wep' => $this->db_crm_wep,
             'ariston' => $this->db_crm_ars,
             'sdkom' => $this->db_default,
+            'ariston_bali' => $this->db_crm_ars_bali,
+            'wep_bali' => $this->db_crm_wep_bali,
             default => null,
         };
 
@@ -405,7 +434,6 @@ class JurnalController extends BaseController
             return $this->response->setJSON(['status' => false, 'msg' => 'Database tidak dikenali']);
         }
 
-        // Hapus data
         $conn->table('jvdet')->where('KDJV', $id)->delete();
         $conn->table('jv')->where('KDJV', $id)->delete();
 

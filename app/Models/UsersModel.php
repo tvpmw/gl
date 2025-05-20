@@ -62,7 +62,14 @@ class UsersModel extends Model
     protected $afterDelete    = [];
 
     protected $column_order = [null,'user_nama', 'user_email', 'user_no_telp', 'user_username', 'user_role', 'user_active'];
-    protected $column_search = ['user_nama', 'user_email', 'user_no_telp', 'user_username', 'user_role', 'user_active'];
+    protected $column_search = [
+        'user_nama', 
+        'user_email', 
+        'user_no_telp', 
+        'user_username', 
+        'user_role'
+        // Remove user_active from search columns since it's boolean
+    ];
     protected $order = ['id' => 'DESC'];
 
     public function __construct()
@@ -85,19 +92,17 @@ class UsersModel extends Model
         if ($this->useSoftDeletes === true) {
             $this->dt->where($this->table . '.' . $this->deletedField, null);
         }
-        $i = 0;
-        foreach ($this->column_search as $item) {
-            if ($searchValue) {
+        
+        if ($searchValue) {
+            $this->dt->groupStart();
+            foreach ($this->column_search as $i => $item) {
                 if ($i === 0) {
-                    $this->dt->groupStart();
                     $this->dt->like($item, $searchValue);
                 } else {
                     $this->dt->orLike($item, $searchValue);
                 }
-                if (count($this->column_search) - 1 == $i)
-                    $this->dt->groupEnd();
             }
-            $i++;
+            $this->dt->groupEnd();
         }
 
         if (!empty($orderColumn)) {

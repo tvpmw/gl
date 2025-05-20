@@ -19,7 +19,6 @@ class Home extends BaseController
             return view('welcome_message', $data);
         }
 
-        // Redirect ke dashboard jika sudah login
         return redirect()->to('cms/dashboard');
     }
 
@@ -76,7 +75,6 @@ class Home extends BaseController
                         'failover' => [],
                         'port'     => getenv('database.default.port'),
                     ];
-                    // Simpan konfigurasi database ke session
                     session()->set('db_config', $dbConfig);
 
                     $last_login = date('Y-m-d H:i:s');

@@ -58,8 +58,10 @@
                 <div class="row">
                     <div class="col-2">
                         <select class="form-control" name="dbs" id="dbs">
-                            <?php foreach ($dbs as $row): ?>
-                                <option value="<?= $row ?>"><?= $row ?></option>
+                            <?php 
+                            $dbList = getSelDb();
+                            foreach ($dbList as $key => $name): ?>
+                                <option value="<?= $key ?>"><?= $name ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>

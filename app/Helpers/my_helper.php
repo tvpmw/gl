@@ -801,7 +801,14 @@ if (!function_exists('formatNegatif')) {
 
 if (!function_exists('getSelDb')) {
   function getSelDb($db=null) {
-    $dbs = ['sdkom','ariston','wep','dtf'];
+    $dbs = [
+      'sdkom' => 'SDKOM',
+      'ariston' => 'Ariston', 
+      'wep' => 'WEP',
+      'dtf' => 'DTF',
+      'ariston_bali' => 'Ariston Bali',
+      'wep_bali' => 'WEP Bali'
+    ];
     if (empty($db)) {
       return $dbs;
     }

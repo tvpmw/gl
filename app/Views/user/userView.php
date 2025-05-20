@@ -1,10 +1,137 @@
 <?= $this->extend('layouts/admin') ?>
 
 <?= $this->section('styles') ?>
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css" rel="stylesheet" />
+<style>
+    /* Card styling */
+    .card {
+        border-radius: var(--border-radius-lg);
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        box-shadow: var(--shadow-sm);
+        transition: var(--transition-base);
+    }
 
+    .card:hover {
+        box-shadow: var(--shadow-md);
+    }
+
+    /* Modal styling */
+    .modal-content {
+        border-radius: var(--border-radius-lg);
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+    }
+
+    .modal-header {
+        border-bottom: 1px solid var(--border-color);
+        padding: 1rem 1.5rem;
+    }
+
+    .modal-header.bg-primary {
+        background: var(--primary-color) !important;
+    }    
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .modal-footer {
+        border-top: 1px solid var(--border-color);
+        padding: 1rem 1.5rem;
+    }
+
+    /* Form controls */
+    .form-control {
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        padding: 0.5rem 1rem;
+        background: var(--bg-main);
+        color: var(--text-main);
+    }
+
+    .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.25);
+    }
+
+    /* Select2 customization */
+    .select2-container--bootstrap5 .select2-selection {
+        border-color: var(--border-color);
+        border-radius: var(--border-radius);
+        background: var(--bg-main);
+        color: var(--text-main);
+    }
+
+    /* Button styling */
+    .btn {
+        border-radius: var(--border-radius);
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        transition: var(--transition-base);
+    }
+
+    .btn-primary {
+        background: var(--primary-color);
+        border: none;
+    }
+
+    .btn-primary:hover {
+        background: var(--primary-hover);
+        transform: translateY(-1px);
+    }
+
+    .btn-primary {
+        background: var(--warning-color);
+        border: none;
+        color: white;
+    }
+
+    /* Table styling */
+    .table {
+        --bs-table-bg: var(--bg-card);
+        --bs-table-border-color: var(--border-color);
+    }
+
+    .table thead th {
+        background: var(--bg-main);
+        border-bottom: 2px solid var(--border-color);
+        color: var(--text-muted);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.025em;
+    }
+
+    /* Radio button styling */
+    .icheck-info {
+        margin-right: 1rem;
+    }
+
+    /* Alert styling */
+    .alert {
+        border-radius: var(--border-radius);
+        border: 1px solid var(--border-color);
+    }
+
+    .alert-dismissible .close {
+        padding: 1rem;
+    }
+
+    /* Dark mode adjustments */
+    [data-bs-theme="dark"] .form-control {
+        background: var(--bg-card);
+        color: var(--text-main);
+        border-color: var(--border-color);
+    }
+
+    [data-bs-theme="dark"] .modal-content {
+        background: var(--bg-card);
+    }
+
+    [data-bs-theme="dark"] .table {
+        color: var(--text-main);
+    }
+</style>
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
@@ -40,12 +167,12 @@
     </div>
 
     <!-- The Modal -->
-    <div class="modal" id="modal_form" data-backdrop="static">
+    <div class="modal fade" id="modal_form" data-backdrop="static" data-keyboard="false" tabindex="-1">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
-          <div class="modal-header" id="mhead">
-            <h4 class="modal-title text-white" id="modal-title">Modal Heading</h4>
-            <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+          <div class="modal-header bg-primary" id="mhead">
+            <h5 class="modal-title text-white" id="modal-title"></h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <form action="#" id="form-data" class="form-horizontal">
           <div class="modal-body">
@@ -114,8 +241,8 @@
             <span id="msgFormInput"></span>
           </div>
           <div class="modal-footer">
-            <input type="submit" id="btnSave" class="btn text-white btn_1" value="<?=isLang('simpan')?>">
-            <button type="button" class="btn btn-danger" data-dismiss="modal"><?=isLang('keluar')?></button>
+            <button type="submit" id="btnSave" class="btn btn-primary"><?=isLang('simpan')?></button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?=isLang('keluar')?></button>            
           </div>
           </form>
         </div>
@@ -136,67 +263,100 @@
 var table;
 $(document).ready(function() {
   table = $("#dataTable").DataTable({
-    "processing": true, 
-    "serverSide": true, 
-    "pageLength": 10,
-    "orderable": false,
-    "aaSorting": [],
-    // "order": [[ 1, "asc" ]], 
-          
-    "ajax": {
-      "url": "<?= base_url('cms/user/lists') ?>",
-      "type": "POST",
-      "global": false,
+    processing: true, 
+    serverSide: true, 
+    pageLength: 10,
+    order: [],
+    ajax: {
+        url: "<?= base_url('cms/user/lists') ?>",
+        type: "POST",
+        global: false
     },
-
-    "columnDefs": [
-      { 
-        "targets": [ 0, -1 ], 
-        "orderable": false, 
-      },
-      {
-        "targets": [0, -2, -1],
-        "className": 'text-center'
-      },
+    columnDefs: [
+        { 
+            targets: [0, 7], // First and last column 
+            orderable: false
+        },
+        {
+            targets: [0, 6, 7], // No, Status, and Action columns
+            className: 'text-center'
+        },
+        {
+            targets: 6, // Status column
+            searchable: false // Disable search for boolean status column
+        }
     ],
+    language: {
+        processing: '<i class="fa fa-spinner fa-spin fa-3x fa-fw"></i>'
+    }
   });
+
+  // Handle modal close button and escape key
+  $('#modal_form').on('hide.bs.modal', function (e) {
+      resetForm();
+  });
+  
+  // Handle close button click
+  $('.close, .btn-secondary').on('click', function() {
+      $('#modal_form').modal('hide');
+  });
+  
+  // Function to reset form
+  function resetForm() {
+      $('#form-data')[0].reset();
+      $('#msgFormInput').html('');
+      $('.passinfo').html('');
+      $('#btnSave').prop('disabled', false);
+      $('[name="data_id"]').val('');
+      $('#mhead').removeClass('bg-primary').addClass('bg-primary');
+      $('#btnSave').removeClass('btn-primary').addClass('btn-primary');
+  }
 
   $("#form-data").submit(function(event){
     event.preventDefault();
-    var form_data = $('#form-data').serialize()
+    const formData = $(this).serialize();
+    
     $.ajax({
-      url : "<?= base_url('cms/user/save') ?>",
-      type:"post",
-      data:form_data,
-      dataType: "JSON",
-      success: function(data)
-      {
-        if(data.status == true){
-          $('#modal_form').modal('hide');
-          reload_table();
-          swal(
-            'Good job!',
-            data.msg,
-            'success'
-          )
-        }else if(data.status == 'auth'){
-          $('#myLogin').modal('show');
-        }else{
-          var a = '';
-              a +='<div class="alert alert-danger alert-dismissible">';
-              a +='<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>';
-              a +=data.msg;
-              a +='</div>';
-          $('#msgFormInput').html(a);
+        url: "<?= base_url('cms/user/save') ?>",
+        type: "POST",
+        data: formData,
+        dataType: "JSON",
+        beforeSend: function() {
+            $("#btnSave").prop('disabled', true);
+            $("#btnSave").val('Saving...');
+        },
+        success: function(response) {
+            if (response.status) {
+                $('#modal_form').modal('hide');
+                reload_table();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: response.msg
+                });
+            } else if (response.status === 'auth') {
+                $('#myLogin').modal('show');
+            } else {
+                $('#msgFormInput').html(`
+                    <div class="alert alert-danger alert-dismissible">
+                        <button type="button" class="close" data-dismiss="alert">&times;</button>
+                        ${response.msg}
+                    </div>
+                `);
+            }
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            console.error('AJAX Error:', textStatus, errorThrown);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'An error occurred while saving data'
+            });
+        },
+        complete: function() {
+            $("#btnSave").prop('disabled', false);
+            $("#btnSave").val('<?=isLang('simpan')?>');
         }
-      },
-      error: function (jqXHR, textStatus, errorThrown)
-      {
-        console.log(jqXHR);
-        console.log(textStatus);
-        console.log(errorThrown);
-        // location.reload();
-      }
     });
   });
 });
@@ -220,10 +380,11 @@ function edit_data(data)
   $('[name="password"]').prop('required',false);
   $('[name="password2"]').prop('required',false);
   $('#passedit').html('Input password jika ingin mengganti');
-  $('#mhead').addClass('bg-warning');
-  $('#mhead').removeClass('btn-primary');
-  $('#btnSave').addClass('btn-warning');
-  $('#btnSave').removeClass('btn-primary');
+  
+  // Update modal styling
+  $('#mhead').removeClass('bg-primary').addClass('bg-primary');
+  $('#btnSave').removeClass('btn-primary').addClass('btn-primary');
+  
   $('#modal_form').modal('show');
   $('#modal-title').text('<?=isLang('edit_data')?>');
 }
@@ -236,9 +397,9 @@ $(document).on('click', ".btn-add", function(event) {
   $('[name="password"]').prop('required',true);
   $('[name="password2"]').prop('required',true);
   $('#passedit').html('');
-  $('#mhead').removeClass('bg-warning');
+  $('#mhead').removeClass('bg-primary');
   $('#mhead').addClass('btn-primary');
-  $('#btnSave').removeClass('btn-warning');
+  $('#btnSave').removeClass('btn-primary');
   $('#btnSave').addClass('btn-primary');
   $('#modal_form').modal('show');
   $('#modal-title').text('<?=isLang('tambah_data')?>');
@@ -247,42 +408,37 @@ $(document).on('click', ".btn-add", function(event) {
 function delete_data(id)
 {
     Swal.fire({
-        title: '<?=isLang('delete_title')?>?',
-        text: `<?=isLang('delete_text')?>!`,
+        title: 'Hapus User',
+        text: 'Apa anda yakin ingin menghapus data user ini dari database ?',
         icon: 'error',
         showCancelButton: true,
         confirmButtonColor: '#dc3545',
-        cancelButtonColor: '#6a6f74',
-        confirmButtonText: 'Ya, Logout!',
-        cancelButtonText: 'Batal'
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<?=isLang('Ya, Hapus!')?>',
+        cancelButtonText: '<?=isLang('Batal')?>'
     }).then((result) => {
         if (result.isConfirmed) {
-          $.ajax({
-            url : "<?= base_url('cms/user/delete') ?>",
-            type: "POST",
-            data: {id:id},
-            dataType: "JSON",
-            success: function(data)
-            {
-              reload_table();
-              if(data.status == true){
-                var sts1 = '<?=isLang('Berhasil')?>';
-                var sts2 = 'success';
-              }else{
-                var sts1 = '<?=isLang('gagal')?>';
-                var sts2 = 'warning';
-              }
-              swal(
-              sts1,
-              data.msg,
-              sts2
-              );
-            },
-            error: function (jqXHR, textStatus, errorThrown)
-            {
-              alert('<?=isLang('terjadi_kesalahan')?>');
-            }
-          });  
+            $.ajax({
+                url: "<?= base_url('cms/user/delete') ?>",
+                type: "POST",
+                data: { id: id },
+                dataType: "JSON",
+                success: function(response) {
+                    reload_table();
+                    Swal.fire({
+                        icon: response.status ? 'success' : 'error',
+                        title: response.status ? '<?=isLang('Berhasil')?>' : '<?=isLang('gagal')?>',
+                        text: response.msg
+                    });
+                },
+                error: function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: '<?=isLang('Error')?>',
+                        text: '<?=isLang('terjadi_kesalahan')?>'
+                    });
+                }
+            });
         }
     });
 }
@@ -292,14 +448,17 @@ function privileges(id)
   window.location.assign("<?=base_url('cms/user/privileges?q=')?>"+id);
 }
 
-$("#password, #password2").keyup(function(){
-  var pass_1 = $("#password").val();
-  var pass_2 = $("#password2").val();
-  if(pass_1!=pass_2){
-    $(".passinfo").html("<span style='color:red'>Password tidak sama</span>");
-  }else{
-    $(".passinfo").html("");
-  }
+$("#password, #password2").on('input', function() {
+    const pass1 = $("#password").val();
+    const pass2 = $("#password2").val();
+    
+    $(".passinfo").html(
+        pass1 && pass2 && pass1 !== pass2 
+            ? '<span class="text-danger">Password tidak sama</span>' 
+            : ''
+    );
+    
+    $("#btnSave").prop('disabled', pass1 && pass2 && pass1 !== pass2);
 });
 </script>
 <?= $this->endSection() ?>

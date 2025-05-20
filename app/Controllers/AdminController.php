@@ -84,7 +84,7 @@ class AdminController extends BaseController
                     }
                     $aksiTable = '';
                     if($aksiUpdate == 'yes'):
-                    $aksiTable .= "<a class='btn btn-xs btn-warning' href='javascript:void(0)' title='Edit' onclick='edit_data(".json_encode($edtVal).")'><i class='fa fa-pencil text-white'></i></a> ";
+                    $aksiTable .= "<a class='btn btn-xs btn-primary' href='javascript:void(0)' title='Edit' onclick='edit_data(".json_encode($edtVal).")'><i class='fa fa-pencil text-white'></i></a> ";
                     endif;
                     if($aksiDelete == 'yes'):
                     $aksiTable .= "<a class='btn btn-xs btn-danger' href='javascript:void(0)' title='Delete' onclick='delete_data(".$list->id.")'><i class='fa fa-trash text-white'></i></a>";
@@ -366,7 +366,7 @@ class AdminController extends BaseController
 
         return $this->response->setJSON([
             'status' => 'success',
-            'message' => "$userName dengan User ID $userId telah dipaksa logout dari $count sesi CRM.",
+            'message' => "$userName dengan User ID $userId telah dipaksa logout dari $count sesi GL.",
         ]);
     }
 }

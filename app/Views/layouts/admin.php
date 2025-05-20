@@ -317,6 +317,159 @@
             gap: 1rem;
         }
 
+        /* DataTables Custom Styling */
+        .dataTables_wrapper {
+            padding: 1rem 0;
+        }
+
+        .dataTables_wrapper .dataTables_length select {
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 0.375rem 2rem 0.375rem 0.75rem;
+            background-color: var(--bg-card);
+            color: var(--text-main);
+            cursor: pointer;
+        }
+
+        .dataTables_wrapper .dataTables_filter input {
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 0.375rem 0.75rem;
+            background-color: var(--bg-card);
+            color: var(--text-main);
+        }
+
+        .dataTables_wrapper .dataTables_filter input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.25);
+            outline: none;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            margin: 0 0.25rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            color: var(--text-main) !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background: var(--primary-hover) !important;
+            border-color: var(--primary-hover);
+            color: white !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+            background: var(--primary-color) !important;
+            border-color: var(--primary-color);
+            color: white !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.disabled {
+            background: var(--bg-main) !important;
+            border-color: var(--border-color);
+            color: var(--text-muted) !important;
+            cursor: not-allowed;
+        }
+
+        .dataTables_wrapper .dataTables_info {
+            color: var(--text-muted);
+            padding-top: 0.85em;
+        }
+
+        /* Table styling */
+        table.dataTable {
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+
+        table.dataTable thead th {
+            background: var(--bg-main);
+            border-bottom: 2px solid var(--border-color);
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.025em;
+            padding: 1rem;
+        }
+
+        table.dataTable tbody td {
+            padding: 1rem;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        table.dataTable tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        table.dataTable tbody tr:hover {
+            background-color: rgba(var(--primary-color-rgb), 0.05);
+        }
+
+        /* Button styling */
+        .dt-buttons {
+            margin-bottom: 1rem;
+        }
+
+        .dt-button {
+            background: var(--bg-card) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: var(--border-radius) !important;
+            color: var(--text-main) !important;
+            padding: 0.5rem 1rem !important;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .dt-button:hover {
+            background: var(--primary-color) !important;
+            border-color: var(--primary-color) !important;
+            color: white !important;
+        }
+
+        /* Dark mode adjustments */
+        [data-bs-theme="dark"] .dataTables_wrapper .dataTables_length select,
+        [data-bs-theme="dark"] .dataTables_wrapper .dataTables_filter input {
+            background-color: var(--bg-card);
+            color: var(--text-main);
+            border-color: var(--border-color);
+        }
+
+        [data-bs-theme="dark"] table.dataTable tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Processing indicator */
+        .dataTables_processing {
+            background: rgba(var(--bg-card-rgb), 0.9) !important;
+            color: var(--text-main) !important;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 767px) {
+            .dataTables_wrapper .dataTables_length,
+            .dataTables_wrapper .dataTables_filter {
+                text-align: left;
+                margin-bottom: 1rem;
+            }
+
+            .dataTables_wrapper .dataTables_paginate {
+                text-align: center;
+                margin-top: 1rem;
+            }
+
+            .dataTables_wrapper .dataTables_info {
+                text-align: center;
+            }
+        }
+
         @media (max-width: 991.98px) {
         .top-navbar {
             padding: 0.5rem 1rem;
@@ -624,9 +777,9 @@
                                 <span><?= $uname ?></span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="/profile"><i class="fas fa-user"></i>Profile</a></li>
-                                <li><a class="dropdown-item" href="/settings"><i class="fas fa-cog"></i>Settings</a></li>
-                                <li><hr class="dropdown-divider"></li>
+                                <!-- <li><a class="dropdown-item" href="/profile"><i class="fas fa-user"></i>Profile</a></li>
+                                <li><a class="dropdown-item" href="/settings"><i class="fas fa-cog"></i>Settings</a></li> -->
+                                <!-- <li><hr class="dropdown-divider"></li> -->
                                 <li><a class="dropdown-item text-danger" href="<?= base_url('logout') ?>"><i class="fas fa-sign-out-alt"></i>Logout</a></li>
                             </ul>
                         </div>

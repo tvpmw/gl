@@ -17,6 +17,12 @@ class Database extends Config
     // CRM_WEP connection group (placeholder)
     public $crm_wep = [];
 
+    // CRM_ARS_BALI
+    public $crm_ars_bali = [];
+
+    // CRM_WEP_BALI
+    public $crm_wep_bali = [];
+
     public function __construct()
     {
         parent::__construct();
@@ -102,6 +108,48 @@ class Database extends Config
             'strictOn' => false,
             'failover' => [],
             'port'     => env('database.crm_dtf.port', 5432),
+        ];
+
+        // Initialize crm_ars_bali dynamically
+        $this->crm_ars_bali = [
+            'DSN'      => '',
+            'hostname' => env('database.crm_ars_bali.hostname', 'localhost'),
+            'username' => env('database.crm_ars_bali.username', 'postgres'),
+            'password' => env('database.crm_ars_bali.password', ''),
+            'database' => env('database.crm_ars_bali.database', ''),
+            'DBDriver' => env('database.crm_ars_bali.DBDriver', 'Postgre'),
+            'DBPrefix' => env('database.crm_ars_bali.DBPrefix', ''),
+            'pConnect' => false,
+            'DBDebug'  => (ENVIRONMENT !== 'production'),
+            'charset'  => 'utf8',
+            'DBCollat' => 'utf8_general_ci',
+            'swapPre'  => '',
+            'encrypt'  => false,
+            'compress' => false,
+            'strictOn' => false,
+            'failover' => [],
+            'port'     => env('database.crm_ars_bali.port', 5432),
+        ];
+
+        // Initialize crm_wep_bali dynamically
+        $this->crm_wep_bali = [
+            'DSN'      => '',
+            'hostname' => env('database.crm_wep_bali.hostname', 'localhost'),
+            'username' => env('database.crm_wep_bali.username', 'postgres'),
+            'password' => env('database.crm_wep_bali.password', ''),
+            'database' => env('database.crm_wep_bali.database', ''),
+            'DBDriver' => env('database.crm_wep_bali.DBDriver', 'Postgre'),
+            'DBPrefix' => env('database.crm_wep_bali.DBPrefix', ''),
+            'pConnect' => false,
+            'DBDebug'  => (ENVIRONMENT !== 'production'),
+            'charset'  => 'utf8',
+            'DBCollat' => 'utf8_general_ci',
+            'swapPre'  => '',
+            'encrypt'  => false,
+            'compress' => false,
+            'strictOn' => false,
+            'failover' => [],
+            'port'     => env('database.crm_wep_bali.port', 5432),
         ];
     }
 }
