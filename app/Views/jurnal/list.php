@@ -86,9 +86,13 @@
             </form>
             <hr class="mb-3">
             <div class="col mb-3">
+                <?php
+                $jurnalAccess = checkMenuAccess('cms/jurnal');
+                    if($jurnalAccess['can_create']): ?>            
                 <button type="button" class="btn btn-success" id="btnAddJurnal" data-bs-toggle="modal" data-bs-target="#formModal">
                     <i class="fa fa-plus"></i> Buat Jurnal
                 </button>
+                <?php endif; ?>                    
 
             </div>
             <table id="jurnalTable" class="display" style="width:100%">
@@ -604,7 +608,8 @@
                         }else{
                             Swal.fire({
                               icon: 'error',
-                              title: 'Jurnal gagal disimpan!'                              
+                              title: 'Jurnal gagal disimpan!',
+                              text: response.msg                              
                             });
                         }
                     },
@@ -724,7 +729,8 @@
                     } else {
                         Swal.fire({
                           icon: 'error',
-                          title: 'Gagal ambil data'                          
+                          title: 'Gagal ambil data',                    
+                          text: response.msg
                         });
                         isEditing = false;
                     }
@@ -764,7 +770,8 @@
                     } else {
                       Swal.fire({
                         icon: 'error',
-                        title: 'Gagal menghapus jurnal'                        
+                        title: 'Gagal menghapus jurnal',
+                        text: response.msg                
                       });
                     }
                   },

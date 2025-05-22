@@ -993,11 +993,21 @@ if (!function_exists('checkMenuAccess')) {
         
         $result = $query->getRowArray();
         
-        return $result ?: [
-            'can_view' => false,
-            'can_create' => false,
-            'can_edit' => false,
-            'can_delete' => false
+        if (!$result) {
+            return [
+                'can_view' => false,
+                'can_create' => false,
+                'can_edit' => false,
+                'can_delete' => false
+            ];
+        }
+
+        // Normalize PostgreSQL boolean values
+        return [
+            'can_view' => in_array($result['can_view'], ['t', '1', 1, true], true),
+            'can_create' => in_array($result['can_create'], ['t', '1', 1, true], true),
+            'can_edit' => in_array($result['can_edit'], ['t', '1', 1, true], true),
+            'can_delete' => in_array($result['can_delete'], ['t', '1', 1, true], true)
         ];
     }
 }

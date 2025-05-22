@@ -65,9 +65,13 @@
                     Data Tax Generate
                 </div>
                 <div>
+                <?php 
+                $taxCoretax = checkMenuAccess('cms/tax-generate');
+                    if ($taxCoretax['can_create']): ?>   
                     <button type="button" id="btnBatalGenerate" class="btn btn-danger">
                         <i class="fas fa-undo me-2"></i>Batal Generate
                     </button>
+                <?php endif; ?>
                 </div>
             </div>
         </div>

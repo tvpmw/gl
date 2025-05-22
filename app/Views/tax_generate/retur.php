@@ -54,12 +54,16 @@
                     Data Tax Generate
                 </div>
                 <div>
+                    <?php 
+                    $taxRetur = checkMenuAccess('cms/tax-retur');
+                    if ($taxRetur['can_create']): ?> 
                     <button type="button" data-id="Diedit" class="btn btn-warning btnSudahLapor">
                         <i class="fas fa-undo me-2"></i>Sudah Dilaporkan (Diedit)
                     </button>
                     <button type="button" data-id="Penggantian" class="btn btn-danger btnSudahLapor">
                         <i class="fas fa-undo me-2"></i>Sudah Dilaporkan (Penggantian)
                     </button>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

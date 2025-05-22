@@ -93,9 +93,13 @@ if ($isUnderDevelopment) {
                     Preview Data
                 </div>
                 <div>
+                    <?php 
+                    $fakturAccess = checkMenuAccess('cms/faktur');
+                    if ($fakturAccess['can_create']): ?>    
                     <button type="button" class="btn btn-success" id="btnSave">
                         <i class="fas fa-save me-2"></i>Simpan Data
                     </button>
+                    <?php endif; ?>
                 </div>                
             </div>
         </div>

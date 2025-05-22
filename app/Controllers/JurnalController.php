@@ -118,13 +118,30 @@ class JurnalController extends BaseController
                 $akt = '<i class="icon fa fa-check" style="color:green"></i>';
             }
             $aksiTable = "<a class='btn btn-sm btn-primary' href='javascript:void(0)' title='Detail' onclick='detail_data(`".$id."`)'><i class='fa fa-eye text-white'></i></a> ";
+            $jurnalAccess = checkMenuAccess('cms/jurnal');            
             if($tampil):
                 if($row->POSTING != 1 && $row->JVTOT != 0):
+                if ($jurnalAccess['can_edit'] == false) {
+                }else if ($jurnalAccess['can_edit'] == null) {
+                }else{
                 $aksiTable .= "<a class='btn btn-sm btn-warning' href='javascript:void(0)' title='Edit' onclick='edit_data(`".$id."`)'><i class='fa fa-pencil text-white'></i></a> ";
-                $aksiTable .= "<a class='btn btn-sm btn-danger' href='javascript:void(0)' title='Delete' onclick='delete_data(`".$id."`)'><i class='fa fa-trash text-white'></i></a>";
+                }
+                if ($jurnalAccess['can_delete'] == false) {
+                }else if ($jurnalAccess['can_delete'] == null) {
+                }else{
+                $aksiTable .= "<a class='btn btn-sm btn-danger' href='javascript:void(0)' title='Delete' onclick='delete_data(`".$id."`)'><i class='fa fa-trash text-white'></i></a>";                
+                }
                 else:
+                if ($jurnalAccess['can_edit'] == false) {
+                }else if ($jurnalAccess['can_edit'] == null) {
+                }else{
                 $aksiTable .= "<a class='btn btn-sm btn-dark' href='javascript:void(0)' title='Edit'><i class='fa fa-pencil text-white'></i></a> ";
+                }
+                if ($jurnalAccess['can_delete'] == false) {
+                }else if ($jurnalAccess['can_delete'] == null) {
+                }else{
                 $aksiTable .= "<a class='btn btn-sm btn-dark' href='javascript:void(0)' title='Delete'><i class='fa fa-trash text-white'></i></a>";
+                }
                 endif;
             endif;
 
@@ -367,6 +384,16 @@ class JurnalController extends BaseController
 
     public function edit()
     {
+        $jurnalAccess = checkMenuAccess('cms/jurnal');
+        
+        if ($jurnalAccess['can_edit'] == false) {
+            return $this->response->setJSON(['status' => false, 'msg' => 'Anda Tidak Punya Akses']);
+          }else if ($jurnalAccess['can_edit'] == null) {
+            return $this->response->setJSON(['status' => false, 'msg' => 'Anda Tidak Punya Akses']);
+          }else{
+            $jurnalAccess['can_edit'] = true;
+        }    
+                
         $idWithDb = $this->request->getVar('id'); 
 
         if (!$idWithDb || !str_contains($idWithDb, '|')) {

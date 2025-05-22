@@ -41,9 +41,13 @@
                     <i class="fas fa-table me-1"></i>
                     Data Mapping
                 </div>
+                <?php 
+                $mappingCoretax = checkMenuAccess('cms/mapping-coretax');
+                    if ($mappingCoretax['can_create']): ?>    
                 <button type="button" class="btn btn-primary btn-sm" id="btnAdd">
                     <i class="fas fa-plus me-1"></i>Tambah Data
                 </button>
+                <?php endif; ?>
             </div>
         </div>
         <div class="card-body">
@@ -133,12 +137,20 @@ $(document).ready(function() {
                 data: 3,
                 render: function(data, type, row) {
                     return `
+                     <?php 
+                $mappingCoretax = checkMenuAccess('cms/mapping-coretax');
+                    if ($mappingCoretax['can_edit']): ?>   
                         <button type="button" class="btn btn-warning btn-sm btnEdit" data-id="${row[0]}">
                             <i class="fas fa-edit"></i>
                         </button>
+                        <?php endif; ?>
+                         <?php 
+                $mappingCoretax = checkMenuAccess('cms/mapping-coretax');
+                    if ($mappingCoretax['can_delete']): ?>   
                         <button type="button" class="btn btn-danger btn-sm btnDelete" data-id="${row[0]}">
                             <i class="fas fa-trash"></i>
                         </button>
+                        <?php endif; ?>
                     `;
                 }
             }

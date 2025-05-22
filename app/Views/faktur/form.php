@@ -104,12 +104,16 @@ if ($isUnderDevelopment) {
                     Data Transaksi
                 </div>
                 <div>                    
+                    <?php 
+                    $fakturAccess = checkMenuAccess('cms/faktur');
+                    if ($fakturAccess['can_create']): ?>                                    
                     <button type="button" id="btnTidakDibuat" class="btn btn-warning">
                         <i class="fas fa-ban me-2"></i>Tidak Dibuat
-                    </button>
+                    </button>                    
                     <button type="button" class="btn btn-success" id="btnGenerateExcel">
                         <i class="fas fa-file-excel me-2"></i>Generate
                     </button>
+                    <?php endif; ?>
                 </div>                
             </div>
         </div>

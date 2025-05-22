@@ -253,18 +253,23 @@ class ModuleModel extends Model
 
     public function getAllModuleAccess($userId) 
     {
-        return $this->select('modules_gl.*, modules_gl.name, modules_gl.slug,
-                         user_module_access_gl.can_view, 
-                         user_module_access_gl.can_create, 
-                         user_module_access_gl.can_edit, 
-                         user_module_access_gl.can_delete')
-                ->join('user_module_access_gl', 
-                      'modules_gl.id = user_module_access_gl.module_id', 'left')
-                ->where('user_module_access_gl.user_id', $userId)
-                ->where('modules_gl.is_active', true)
-                ->where('modules_gl.deleted_at', null)
-                ->orderBy('modules_gl.sort_order', 'ASC')
-                ->findAll();
+        return $this->db->table('user_module_access_gl')
+        ->select('
+            user_module_access_gl.module_id,
+            user_module_access_gl.can_view,
+            user_module_access_gl.can_create,
+            user_module_access_gl.can_edit,
+            user_module_access_gl.can_delete,
+            modules_gl.name,
+            modules_gl.slug
+        ')
+        ->join('modules_gl', 'modules_gl.id = user_module_access_gl.module_id')
+        ->where('user_module_access_gl.user_id', $userId)
+        ->where('modules_gl.is_active', true)
+        ->where('modules_gl.deleted_at', null)
+        ->orderBy('modules_gl.sort_order', 'ASC')
+        ->get()
+        ->getResult();
     }
 
     public function updateUserModuleAccess($userId, $moduleAccess) 

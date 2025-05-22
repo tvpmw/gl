@@ -143,7 +143,11 @@
         <div class="card-body">
           <div class="table-responsive">
             <?php if(isset($aksiCreate) && $aksiCreate == 'yes'):?>
+            <?php 
+            $userManagement = checkMenuAccess('cms/user');
+            if ($userManagement['can_create']): ?> 
             <button class="btn btn-primary btn-sm btn-add mb-2"><?=isLang('tambah_data')?></button>
+            <?php endif; ?>
             <?php endif; ?>
             <table id="dataTable" class="table table-bordered table-striped table-sm">
               <thead class="headtable">
@@ -593,7 +597,6 @@ function editModuleAccess(userId) {
     });
 }
 
-// Replace the edit_module_access function with this updated version
 function edit_module_access(userId) {
     $('#access_user_id').val(userId);
     
@@ -609,6 +612,12 @@ function edit_module_access(userId) {
             if (response.status) {
                 let html = '';
                 response.data.forEach(function(module) {
+                    // Convert PostgreSQL boolean values ('t'/'f') to true/false
+                    const can_view = module.can_view === 't' || module.can_view === true || module.can_view === 1;
+                    const can_create = module.can_create === 't' || module.can_create === true || module.can_create === 1;
+                    const can_edit = module.can_edit === 't' || module.can_edit === true || module.can_edit === 1;
+                    const can_delete = module.can_delete === 't' || module.can_delete === true || module.can_delete === 1;
+                    
                     const isViewOnly = module.slug === 'dashboard';
                     html += `
                         <tr>
@@ -619,7 +628,7 @@ function edit_module_access(userId) {
                                         name="access[${module.id}][view]" 
                                         value="1"
                                         data-type="view"
-                                        ${module.can_view ? 'checked' : ''}>
+                                        ${can_view ? 'checked' : ''}>
                                 </div>
                             </td>
                             ${isViewOnly ? `
@@ -633,7 +642,7 @@ function edit_module_access(userId) {
                                             name="access[${module.id}][create]" 
                                             value="1"
                                             data-type="create"
-                                            ${module.can_create ? 'checked' : ''}>
+                                            ${can_create ? 'checked' : ''}>
                                     </div>
                                 </td>
                                 <td class="text-center align-middle">
@@ -642,7 +651,7 @@ function edit_module_access(userId) {
                                             name="access[${module.id}][edit]" 
                                             value="1"
                                             data-type="edit"
-                                            ${module.can_edit ? 'checked' : ''}>
+                                            ${can_edit ? 'checked' : ''}>
                                     </div>
                                 </td>
                                 <td class="text-center align-middle">
@@ -651,7 +660,7 @@ function edit_module_access(userId) {
                                             name="access[${module.id}][delete]" 
                                             value="1"
                                             data-type="delete"
-                                            ${module.can_delete ? 'checked' : ''}>
+                                            ${can_delete ? 'checked' : ''}>
                                     </div>
                                 </td>
                             `}
@@ -659,7 +668,10 @@ function edit_module_access(userId) {
                     `;
                 });
                 $('#module_access_list').html(html);
-                updateCheckAllStates(); 
+                updateCheckAllStates();
+                
+                // Debug output
+                console.log('Module Access Data:', response.data);
             } else {
                 Swal.fire({
                     icon: 'error',
@@ -685,10 +697,42 @@ function edit_module_access(userId) {
 $("#form-module-access").submit(function(e) {
     e.preventDefault();
     
+    const moduleAccess = [];
+    $('#module_access_list tr').each(function() {
+        // Extract module ID using a more robust method
+        const nameAttr = $(this).find('input[type="checkbox"]').first().attr('name');
+        const moduleId = nameAttr ? nameAttr.match(/\[(\d+)\]/)?.[1] : null;
+        
+        if (moduleId) {
+            const row = $(this);
+            const isViewOnly = row.find('td[colspan="3"]').length > 0;
+            
+            moduleAccess.push({
+                module_id: moduleId,
+                view: row.find('input[name^="access['+moduleId+'][view]"]').is(':checked'),
+                create: isViewOnly ? false : row.find('input[name^="access['+moduleId+'][create]"]').is(':checked'),
+                edit: isViewOnly ? false : row.find('input[name^="access['+moduleId+'][edit]"]').is(':checked'),
+                delete: isViewOnly ? false : row.find('input[name^="access['+moduleId+'][delete]"]').is(':checked')
+            });
+        }
+    });
+    
+    if (moduleAccess.length === 0) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No modules found to update'
+        });
+        return;
+    }
+
     $.ajax({
         url: "<?= base_url('cms/user/save-module-access') ?>",
         type: "POST",
-        data: $(this).serialize(),
+        data: {
+            user_id: $('#access_user_id').val(),
+            module_access: JSON.stringify(moduleAccess) // Stringify the array
+        },
         dataType: "JSON",
         beforeSend: function() {
             $("#form-module-access button[type=submit]").prop('disabled', true);
@@ -711,6 +755,7 @@ $("#form-module-access").submit(function(e) {
             }
         },
         error: function(xhr, status, error) {
+            console.error('AJAX Error:', xhr.responseText);
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
@@ -722,6 +767,7 @@ $("#form-module-access").submit(function(e) {
         }
     });
 });
+
 
 // Handle check all functionality
 $(document).on('change', '.check-all', function() {

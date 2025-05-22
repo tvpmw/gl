@@ -93,14 +93,21 @@ class AdminController extends BaseController
                     }
                     $aksiTable = '';
                     $modulTable = '';
+                    $userManagement = checkMenuAccess('cms/user');                    
                     if($aksiUpdate == 'yes'):
+                        if($userManagement['can_edit']):                        
                         $aksiTable .= "<a class='btn btn-xs btn-primary' href='javascript:void(0)' title='Edit' onclick='edit_data(".json_encode($edtVal).")'><i class='fa fa-pencil text-white'></i></a> ";
+                        endif;
                     endif;
                     if($aksiDelete == 'yes'):
+                        if($userManagement['can_delete']):                        
                         $aksiTable .= "<a class='btn btn-xs btn-danger' href='javascript:void(0)' title='Delete' onclick='delete_data(".$list->id.")'><i class='fa fa-trash text-white'></i></a> ";
+                        endif;
                     endif;
                     // Add module access button
+                    if($userManagement['can_edit'] && $userManagement['can_create']):                    
                     $modulTable .= "<a class='btn btn-xs btn-info' href='javascript:void(0)' title='Module Access' onclick='edit_module_access(".$list->id.")'><i class='fa fa-key text-white'></i></a>";
+                    endif;
                     
                     $row = [];
                     $row[]  = $no++;
@@ -273,10 +280,15 @@ class AdminController extends BaseController
 
     public function userLogin()
     {
+        $userLogin = checkMenuAccess('cms/user');
+        if($userLogin['can_view'] && $userLogin['can_create'] && $userLogin['can_edit'] && $userLogin['can_delete'] && detailUser()->user_role == 'superadmin'){        
         $data['aksiCreate'] = 'yes';
         $data['title'] = 'User Login | '.$this->CompName;
         $data['judul'] = 'User Login';
         return view('user/userLoginView', $data);
+        }else{
+            return redirect()->to(base_url('unauthorized'));
+        }
     }
 
     public function userAktif()
@@ -410,7 +422,7 @@ class AdminController extends BaseController
             // Create access map for quick lookup
             $accessMap = [];
             foreach ($userAccess as $access) {
-                $accessMap[$access->id] = $access;
+                $accessMap[$access->module_id] = $access; // Changed from $access->id to $access->module_id
             }
             
             // Prepare module data with access information
@@ -425,12 +437,15 @@ class AdminController extends BaseController
                     'id' => $module->id,
                     'name' => $module->name,
                     'slug' => $module->slug,
-                    'can_view' => $access ? (bool)$access->can_view : false,
-                    'can_create' => $isViewOnly ? false : ($access ? (bool)$access->can_create : false),
-                    'can_edit' => $isViewOnly ? false : ($access ? (bool)$access->can_edit : false),
-                    'can_delete' => $isViewOnly ? false : ($access ? (bool)$access->can_delete : false)
+                    'can_view' => $access ? ($access->can_view === 't' || $access->can_view === true || $access->can_view === 1) : false,
+                    'can_create' => $isViewOnly ? false : ($access ? ($access->can_create === 't' || $access->can_create === true || $access->can_create === 1) : false),
+                    'can_edit' => $isViewOnly ? false : ($access ? ($access->can_edit === 't' || $access->can_edit === true || $access->can_edit === 1) : false),
+                    'can_delete' => $isViewOnly ? false : ($access ? ($access->can_delete === 't' || $access->can_delete === true || $access->can_delete === 1) : false)
                 ];
             }
+            
+            // Debug log
+            log_message('debug', 'Module Access Data: ' . json_encode($moduleData));
             
             return $this->response->setJSON([
                 'status' => true,
@@ -445,24 +460,95 @@ class AdminController extends BaseController
 
     public function saveModuleAccess()
     {
-        if ($this->request->isAJAX()) {
-            if(detailUser()->user_role != 'superadmin'){
+        if (!$this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'status' => false, 
+                'msg' => 'Invalid request'
+            ]);
+        }
+
+        if (detailUser()->user_role != 'superadmin') {
+            return $this->response->setJSON([
+                'status' => false,
+                'msg' => 'Access Denied'
+            ]);
+        }
+
+        try {
+            $userId = $this->request->getPost('user_id');
+            $moduleAccess = json_decode($this->request->getPost('module_access'), true);
+
+            if (!$userId || !is_array($moduleAccess)) {
                 return $this->response->setJSON([
                     'status' => false,
-                    'msg' => 'Access Denied'
+                    'msg' => 'Invalid input data'
                 ]);
             }
 
-            $userId = $this->request->getPost('user_id');
-            $access = $this->request->getPost('access');
-            
-            $result = $this->moduleMod->updateUserModuleAccess($userId, $access);
+            $db = db_connect();
+            $db->transBegin();
 
+            // Delete existing access
+            $db->table('user_module_access_gl')
+            ->where('user_id', $userId)
+            ->delete();
+
+            // Prepare batch data for insertion
+            $batchData = [];
+            foreach ($moduleAccess as $access) {
+                if (!isset($access['module_id'])) {
+                    continue;
+                }
+                
+                $batchData[] = [
+                    'user_id' => $userId,
+                    'module_id' => $access['module_id'],
+                    'can_view' => $access['view'] ? 't' : 'f',
+                    'can_create' => $access['create'] ? 't' : 'f',
+                    'can_edit' => $access['edit'] ? 't' : 'f',
+                    'can_delete' => $access['delete'] ? 't' : 'f',
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'created_by' => session()->get('user_id')
+                ];
+            }
+
+            // Insert new access rights if we have data
+            if (!empty($batchData)) {
+                $inserted = $db->table('user_module_access_gl')->insertBatch($batchData);
+                
+                if ($inserted === false) {
+                    $db->transRollback();
+                    return $this->response->setJSON([
+                        'status' => false,
+                        'msg' => 'Failed to insert module access data'
+                    ]);
+                }
+            }
+
+            if ($db->transStatus() === false) {
+                $db->transRollback();
+                return $this->response->setJSON([
+                    'status' => false,
+                    'msg' => 'Transaction failed'
+                ]);
+            }
+
+            $db->transCommit();
             return $this->response->setJSON([
-                'status' => $result,
-                'msg' => $result ? 'Module access updated successfully' : 'Failed to update module access'
+                'status' => true,
+                'msg' => 'Module access updated successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            if (isset($db) && $db->transStatus() === false) {
+                $db->transRollback();
+            }
+            
+            log_message('error', 'Module access update error: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'status' => false,
+                'msg' => 'Failed to update module access: ' . $e->getMessage()
             ]);
         }
-        return $this->response->setJSON(['status' => false, 'msg' => 'Invalid request']);
     }
 }
