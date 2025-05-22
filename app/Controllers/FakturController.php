@@ -794,7 +794,7 @@ class FakturController extends Controller
             
             $dataFaktur[] = [
                 $counter++,
-                format_date($row->tgl, 'Y-m-d'),
+                format_date($row->tgl, 'd/m/Y'),
                 'Normal',
                 "04",
                 '',
