@@ -48,6 +48,7 @@ class MstrModel extends Model
     protected $column_search = ['mstr.kdtr', 'mstr.tgl', 'mstr.gtot', 'cust.nmcust', 'n.npwp', 'n.name','n.jenis', 'n.status_wp'];
     protected $order = ['mstr.kdtr' => 'ASC'];
     protected $online = ['BHINEKA', 'BHINNEKA', 'BLIBLI.COM', 'BUKALAPAK', 'EKATALOG', 'ETALASE', 'IG', 'GOSHOP', 'FACEBOOK', 'JD.ID', 'LAZADA', 'OLX', 'OLXACD', 'ONLINE', 'SHOPEE', 'SHOPEEACD', 'SHOPEES', 'SHOPPOFF', 'TIKTOKSHOP', 'TOKOPEDIA', 'TOKPEDACD', 'TOKPEDDDL', 'TOKPEDOFFL', 'TOKPEDS', 'WEBSITE', 'SHOPEEOFF', 'TOKPEDOFF', 'SHOPEEBLP', 'MANGGA', 'TIKTOKMIST'];
+    protected $salesArsOnline = ['HERI', 'ISA', 'ANDRIAN'];
 
 
     public function __construct($connectionName = null)
@@ -224,12 +225,20 @@ class MstrModel extends Model
         }
 
         // Apply sales type filter
-        if ($sales_type == 'ONLINE') {
-            // $builder->whereIn('cust.wil', $this->online);
-            $builder->where('cust.npwp', '');
-        } else {
-            // $builder->whereNotIn('cust.wil', $this->online);
-            $builder->where('cust.npwp !=', '');
+        if($prefix != 'A'){
+            if ($sales_type == 'ONLINE') {
+                // $builder->whereIn('cust.wil', $this->online);
+                $builder->where('cust.npwp', '');
+            } else {
+                // $builder->whereNotIn('cust.wil', $this->online);
+                $builder->where('cust.npwp !=', '');
+            }
+        }else{
+            if ($sales_type == 'ONLINE') {
+                $builder->whereIn('mstr.nmsales', $this->salesArsOnline);
+            }else{
+                $builder->whereNotIn('mstr.nmsales', $this->salesArsOnline);
+            }
         }
 
         // Apply prefix filter if provided
