@@ -25,7 +25,7 @@ class MenuAccessFilter implements FilterInterface
         }
         
         // Construct module path to match database format (cms/module)
-        $modulePath = 'cms/' . $segments[$moduleIndex];
+        $modulePath = 'cms/' . $segments[$moduleIndex];        
         
         // Check menu access
         $access = checkMenuAccess($modulePath);
@@ -36,7 +36,11 @@ class MenuAccessFilter implements FilterInterface
         
         // Handle PostgreSQL boolean ('t'/'f') values
         if (!$access || $access['can_view'] === 'f' || $access['can_view'] === false) {
-            return redirect()->to(base_url('unauthorized'));
+            if($segments[$moduleIndex] == 'dashboard'){                
+                return redirect()->to(base_url('home'));
+            }else{
+                return redirect()->to(base_url('unauthorized'));
+            }            
         }
     }
 

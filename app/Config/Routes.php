@@ -10,6 +10,7 @@ $routes->get('login-sso', 'Home::loginSSO');
 $routes->get('login/with-sso', 'Home::loginWithSSO');
 $routes->get('logout', 'Home::logout');
 $routes->get('unauthorized', 'ErrorController::unauthorized');
+$routes->get('home', 'ErrorController::dashboard_unauthorized');
 
 $routes->group("api", function ($routes) {
 	$routes->get('npwp/check', 'NpwpController::apiCheckSingle');

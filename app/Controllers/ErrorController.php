@@ -8,4 +8,9 @@ class ErrorController extends BaseController
     {
         return view('errors/unauthorized');
     }
+
+    public function dashboard_unauthorized()
+    {
+        return view('dashboard_unauthorized');
+    }
 }

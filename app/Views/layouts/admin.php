@@ -702,15 +702,13 @@
             </button>
 
             <div class="collapse navbar-collapse" id="navbarNav">
-               <ul class="navbar-nav mx-auto nav-menu">                    
-                    <?php if ($dashboardAccess['can_view']): ?>
+               <ul class="navbar-nav mx-auto nav-menu">                                        
                     <li class="nav-item">
                         <a class="nav-link <?= str_starts_with(current_url(), base_url('cms/dashboard')) ? 'active' : '' ?>" 
                         href="<?= base_url('cms/dashboard') ?>">
                             <i class="fas fa-home me-2"></i>Dashboard
                         </a>            
-                    </li>
-                    <?php endif; ?>
+                    </li>                    
 
                   <?php if ($jurnalAccess['can_view']): ?>
                     <li class="nav-item">
