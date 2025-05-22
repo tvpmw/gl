@@ -8,17 +8,18 @@ class Auth implements FilterInterface
 {
     public function before(RequestInterface $request, $arguments = null)
     {
-        // jika user belum login
-        if(! session()->get('isGlLoggedIn')){
-            // maka redirct ke halaman login
+        helper(['my_helper']);  // Load helper at the start
+        
+        // Check if user is logged in
+        if (!session()->get('isGlLoggedIn')) {
             return redirect()->to(base_url());
-        }
+        } 
     }
  
     //--------------------------------------------------------------------
  
     public function after(RequestInterface $request, ResponseInterface $response, $arguments = null)
     {
-        // Do something here
+        // No actions needed after request
     }
 }

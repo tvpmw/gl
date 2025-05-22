@@ -155,6 +155,7 @@
                   <th><?=isLang('Username')?></th>
                   <th><?=isLang('Peran')?></th>
                   <th><?=isLang('Status')?></th>
+                  <th><?=isLang('Modul')?></th>
                   <th width="80px"><?=isLang('aksi')?></th>
                 </tr>
               </thead>
@@ -247,6 +248,50 @@
           </form>
         </div>
       </div>
+    </div>
+
+    <!-- Module Access Modal -->
+    <div class="modal fade" id="modal_module_access" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary">
+                    <h5 class="modal-title text-white"><?=isLang('Edit Hak Akses Modul')?></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="form-module-access">
+                    <input type="hidden" name="user_id" id="access_user_id">
+                    <div class="modal-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th><?=isLang('Modul')?></th>
+                                        <th class="text-center">
+                                            <input type="checkbox" class="form-check-input check-all" data-type="view"> <?=isLang('Lihat')?>
+                                        </th>
+                                        <th class="text-center">
+                                            <input type="checkbox" class="form-check-input check-all" data-type="create"> <?=isLang('Tambah')?>
+                                        </th>
+                                        <th class="text-center">
+                                            <input type="checkbox" class="form-check-input check-all" data-type="edit"> <?=isLang('Edit')?>
+                                        </th>
+                                        <th class="text-center">
+                                            <input type="checkbox" class="form-check-input check-all" data-type="delete"> <?=isLang('Hapus')?>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="module_access_list">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary"><?=isLang('simpan')?></button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?=isLang('keluar')?></button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
 </div>
@@ -460,5 +505,282 @@ $("#password, #password2").on('input', function() {
     
     $("#btnSave").prop('disabled', pass1 && pass2 && pass1 !== pass2);
 });
+
+// Handle module access
+$(document).on('click', '.btn-access', function() {
+    var userId = $(this).data('id');
+    $('#access_user_id').val(userId);
+    
+    // Fetch and display module access data
+    $.ajax({
+        url: "<?= base_url('cms/user/get_module_access') ?>",
+        type: "POST",
+        data: { user_id: userId },
+        dataType: "JSON",
+        success: function(response) {
+            var rows = '';
+            $.each(response.modules, function(index, module) {
+                rows += `
+                    <tr>
+                        <td>${module.name}</td>
+                        <td class="text-center">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="view_access[]" value="${module.id}" ${module.view_access ? 'checked' : ''}>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="add_access[]" value="${module.id}" ${module.add_access ? 'checked' : ''}>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="edit_access[]" value="${module.id}" ${module.edit_access ? 'checked' : ''}>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="delete_access[]" value="${module.id}" ${module.delete_access ? 'checked' : ''}>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            $('#module_access_list').html(rows);
+        }
+    });
+    
+    $('#modal_module_access').modal('show');
+});
+
+function editModuleAccess(userId) {
+    $('#access_user_id').val(userId);
+    
+    // Load current module access
+    $.ajax({
+        url: "<?= base_url('cms/module/getUserModuleAccess') ?>",
+        type: "POST",
+        data: { user_id: userId },
+        dataType: "JSON",
+        success: function(response) {
+            let html = '';
+            response.modules.forEach(function(module) {
+                html += `
+                    <tr>
+                        <td>${module.name}</td>
+                        <td class="text-center">
+                            <input type="checkbox" name="access[${module.id}][view]" 
+                                ${module.can_view ? 'checked' : ''}>
+                        </td>
+                        <td class="text-center">
+                            <input type="checkbox" name="access[${module.id}][create]" 
+                                ${module.can_create ? 'checked' : ''}>
+                        </td>
+                        <td class="text-center">
+                            <input type="checkbox" name="access[${module.id}][edit]" 
+                                ${module.can_edit ? 'checked' : ''}>
+                        </td>
+                        <td class="text-center">
+                            <input type="checkbox" name="access[${module.id}][delete]" 
+                                ${module.can_delete ? 'checked' : ''}>
+                        </td>
+                    </tr>
+                `;
+            });
+            $('#module_access_list').html(html);
+            $('#modal_module_access').modal('show');
+        }
+    });
+}
+
+// Replace the edit_module_access function with this updated version
+function edit_module_access(userId) {
+    $('#access_user_id').val(userId);
+    
+    $.ajax({
+        url: "<?= base_url('cms/user/get-module-access') ?>",
+        type: "POST",
+        data: { user_id: userId },
+        dataType: "JSON",
+        beforeSend: function() {
+            $('#module_access_list').html('<tr><td colspan="5" class="text-center">Loading...</td></tr>');
+        },
+        success: function(response) {
+            if (response.status) {
+                let html = '';
+                response.data.forEach(function(module) {
+                    const isViewOnly = module.slug === 'dashboard';
+                    html += `
+                        <tr>
+                            <td>${module.name}</td>
+                            <td class="text-center align-middle">
+                                <div class="form-check d-flex justify-content-center">
+                                    <input type="checkbox" class="form-check-input module-checkbox" 
+                                        name="access[${module.id}][view]" 
+                                        value="1"
+                                        data-type="view"
+                                        ${module.can_view ? 'checked' : ''}>
+                                </div>
+                            </td>
+                            ${isViewOnly ? `
+                                <td colspan="3" class="text-center align-middle text-muted">
+                                    <small><i>View Only Module</i></small>
+                                </td>
+                            ` : `
+                                <td class="text-center align-middle">
+                                    <div class="form-check d-flex justify-content-center">
+                                        <input type="checkbox" class="form-check-input module-checkbox" 
+                                            name="access[${module.id}][create]" 
+                                            value="1"
+                                            data-type="create"
+                                            ${module.can_create ? 'checked' : ''}>
+                                    </div>
+                                </td>
+                                <td class="text-center align-middle">
+                                    <div class="form-check d-flex justify-content-center">
+                                        <input type="checkbox" class="form-check-input module-checkbox" 
+                                            name="access[${module.id}][edit]" 
+                                            value="1"
+                                            data-type="edit"
+                                            ${module.can_edit ? 'checked' : ''}>
+                                    </div>
+                                </td>
+                                <td class="text-center align-middle">
+                                    <div class="form-check d-flex justify-content-center">
+                                        <input type="checkbox" class="form-check-input module-checkbox" 
+                                            name="access[${module.id}][delete]" 
+                                            value="1"
+                                            data-type="delete"
+                                            ${module.can_delete ? 'checked' : ''}>
+                                    </div>
+                                </td>
+                            `}
+                        </tr>
+                    `;
+                });
+                $('#module_access_list').html(html);
+                updateCheckAllStates(); 
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: response.msg || 'Failed to load module access'
+                });
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX Error:', xhr.responseText);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Failed to load module access: ' + error
+            });
+        }
+    });
+    
+    $('#modal_module_access').modal('show');
+}
+
+// Update form submit handler
+$("#form-module-access").submit(function(e) {
+    e.preventDefault();
+    
+    $.ajax({
+        url: "<?= base_url('cms/user/save-module-access') ?>",
+        type: "POST",
+        data: $(this).serialize(),
+        dataType: "JSON",
+        beforeSend: function() {
+            $("#form-module-access button[type=submit]").prop('disabled', true);
+        },
+        success: function(response) {
+            if (response.status) {
+                $('#modal_module_access').modal('hide');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: response.msg
+                });
+                reload_table();
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: response.msg
+                });
+            }
+        },
+        error: function(xhr, status, error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Failed to save module access: ' + error
+            });
+        },
+        complete: function() {
+            $("#form-module-access button[type=submit]").prop('disabled', false);
+        }
+    });
+});
+
+// Handle check all functionality
+$(document).on('change', '.check-all', function() {
+    const type = $(this).data('type');
+    const isChecked = $(this).prop('checked');
+    
+    // Select all checkboxes including dashboard for view permission
+    if (type === 'view') {
+        $(`input[name$="[${type}]"]`).prop('checked', isChecked);
+    } else {
+        // For other permissions, exclude view-only modules
+        $('.module-checkbox[data-type="' + type + '"]').each(function() {
+            const row = $(this).closest('tr');
+            if (!row.find('td[colspan="3"]').length) {
+                $(this).prop('checked', isChecked);
+            }
+        });
+    }
+});
+
+// Add some CSS to ensure checkbox alignment
+$('<style>')
+    .text(`
+        .form-check {
+            margin: 0;
+            padding: 0;
+        }
+        .align-middle {
+            vertical-align: middle !important;
+        }
+        .form-check-input {
+            margin: 0 !important;
+            position: relative !important;
+        }
+        .d-flex.justify-content-center {
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            height: 100%;
+        }
+    `)
+    .appendTo('head');
+
+// Update check all state when individual checkboxes change
+$(document).on('change', '.module-checkbox', function() {
+    const type = $(this).data('type');
+    const totalBoxes = $('.module-checkbox[data-type="' + type + '"]').not(':disabled').length;
+    const checkedBoxes = $('.module-checkbox[data-type="' + type + '"]:checked').not(':disabled').length;
+    
+    $('.check-all[data-type="' + type + '"]').prop('checked', totalBoxes === checkedBoxes);
+});
+
+// Function to update all check-all states
+function updateCheckAllStates() {
+    ['view', 'create', 'edit', 'delete'].forEach(function(type) {
+        const totalBoxes = $('.module-checkbox[data-type="' + type + '"]').not(':disabled').length;
+        const checkedBoxes = $('.module-checkbox[data-type="' + type + '"]:checked').not(':disabled').length;
+        $('.check-all[data-type="' + type + '"]').prop('checked', totalBoxes === checkedBoxes);
+    });
+}
 </script>
 <?= $this->endSection() ?>

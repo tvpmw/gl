@@ -970,6 +970,73 @@ if ( ! function_exists('getMonths')) {
   }
 }
 
+if (!function_exists('checkMenuAccess')) {
+    function checkMenuAccess($moduleLink) {
+        $session = session();
+        $userId = $session->get('user_id');
+        
+        // If no user is logged in, return no access
+        if (!$userId) {
+            return [
+                'can_view' => false,
+                'can_create' => false,
+                'can_edit' => false,
+                'can_delete' => false
+            ];
+        }
+        
+        $db = db_connect();
+        $query = $db->query("SELECT can_view, can_create, can_edit, can_delete 
+                            FROM user_module_access_detail 
+                            WHERE user_id = ? AND module_link = ? 
+                            AND deleted_at IS NULL", [$userId, $moduleLink]);
+        
+        $result = $query->getRowArray();
+        
+        return $result ?: [
+            'can_view' => false,
+            'can_create' => false,
+            'can_edit' => false,
+            'can_delete' => false
+        ];
+    }
+}
+
+function checkModul($modul, $aksi = 'view') 
+{
+    $db = \Config\Database::connect();
+    $userId = session()->get('user_id');
+    
+    if (!$userId) return false;
+    
+    // Super admin has all access
+    if (detailUser()->user_role == 'superadmin') return true;
+    
+    $builder = $db->table('modules_gl')
+        ->join('user_module_access_gl', 'modules_gl.id = user_module_access_gl.module_id')
+        ->where('modules_gl.slug', $modul)
+        ->where('user_module_access_gl.user_id', $userId)
+        ->where('modules_gl.deleted_at', null)
+        ->where('user_module_access_gl.deleted_at', null);
+        
+    $access = $builder->get()->getRow();
+    
+    if (!$access) return false;
+    
+    switch($aksi) {
+        case 'view':
+            return (bool)$access->can_view;
+        case 'create':
+            return (bool)$access->can_create;
+        case 'edit':
+            return (bool)$access->can_edit;
+        case 'delete':
+            return (bool)$access->can_delete;
+        default:
+            return false;
+    }
+}
+
 if ( ! function_exists('generateKodeJurnal')) {
   function generateKodeJurnal($db)
   {
@@ -1316,30 +1383,40 @@ if ( ! function_exists('listModul')) {
 }
 
 if ( ! function_exists('checkModul')) {
-  function checkModul($modul,$aksi='lihat'){
-    return 'yes';
+  function checkModul($modul, $aksi = 'view') 
+{
+    $db = \Config\Database::connect();
+    $userId = session()->get('user_id');
     
-    $UserAkses =  new UserAksesModel();
-    $user_id = session()->get('user_id');
-    if($user_id){
-      $cekFitur = $UserAkses->check_fitur($user_id,$modul);
-      $akses = 'no';
-      if($cekFitur){
-        if($aksi == 'buat' && $cekFitur->ua_create == 1){
-          $akses = 'yes';
-        }else if($aksi == 'lihat' && $cekFitur->ua_read == 1){
-          $akses = 'yes';
-        }else if($aksi == 'ubah' && $cekFitur->ua_update == 1){
-          $akses = 'yes';
-        }else if($aksi == 'hapus' && $cekFitur->ua_delete == 1){
-          $akses = 'yes';
-        }
-      }
-    }else{
-      $akses = 'auth';
+    if (!$userId) return false;
+    
+    // Super admin has all access
+    if (detailUser()->user_role == 'superadmin') return true;
+    
+    $builder = $db->table('modules_gl')
+        ->join('user_module_access_gl', 'modules_gl.id = user_module_access_gl.module_id')
+        ->where('modules_gl.slug', $modul)
+        ->where('user_module_access_gl.user_id', $userId)
+        ->where('modules_gl.deleted_at', null)
+        ->where('user_module_access_gl.deleted_at', null);
+        
+    $access = $builder->get()->getRow();
+    
+    if (!$access) return false;
+    
+    switch($aksi) {
+        case 'view':
+            return (bool)$access->can_view;
+        case 'create':
+            return (bool)$access->can_create;
+        case 'edit':
+            return (bool)$access->can_edit;
+        case 'delete':
+            return (bool)$access->can_delete;
+        default:
+            return false;
     }
-    return $akses;
-  }
+}
 }
 
 if (!function_exists('detailUser')) {
@@ -3125,5 +3202,4 @@ if ( ! function_exists('isLang')) {
     return ucwords(str_replace('_', ' ', $a));
   }
 }
-
 ?>

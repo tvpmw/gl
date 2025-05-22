@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Models\CoaModel;
 use Predis\Client;
+use CodeIgniter\HTTP\RedirectResponse;
 
 class DashboardController extends BaseController
 {
@@ -18,7 +19,8 @@ class DashboardController extends BaseController
     public function __construct()
     {
         helper(['my_helper']);
-
+        
+        // Initialize models if authorized
         $this->coaModel = new CoaModel('default');
         $this->coaModel2 = new CoaModel('crm_ars');        
         $this->coaModel3 = new CoaModel('crm_wep');
@@ -35,9 +37,12 @@ class DashboardController extends BaseController
 
     public function index()
     {
-        $data['thnSkg'] = date('Y');
-        $data['startYear'] = 2009;
-        $data['dbs'] = getSelDb();
+        $data = [
+            'thnSkg' => date('Y'),
+            'startYear' => 2009,
+            'dbs' => getSelDb()
+        ];
+        
         return view('dashboard', $data);
     }
 

@@ -5,12 +5,20 @@ namespace App\Controllers;
 use App\Controllers\BaseController;
 use CodeIgniter\HTTP\ResponseInterface;
 use App\Models\UsersModel;
+use App\Models\ModuleModel;
 
 class AdminController extends BaseController
 {
+    protected $moduleMod;
+
     public function __construct()
     {
         helper(['my_helper']);
+        
+        $access = checkMenuAccess('cms/user');
+        if (!$access['can_view']) {            
+            return redirect()->to(base_url('unauthorized'));
+        }
         $this->login = 'iya';
         $cek_auth = detailUser();
         if(empty($cek_auth)){
@@ -19,6 +27,7 @@ class AdminController extends BaseController
 
         $this->users_id = session()->get('user_id');
         $this->userMod = new UsersModel;
+        $this->moduleMod = new ModuleModel();
         $this->modul = 'user management';
         $this->CompName = "CRM";
     }
@@ -83,12 +92,16 @@ class AdminController extends BaseController
                         $akt = '<i class="icon fa fa-check" style="color:green"></i>';
                     }
                     $aksiTable = '';
+                    $modulTable = '';
                     if($aksiUpdate == 'yes'):
-                    $aksiTable .= "<a class='btn btn-xs btn-primary' href='javascript:void(0)' title='Edit' onclick='edit_data(".json_encode($edtVal).")'><i class='fa fa-pencil text-white'></i></a> ";
+                        $aksiTable .= "<a class='btn btn-xs btn-primary' href='javascript:void(0)' title='Edit' onclick='edit_data(".json_encode($edtVal).")'><i class='fa fa-pencil text-white'></i></a> ";
                     endif;
                     if($aksiDelete == 'yes'):
-                    $aksiTable .= "<a class='btn btn-xs btn-danger' href='javascript:void(0)' title='Delete' onclick='delete_data(".$list->id.")'><i class='fa fa-trash text-white'></i></a>";
+                        $aksiTable .= "<a class='btn btn-xs btn-danger' href='javascript:void(0)' title='Delete' onclick='delete_data(".$list->id.")'><i class='fa fa-trash text-white'></i></a> ";
                     endif;
+                    // Add module access button
+                    $modulTable .= "<a class='btn btn-xs btn-info' href='javascript:void(0)' title='Module Access' onclick='edit_module_access(".$list->id.")'><i class='fa fa-key text-white'></i></a>";
+                    
                     $row = [];
                     $row[]  = $no++;
                     $row[]  = $list->user_nama;
@@ -97,6 +110,7 @@ class AdminController extends BaseController
                     $row[]  = $list->user_username;
                     $row[]  = $list->user_role;
                     $row[]  = $akt;
+                    $row[]  = $modulTable;
                     $row[]  = $aksiTable;
 
                     $data[] = $row;
@@ -368,5 +382,87 @@ class AdminController extends BaseController
             'status' => 'success',
             'message' => "$userName dengan User ID $userId telah dipaksa logout dari $count sesi GL.",
         ]);
+    }
+
+    public function moduleAccess($userId)
+    {
+        if(detailUser()->user_role != 'superadmin'){
+            return redirect()->back()->with('error', 'Access Denied');
+        }
+
+        $data['title'] = 'Module Access | '.$this->CompName;
+        $data['judul'] = 'Module Access';
+        $data['user'] = $this->userMod->find($userId);
+        return view('user/moduleAccessView', $data);
+    }
+
+    public function getModuleAccess()
+    {
+        if ($this->request->isAJAX()) {
+            $userId = $this->request->getPost('user_id');
+            
+            // Get all active modules
+            $modules = $this->moduleMod->getAllActiveModules();
+            
+            // Get user's current module access
+            $userAccess = $this->moduleMod->getAllModuleAccess($userId);
+            
+            // Create access map for quick lookup
+            $accessMap = [];
+            foreach ($userAccess as $access) {
+                $accessMap[$access->id] = $access;
+            }
+            
+            // Prepare module data with access information
+            $moduleData = [];
+            foreach ($modules as $module) {
+                $access = isset($accessMap[$module->id]) ? $accessMap[$module->id] : null;
+                
+                // Check if module is view-only
+                $isViewOnly = in_array($module->slug, $this->moduleMod->viewOnlyModules);
+                
+                $moduleData[] = [
+                    'id' => $module->id,
+                    'name' => $module->name,
+                    'slug' => $module->slug,
+                    'can_view' => $access ? (bool)$access->can_view : false,
+                    'can_create' => $isViewOnly ? false : ($access ? (bool)$access->can_create : false),
+                    'can_edit' => $isViewOnly ? false : ($access ? (bool)$access->can_edit : false),
+                    'can_delete' => $isViewOnly ? false : ($access ? (bool)$access->can_delete : false)
+                ];
+            }
+            
+            return $this->response->setJSON([
+                'status' => true,
+                'data' => $moduleData
+            ]);
+        }
+        return $this->response->setJSON([
+            'status' => false,
+            'msg' => 'Invalid request'
+        ]);
+    }
+
+    public function saveModuleAccess()
+    {
+        if ($this->request->isAJAX()) {
+            if(detailUser()->user_role != 'superadmin'){
+                return $this->response->setJSON([
+                    'status' => false,
+                    'msg' => 'Access Denied'
+                ]);
+            }
+
+            $userId = $this->request->getPost('user_id');
+            $access = $this->request->getPost('access');
+            
+            $result = $this->moduleMod->updateUserModuleAccess($userId, $access);
+
+            return $this->response->setJSON([
+                'status' => $result,
+                'msg' => $result ? 'Module access updated successfully' : 'Failed to update module access'
+            ]);
+        }
+        return $this->response->setJSON(['status' => false, 'msg' => 'Invalid request']);
     }
 }

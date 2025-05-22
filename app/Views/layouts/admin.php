@@ -680,6 +680,15 @@
     <?= $this->renderSection('styles') ?>
 </head>
 <body>
+    <?php 
+    helper(['my_helper']);
+    $dashboardAccess = checkMenuAccess('cms/dashboard');
+    $jurnalAccess = checkMenuAccess('cms/jurnal');
+    $npwpAccess = checkMenuAccess('cms/npwp');
+    $fakturAccess = checkMenuAccess('cms/faktur');
+    $reportAccess = checkMenuAccess('cms/report');
+    $userAccess = checkMenuAccess('cms/user');
+    ?>
 <div class="wrapper">
     <!-- Replace the existing nav opening -->
     <nav class="navbar navbar-expand-lg top-navbar fixed-top">
@@ -693,25 +702,35 @@
             </button>
 
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav mx-auto nav-menu">                    
+               <ul class="navbar-nav mx-auto nav-menu">                    
+                    <?php if ($dashboardAccess['can_view']): ?>
                     <li class="nav-item">
-                        <a class="nav-link <?= str_starts_with(current_url(), base_url('cms/dashboard')) ? 'active' : '' ?>" href="<?= base_url('cms/dashboard') ?>">
+                        <a class="nav-link <?= str_starts_with(current_url(), base_url('cms/dashboard')) ? 'active' : '' ?>" 
+                        href="<?= base_url('cms/dashboard') ?>">
                             <i class="fas fa-home me-2"></i>Dashboard
                         </a>            
                     </li>
+                    <?php endif; ?>
 
+                  <?php if ($jurnalAccess['can_view']): ?>
                     <li class="nav-item">
-                        <a class="nav-link <?= str_starts_with(current_url(), base_url('cms/jurnal')) ? 'active' : '' ?>" href="<?= base_url('cms/jurnal') ?>">
+                        <a class="nav-link <?= str_starts_with(current_url(), base_url('cms/jurnal')) ? 'active' : '' ?>" 
+                        href="<?= base_url('cms/jurnal') ?>">
                             <i class="fas fa-file-alt me-2"></i> Jurnal
                         </a>            
                     </li>
+                    <?php endif; ?>
 
+                    <?php if ($npwpAccess['can_view']): ?>
                     <li class="nav-item">
-                        <a class="nav-link <?= str_starts_with(current_url(), base_url('cms/npwp')) ? 'active' : '' ?>" href="<?= base_url('cms/npwp') ?>">
+                        <a class="nav-link <?= str_starts_with(current_url(), base_url('cms/npwp')) ? 'active' : '' ?>" 
+                        href="<?= base_url('cms/npwp') ?>">
                             <i class="fas fa-id-card me-2"></i> NPWP
                         </a>            
-                    </li>       
+                    </li>
+                    <?php endif; ?>  
                     
+                    <?php if ($fakturAccess['can_view']): ?>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle <?= str_starts_with(current_url(), base_url('cms/faktur')) ? 'active' : '' ?>" href="#" id="fakturDropdown" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-balance-scale me-2"></i>Faktur
@@ -724,8 +743,10 @@
                             <li><a class="dropdown-item" href="<?= base_url('cms/customer') ?>"><i class="fas fa-users me-2"></i>Customer Check</a></li>
                         </ul>
                     </li>
+                    <?php endif; ?>
 
                     <!-- Dropdown Report -->
+                    <?php if ($reportAccess['can_view']): ?>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle <?= str_starts_with(current_url(), base_url('cms/report')) ? 'active' : '' ?>" href="#" id="reportDropdown" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-book me-2"></i>Report
@@ -739,8 +760,9 @@
                             <li><a class="dropdown-item" href="<?= base_url('cms/report/perubahan-modal') ?>"><i class="fas fa-wallet me-2"></i>Perubahan Modal</a></li>
                         </ul>
                     </li>
-
-                    <?php if (detailUser()->user_role == 'superadmin'): ?>
+                    <?php endif; ?>
+                    
+                    <?php if ($userAccess['can_view'] && detailUser()->user_role == 'superadmin'): ?>
                     <!-- Dropdown User -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle <?= str_starts_with(current_url(), base_url('cms/user')) ? 'active' : '' ?>" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">

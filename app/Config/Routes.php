@@ -9,13 +9,14 @@ $routes->get('/', 'Home::index');
 $routes->get('login-sso', 'Home::loginSSO');
 $routes->get('login/with-sso', 'Home::loginWithSSO');
 $routes->get('logout', 'Home::logout');
+$routes->get('unauthorized', 'ErrorController::unauthorized');
 
 $routes->group("api", function ($routes) {
 	$routes->get('npwp/check', 'NpwpController::apiCheckSingle');
 	$routes->get('npwp/check-bulk', 'NpwpController::apiCheckBulk');
 });
 
-$routes->group('cms', ['filter' => 'auth'], function ($routes) {    
+$routes->group('cms', ['filter' => ['auth', 'menuAccess']], function ($routes) {    
 
 	$routes->get('barang/search', 'BarangController::search');
     $routes->get('barang/tax-codes', 'BarangController::getTaxCodes');
@@ -25,7 +26,6 @@ $routes->group('cms', ['filter' => 'auth'], function ($routes) {
 		$routes->post('get-data', 'DashboardController::getData');
 		$routes->get('neraca', 'DashboardController::neraca');
 		$routes->get('coa', 'DashboardController::coa');
-		$routes->get('generate', 'FakturExcelGenerator::generate_excel');
 	});
 
 	$routes->group("jurnal", function ($routes) {
@@ -113,6 +113,11 @@ $routes->group('cms', ['filter' => 'auth'], function ($routes) {
 		$routes->get('userAktif','AdminController::userAktif');
 		$routes->get('getOnlineUsers','AdminController::getOnlineUsers');
 		$routes->post('forceLogout','AdminController::forceLogout');
+		
+		// Update module access routes
+        $routes->get('module-access/(:num)', 'AdminController::moduleAccess/$1');
+        $routes->post('get-module-access', 'AdminController::getModuleAccess');
+        $routes->post('save-module-access', 'AdminController::saveModuleAccess');
 	});
 
 	$routes->group('customer', function ($routes) {
