@@ -7,8 +7,8 @@ use CodeIgniter\Model;
 class ModuleModel extends Model
 {
     protected $DBGroup          = 'default';
-    protected $table            = 'modules_gl';
-    protected $tableIns         = 'modules_gl';
+    protected $table            = 'crm.modules_gl';
+    protected $tableIns         = 'crm.modules_gl';
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = true;
     protected $insertID         = 0;
@@ -41,7 +41,7 @@ class ModuleModel extends Model
     // Validation
     protected $validationRules      = [
         'name' => 'required|min_length[3]',
-        'slug' => 'required|is_unique[modules_gl.slug,id,{id}]',
+        'slug' => 'required|is_unique[crm.modules_gl.slug,id,{id}]',
     ];
     protected $validationMessages   = [];
     protected $skipValidation       = false;
@@ -71,13 +71,13 @@ class ModuleModel extends Model
 
     public function getModuleWithAccess($userId) 
     {
-        return $this->select('modules_gl.*, user_module_access_gl.*')
-                    ->join('user_module_access_gl', 'modules_gl.id = user_module_access_gl.module_id', 'left')
-                    ->where('user_module_access_gl.user_id', $userId)
-                    ->where('modules_gl.is_active', true) // Change from 1 to true
-                    ->where('modules_gl.deleted_at', null)
-                    ->where('user_module_access_gl.deleted_at', null)
-                    ->orderBy('modules_gl.sort_order', 'ASC')
+        return $this->select('crm.modules_gl.*, crm.user_module_access_gl.*')
+                    ->join('crm.user_module_access_gl', 'crm.modules_gl.id = crm.user_module_access_gl.module_id', 'left')
+                    ->where('crm.user_module_access_gl.user_id', $userId)
+                    ->where('crm.modules_gl.is_active', true) // Change from 1 to true
+                    ->where('crm.modules_gl.deleted_at', null)
+                    ->where('crm.user_module_access_gl.deleted_at', null)
+                    ->orderBy('crm.modules_gl.sort_order', 'ASC')
                     ->findAll();
     }
 
@@ -94,7 +94,7 @@ class ModuleModel extends Model
             'created_at' => date('Y-m-d H:i:s')
         ];
 
-        return $this->db->table('user_module_access_gl')->insert($data);
+        return $this->db->table('crm.user_module_access_gl')->insert($data);
     }
 
     public function updateUserAccess($userId, $moduleId, $permissions) 
@@ -108,7 +108,7 @@ class ModuleModel extends Model
             'updated_at' => date('Y-m-d H:i:s')
         ];
 
-        return $this->db->table('user_module_access_gl')
+        return $this->db->table('crm.user_module_access_gl')
                     ->where('user_id', $userId)
                     ->where('module_id', $moduleId)
                     ->update($data);
@@ -117,7 +117,7 @@ class ModuleModel extends Model
     public function deleteUserAccess($userId, $moduleId) 
     {
         if ($this->useSoftDeletes) {
-            return $this->db->table('user_module_access_gl')
+            return $this->db->table('crm.user_module_access_gl')
                         ->where('user_id', $userId)
                         ->where('module_id', $moduleId)
                         ->update([
@@ -126,7 +126,7 @@ class ModuleModel extends Model
                         ]);
         }
         
-        return $this->db->table('user_module_access_gl')
+        return $this->db->table('crm.user_module_access_gl')
                     ->where('user_id', $userId)
                     ->where('module_id', $moduleId)
                     ->delete();
@@ -134,15 +134,15 @@ class ModuleModel extends Model
 
     public function getUserModuleAccess($userId) 
     {
-        $modules = $this->select('modules_gl.*, user_module_access_gl.can_view, 
-                                user_module_access_gl.can_create, 
-                                user_module_access_gl.can_edit, 
-                                user_module_access_gl.can_delete')
-                       ->join('user_module_access_gl', 
-                             'modules_gl.id = user_module_access_gl.module_id', 'left')
-                       ->where('modules_gl.is_active', true) // Change from 1 to true
-                       ->where('modules_gl.deleted_at', null)
-                       ->orderBy('modules_gl.sort_order', 'ASC')
+        $modules = $this->select('crm.modules_gl.*, crm.user_module_access_gl.can_view, 
+                                crm.user_module_access_gl.can_create, 
+                                crm.user_module_access_gl.can_edit, 
+                                crm.user_module_access_gl.can_delete')
+                       ->join('crm.user_module_access_gl', 
+                             'crm.modules_gl.id = crm.user_module_access_gl.module_id', 'left')
+                       ->where('crm.modules_gl.is_active', true) // Change from 1 to true
+                       ->where('crm.modules_gl.deleted_at', null)
+                       ->orderBy('crm.modules_gl.sort_order', 'ASC')
                        ->findAll();
 
         // Set default values if no access exists
@@ -243,7 +243,7 @@ class ModuleModel extends Model
 
     public function getAllActiveModules()
     {
-        return $this->select('modules_gl.*')
+        return $this->select('crm.modules_gl.*')
                     ->where('is_active', true)
                     ->where('deleted_at', null)
                     ->orderBy('sort_order', 'ASC')
@@ -253,21 +253,21 @@ class ModuleModel extends Model
 
     public function getAllModuleAccess($userId) 
     {
-        return $this->db->table('user_module_access_gl')
+        return $this->db->table('crm.user_module_access_gl')
         ->select('
-            user_module_access_gl.module_id,
-            user_module_access_gl.can_view,
-            user_module_access_gl.can_create,
-            user_module_access_gl.can_edit,
-            user_module_access_gl.can_delete,
-            modules_gl.name,
-            modules_gl.slug
+            crm.user_module_access_gl.module_id,
+            crm.user_module_access_gl.can_view,
+            crm.user_module_access_gl.can_create,
+            crm.user_module_access_gl.can_edit,
+            crm.user_module_access_gl.can_delete,
+            crm.modules_gl.name,
+            crm.modules_gl.slug
         ')
-        ->join('modules_gl', 'modules_gl.id = user_module_access_gl.module_id')
-        ->where('user_module_access_gl.user_id', $userId)
-        ->where('modules_gl.is_active', true)
-        ->where('modules_gl.deleted_at', null)
-        ->orderBy('modules_gl.sort_order', 'ASC')
+        ->join('crm.modules_gl', 'crm.modules_gl.id = crm.user_module_access_gl.module_id')
+        ->where('crm.user_module_access_gl.user_id', $userId)
+        ->where('crm.modules_gl.is_active', true)
+        ->where('crm.modules_gl.deleted_at', null)
+        ->orderBy('crm.modules_gl.sort_order', 'ASC')
         ->get()
         ->getResult();
     }
@@ -277,7 +277,7 @@ class ModuleModel extends Model
         $this->db->transStart();
 
         // Delete existing access
-        $this->db->table('user_module_access_gl')
+        $this->db->table('crm.user_module_access_gl')
                  ->where('user_id', $userId)
                  ->delete();
 
@@ -290,7 +290,7 @@ class ModuleModel extends Model
                 // Set permissions based on module type
                 $isViewOnly = in_array($module->slug, $this->viewOnlyModules);
                 
-                $this->db->table('user_module_access_gl')->insert([
+                $this->db->table('crm.user_module_access_gl')->insert([
                     'user_id' => $userId,
                     'module_id' => $moduleId,
                     'can_view' => isset($access['view']) ? true : false,

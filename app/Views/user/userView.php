@@ -620,52 +620,82 @@ function edit_module_access(userId) {
                     
                     const isViewOnly = module.slug === 'dashboard';
                     html += `
-                        <tr>
-                            <td>${module.name}</td>
+                    <tr>
+                        <td>
+                            <div class="form-check-label">
+                                <input type="checkbox" class="form-check-input check-module-row" 
+                                    id="module-row-${module.id}" 
+                                    data-module-id="${module.id}"
+                                    ${(can_view && can_create && can_edit && can_delete) ? 'checked' : ''}>
+                                      <label class="form-check-label" for="module-row-${module.id}">
+                                ${module.name}
+                            </label>
+                            </div>                        
+                        </td>
+                        <td class="text-center align-middle">
+                            <div class="form-check d-flex justify-content-center">
+                                <input type="checkbox" class="form-check-input module-checkbox" 
+                                    name="access[${module.id}][view]" 
+                                    value="1"
+                                    data-type="view"
+                                    data-module-id="${module.id}"
+                                    ${can_view ? 'checked' : ''}>
+                            </div>
+                        </td>
+                        ${isViewOnly ? `
+                            <td colspan="3" class="text-center align-middle text-muted">
+                                <small><i>View Only Module</i></small>
+                            </td>
+                        ` : `
                             <td class="text-center align-middle">
                                 <div class="form-check d-flex justify-content-center">
                                     <input type="checkbox" class="form-check-input module-checkbox" 
-                                        name="access[${module.id}][view]" 
+                                        name="access[${module.id}][create]" 
                                         value="1"
-                                        data-type="view"
-                                        ${can_view ? 'checked' : ''}>
+                                        data-type="create"
+                                        data-module-id="${module.id}"
+                                        ${can_create ? 'checked' : ''}>
                                 </div>
                             </td>
-                            ${isViewOnly ? `
-                                <td colspan="3" class="text-center align-middle text-muted">
-                                    <small><i>View Only Module</i></small>
-                                </td>
-                            ` : `
-                                <td class="text-center align-middle">
-                                    <div class="form-check d-flex justify-content-center">
-                                        <input type="checkbox" class="form-check-input module-checkbox" 
-                                            name="access[${module.id}][create]" 
-                                            value="1"
-                                            data-type="create"
-                                            ${can_create ? 'checked' : ''}>
-                                    </div>
-                                </td>
-                                <td class="text-center align-middle">
-                                    <div class="form-check d-flex justify-content-center">
-                                        <input type="checkbox" class="form-check-input module-checkbox" 
-                                            name="access[${module.id}][edit]" 
-                                            value="1"
-                                            data-type="edit"
-                                            ${can_edit ? 'checked' : ''}>
-                                    </div>
-                                </td>
-                                <td class="text-center align-middle">
-                                    <div class="form-check d-flex justify-content-center">
-                                        <input type="checkbox" class="form-check-input module-checkbox" 
-                                            name="access[${module.id}][delete]" 
-                                            value="1"
-                                            data-type="delete"
-                                            ${can_delete ? 'checked' : ''}>
-                                    </div>
-                                </td>
-                            `}
-                        </tr>
-                    `;
+                            <td class="text-center align-middle">
+                                <div class="form-check d-flex justify-content-center">
+                                    <input type="checkbox" class="form-check-input module-checkbox" 
+                                        name="access[${module.id}][edit]" 
+                                        value="1"
+                                        data-type="edit"
+                                        data-module-id="${module.id}"
+                                        ${can_edit ? 'checked' : ''}>
+                                </div>
+                            </td>
+                            <td class="text-center align-middle">
+                                <div class="form-check d-flex justify-content-center">
+                                    <input type="checkbox" class="form-check-input module-checkbox" 
+                                        name="access[${module.id}][delete]" 
+                                        value="1"
+                                        data-type="delete"
+                                        data-module-id="${module.id}"
+                                        ${can_delete ? 'checked' : ''}>
+                                </div>
+                            </td>
+                        `}
+                    </tr>
+                `;
+                // Tambahkan event handler untuk checkbox modul
+                $(document).on('change', '.check-module-row', function() {
+                    const moduleId = $(this).data('module-id');
+                    const isChecked = $(this).prop('checked');
+                    const row = $(this).closest('tr');
+                    
+                    // Jika modul view-only, hanya check/uncheck view permission
+                    if (row.find('td[colspan="3"]').length) {
+                        row.find('input[data-type="view"]').prop('checked', isChecked);
+                    } else {
+                        // Untuk modul normal, check/uncheck semua permission
+                        row.find('.module-checkbox').prop('checked', isChecked);
+                    }
+                    
+                    updateCheckAllStates();
+                });
                 });
                 $('#module_access_list').html(html);
                 updateCheckAllStates();

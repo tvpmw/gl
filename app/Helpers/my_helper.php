@@ -1022,12 +1022,12 @@ function checkModul($modul, $aksi = 'view')
     // Super admin has all access
     if (detailUser()->user_role == 'superadmin') return true;
     
-    $builder = $db->table('modules_gl')
-        ->join('user_module_access_gl', 'modules_gl.id = user_module_access_gl.module_id')
-        ->where('modules_gl.slug', $modul)
-        ->where('user_module_access_gl.user_id', $userId)
-        ->where('modules_gl.deleted_at', null)
-        ->where('user_module_access_gl.deleted_at', null);
+    $builder = $db->table('crm.modules_gl')
+        ->join('crm.user_module_access_gl', 'crm.modules_gl.id = crm.user_module_access_gl.module_id')
+        ->where('crm.modules_gl.slug', $modul)
+        ->where('crm.user_module_access_gl.user_id', $userId)
+        ->where('crm.modules_gl.deleted_at', null)
+        ->where('crm.user_module_access_gl.deleted_at', null);
         
     $access = $builder->get()->getRow();
     
@@ -1403,12 +1403,12 @@ if ( ! function_exists('checkModul')) {
     // Super admin has all access
     if (detailUser()->user_role == 'superadmin') return true;
     
-    $builder = $db->table('modules_gl')
-        ->join('user_module_access_gl', 'modules_gl.id = user_module_access_gl.module_id')
-        ->where('modules_gl.slug', $modul)
-        ->where('user_module_access_gl.user_id', $userId)
-        ->where('modules_gl.deleted_at', null)
-        ->where('user_module_access_gl.deleted_at', null);
+    $builder = $db->table('crm.modules_gl')
+        ->join('crm.user_module_access_gl', 'crm.modules_gl.id = crm.user_module_access_gl.module_id')
+        ->where('crm.modules_gl.slug', $modul)
+        ->where('crm.user_module_access_gl.user_id', $userId)
+        ->where('crm.modules_gl.deleted_at', null)
+        ->where('crm.user_module_access_gl.deleted_at', null);
         
     $access = $builder->get()->getRow();
     
