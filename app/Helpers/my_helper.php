@@ -987,7 +987,7 @@ if (!function_exists('checkMenuAccess')) {
         
         $db = db_connect();
         $query = $db->query("SELECT can_view, can_create, can_edit, can_delete 
-                            FROM user_module_access_detail 
+                            FROM crm.user_module_access_detail 
                             WHERE user_id = ? AND module_link = ? 
                             AND deleted_at IS NULL", [$userId, $moduleLink]);
         
