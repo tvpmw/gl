@@ -1157,7 +1157,7 @@ class FakturController extends Controller
             ]);
         }
     }
-
+    
     public function saveImport()
     {
         try {
@@ -1199,83 +1199,90 @@ class FakturController extends Controller
             $updateData = [];
             $now = date('Y-m-d H:i:s');
 
-            foreach ($json['data'] as $row) {
-                $kodeTransaksi = preg_replace('/^(\d+).*$/', '$1', $row['kode_transaksi']);
-                
-                $tanggal = null;
-                if (!empty($row['tanggal_faktur'])) {
-                    $dateObj = new \DateTime($row['tanggal_faktur']);
-                    $tanggal = $dateObj->format('Y-m-d');
-                }
+            $db->transStart();
 
-                $data = [
-                    'npwp' => $row['npwp'],
-                    'nama_pembeli' => $row['nama_pembeli'],
-                    'kode_transaksi' => $kodeTransaksi,
-                    'no_faktur' => $row['no_faktur'],
-                    'tanggal_faktur' => $tanggal,
-                    'masa_pajak' => $row['masa_pajak'],
-                    'tahun' => $row['tahun'],
-                    'status_faktur' => $row['status_faktur'],
-                    'harga_jual' => $row['harga_jual'],
-                    'dpp' => $row['dpp'],
-                    'ppn' => $row['ppn'],
-                    'ppnbm' => $row['ppnbm'],
-                    'referensi' => $row['referensi'],
-                    'dilaporkan_penjual' => $row['dilaporkan_penjual']
-                ];
+            try {
+                foreach ($json['data'] as $row) {
+                    $kodeTransaksi = preg_replace('/^(\d+).*$/', '$1', $row['kode_transaksi']);
+                    
+                    $tanggal = null;
+                    if (!empty($row['tanggal_faktur'])) {
+                        $dateObj = new \DateTime($row['tanggal_faktur']);
+                        $tanggal = $dateObj->format('Y-m-d');
+                    }
 
-                $existing = $db->table('crm.data_coretax')
-                            ->where('no_faktur', $data['no_faktur'])
-                            ->get()
-                            ->getRow();
+                    $data = [
+                        'npwp' => $row['npwp'],
+                        'nama_pembeli' => $row['nama_pembeli'],
+                        'kode_transaksi' => $kodeTransaksi,
+                        'no_faktur' => $row['no_faktur'],
+                        'tanggal_faktur' => $tanggal,
+                        'masa_pajak' => $row['masa_pajak'],
+                        'tahun' => $row['tahun'],
+                        'status_faktur' => $row['status_faktur'],
+                        'harga_jual' => $row['harga_jual'],
+                        'dpp' => $row['dpp'],
+                        'ppn' => $row['ppn'],
+                        'ppnbm' => $row['ppnbm'],
+                        'referensi' => $row['referensi'],
+                        'dilaporkan_penjual' => $row['dilaporkan_penjual']
+                    ];
 
-                if ($existing) {
-                    $data['updated_at'] = $now;
-                    $updateData[] = $data;
-                } else {
-                    $data['created_at'] = $now;
-                    $data['updated_at'] = null;
-                    $insertData[] = $data;
-                }
-            }
+                    // Search only by referensi for updates
+                    $existing = $db->table('crm.data_coretax')
+                                ->where('referensi', $data['referensi'])
+                                ->get()
+                                ->getRow();
 
-            $success = true;
-            $message = [];
-
-            if (!empty($insertData)) {
-                $result = $db->table('crm.data_coretax')->insertBatch($insertData);
-                if (!$result) {
-                    throw new \Exception('Gagal menyimpan data baru');
-                }
-                $message[] = count($insertData) . ' data baru berhasil disimpan';
-            }
-
-            if (!empty($updateData)) {
-                foreach ($updateData as $data) {
-                    $result = $db->table('crm.data_coretax')
-                                ->where('no_faktur', $data['no_faktur'])
+                    if ($existing) {
+                        // Update based on referensi
+                        $data['updated_at'] = $now;
+                        $result = $db->table('crm.data_coretax')
+                                ->where('referensi', $data['referensi'])
                                 ->update($data);
-                    if (!$result) {
-                        $success = false;
-                        $message[] = 'Gagal mengupdate data dengan no faktur: ' . $data['no_faktur'];
+                        if ($result) {
+                            $updateData[] = $data['referensi'];
+                        }
+                    } else {
+                        // Insert based on no_faktur
+                        $data['created_at'] = $now;
+                        $data['updated_at'] = null;
+                        $insertData[] = $data;
                     }
                 }
-                if ($success) {
+
+                if (!empty($insertData)) {
+                    $result = $db->table('crm.data_coretax')->insertBatch($insertData);
+                    if (!$result) {
+                        throw new \Exception('Gagal menyimpan data baru');
+                    }
+                }
+
+                $db->transComplete();
+
+                $message = [];
+                if (!empty($insertData)) {
+                    $message[] = count($insertData) . ' data baru berhasil disimpan';
+                }
+                if (!empty($updateData)) {
                     $message[] = count($updateData) . ' data berhasil diupdate';
                 }
+
+                logGL($db_config, 'faktur_import', 'Insert');
+
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => implode(', ', $message)
+                ]);
+
+            } catch (\Exception $e) {
+                $db->transRollback();
+                throw $e;
             }
-
-            logGL($db_config,'faktur_import','Insert');
-
-            return $this->response->setJSON([
-                'success' => $success,
-                'message' => implode(', ', $message)
-            ]);
 
         } catch (\Exception $e) {
             return $this->response->setJSON([
-                'success' => false,
+                'success' => false, 
                 'message' => $e->getMessage()
             ]);
         }
