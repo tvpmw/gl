@@ -522,6 +522,7 @@ class FakturController extends Controller
         try {
             $rowDetail = 2; 
             $fakturCounter = 1;
+            $processedItems = [];
             
             $baseQuery = "SELECT 
                 tr.kdtr,
@@ -613,14 +614,25 @@ class FakturController extends Controller
                     $listRetur[$row->nmbrg] = $row;
                 }
                 $details = $db->query($sql, [$trx->kdtr])->getResult();
+                $processedDetailsForTrx = [];
                 foreach ($details as $detail) {
+                    // Buat unique key untuk setiap item
+                    $uniqueKey = $trx->kdtr . '_' . $detail->nmbrg;
+                    
+                    // Skip jika item sudah diproses untuk transaksi ini
+                    if (in_array($uniqueKey, $processedDetailsForTrx)) {
+                        continue;
+                    }
                     $cekRetur = $listRetur[$detail->nmbrg] ?? [];
                     $valRetur = $cekRetur->qty ?? 0;
                     $qty = $detail->qty;
                     $tot_qty = $qty-$valRetur;
+                    
                     if($tot_qty<=0){
                         continue;
                     }
+
+                    $processedDetailsForTrx[] = $uniqueKey; // Tandai item sebagai sudah diproses
                     $listTrx[] = $detail->kdtr;
                     if (in_array($dbs, ['ariston', 'wep', 'ariston_bali', 'wep_bali'])) {
                         $dpp = $detail->dpp;
