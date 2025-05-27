@@ -112,7 +112,7 @@ class TaxGenerateCheckController extends Controller
                     $selisih = $roundedPpnCoretax - $roundedTotalTax;
                     
                     $selisihFormatted = '<span class="' . 
-                        (abs($selisih) < 0.01 ? 'text-danger' : 'text-success') . 
+                        (abs($selisih) < 0.01 ? 'text-danger' : 'text-danger') . 
                         '">' . format_price($selisih) . '</span>';
                         
                     $ppnCoretaxFormatted = format_price($row->ppn_coretax);
