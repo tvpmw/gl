@@ -1210,6 +1210,7 @@ class FakturController extends Controller
             $insertData = [];
             $updateData = [];
             $now = date('Y-m-d H:i:s');
+            $referensiInserted = [];
 
             $db->transStart();
 
@@ -1256,10 +1257,13 @@ class FakturController extends Controller
                             $updateData[] = $data['referensi'];
                         }
                     } else {
-                        // Insert based on no_faktur
-                        $data['created_at'] = $now;
-                        $data['updated_at'] = null;
-                        $insertData[] = $data;
+                        // Cek apakah referensi sudah pernah dimasukkan ke $insertData
+                        if (!in_array($data['referensi'], $referensiInserted)) {
+                            $data['created_at'] = $now;
+                            $data['updated_at'] = null;
+                            $insertData[] = $data;
+                            $referensiInserted[] = $data['referensi'];
+                        }
                     }
                 }
 
