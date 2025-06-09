@@ -597,20 +597,27 @@ function formatNumber(number) {
     }).format(number);
 }
 
-// Add batch cancellation handler
+// Modifikasi handler untuk batch cancellation
 $('#btnBatalGenerate').on('click', function() {
-    if (checkedRows.size === 0) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Peringatan',
-            text: 'Pilih transaksi yang akan dibatalkan'
-        });
-        return;
+    let confirmMessage = '';
+    let postData = {
+        sumber_data: $('#sumber_data').val(),
+        startDate: $('#startDate').val(),
+        endDate: $('#endDate').val()
+    };
+
+    // Jika ada yang dicentang, gunakan data yang dicentang
+    // Jika tidak ada yang dicentang, gunakan range tanggal
+    if (checkedRows.size > 0) {
+        confirmMessage = `Anda yakin ingin membatalkan ${checkedRows.size} transaksi yang dipilih?`;
+        postData.kode_trx = Array.from(checkedRows);
+    } else {
+        confirmMessage = `Anda yakin ingin membatalkan semua transaksi pada periode ${moment(postData.startDate).format('DD/MM/YYYY')} sampai ${moment(postData.endDate).format('DD/MM/YYYY')}?`;
     }
 
     Swal.fire({
         title: 'Konfirmasi Pembatalan',
-        text: `Anda yakin ingin membatalkan ${checkedRows.size} transaksi yang dipilih?`,
+        text: confirmMessage,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonText: 'Ya, Batalkan',
@@ -621,10 +628,7 @@ $('#btnBatalGenerate').on('click', function() {
             $.ajax({
                 url: '<?= base_url('cms/tax-generate/batal-generate') ?>',
                 type: 'POST',
-                data: {
-                    kode_trx: Array.from(checkedRows),
-                    sumber_data: $('#sumber_data').val()
-                },
+                data: postData,
                 success: function(response) {
                     if (response.success) {
                         Swal.fire({

@@ -509,8 +509,14 @@ class TaxGenerateCheckController extends Controller
     {
         try {
             $request = service('request');
-            $kode_trx = $request->getPost('kode_trx');
+            $startDate = $request->getPost('startDate');
+            $endDate = $request->getPost('endDate');
             $dbs = $request->getPost('sumber_data');
+            $kodeTransaksi = $request->getPost('kode_trx'); // Array of selected transactions
+
+            if (!$dbs) {
+                throw new \Exception('Parameter sumber data tidak lengkap');
+            }
 
             switch ($dbs) {
                 case 'ariston':
@@ -540,25 +546,70 @@ class TaxGenerateCheckController extends Controller
 
             $db->transStart();
 
-            $db->table('crm.tax_generate_brg')
-                ->whereIn('kode_trx', $kode_trx)
-                ->delete();
+            $builder = $db->table('crm.tax_generate');
+            
+            // Jika ada kode transaksi spesifik yang dipilih
+            if (!empty($kodeTransaksi)) {
+                // Delete specific transactions
+                $kodeList = is_array($kodeTransaksi) ? $kodeTransaksi : [$kodeTransaksi];
+                
+                $db->table('crm.tax_generate_brg')
+                   ->whereIn('kode_trx', $kodeList)
+                   ->delete();
 
-            $db->table('crm.tax_generate')
-                ->whereIn('kode_trx', $kode_trx)
-                ->delete();
+                $builder->whereIn('kode_trx', $kodeList)
+                       ->delete();
+
+                $message = 'Berhasil membatalkan ' . count($kodeList) . ' transaksi yang dipilih';
+            } 
+            // Jika tidak ada yang dipilih, hapus berdasarkan range tanggal
+            else {
+                if (!$startDate || !$endDate) {
+                    throw new \Exception('Parameter tanggal tidak lengkap');
+                }
+
+                // Get affected transactions first
+                $affectedTransactions = $builder->where('tanggal >=', $startDate)
+                                              ->where('tanggal <=', $endDate)
+                                              ->get()
+                                              ->getResult();
+
+                if (empty($affectedTransactions)) {
+                    return $this->response->setJSON([
+                        'success' => true,
+                        'message' => 'Tidak ada data yang perlu dibatalkan untuk periode tersebut'
+                    ]);
+                }
+
+                $kodeList = array_column($affectedTransactions, 'kode_trx');
+
+                // Delete from tax_generate_brg
+                $db->table('crm.tax_generate_brg')
+                   ->whereIn('kode_trx', $kodeList)
+                   ->delete();
+
+                // Delete from tax_generate
+                $builder->where('tanggal >=', $startDate)
+                       ->where('tanggal <=', $endDate)
+                       ->delete();
+
+                $message = 'Berhasil membatalkan generate data untuk periode ' . 
+                          format_date($startDate, 'd/m/Y') . ' sampai ' . 
+                          format_date($endDate, 'd/m/Y');
+            }
 
             $db->transComplete();
 
             if ($db->transStatus() === false) {
-                throw new \Exception('Gagal membatalkan tax generate');
+                throw new \Exception('Gagal membatalkan generate data');
             }
 
-            logGL($db_config,'faktur_batalgenerate','Insert');
+            // Log activity
+            logGL($db_config,'faktur_batalgenerate','Delete');            
 
             return $this->response->setJSON([
                 'success' => true,
-                'message' => 'Tax generate berhasil dibatalkan'
+                'message' => $message
             ]);
 
         } catch (\Exception $e) {
